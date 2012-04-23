@@ -1,0 +1,8 @@
+dist/
+target/
+tmp/
+tags
+TAGS
+*.swp
+.project
+.classpath
