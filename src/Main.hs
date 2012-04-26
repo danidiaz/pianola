@@ -24,15 +24,13 @@ import Network.MessagePackRpc.Client
 import Control.Concurrent
 import Control.Monad
  
-hello :: RpcMethod (T.Text -> Int -> IO (T.Text,[Int]))
+hello :: RpcMethod (T.Text -> Int -> IO [(T.Text,Int,Int)])
 hello = method "hello"
  
 main :: IO ()
 main = do
   args <- getArgs 
   conn <- connect (head args) 26060
-  (text,intylist) <- hello conn (T.pack "hello") 4
-  putStrLn . T.unpack $ text
-  -- mapM putStrLn (map show (map (+1) intylist))
-  putStrLn . show $ intylist
+  wlist <- hello conn (T.pack "hello") 4
+  mapM_ (putStrLn . show) wlist
 
