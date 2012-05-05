@@ -19,12 +19,40 @@ import Control.Monad.Error
 import Control.Applicative
 import Control.Exception
 
+import Blaze.ByteString.Builder
+import Data.MessagePack
+import Data.MessagePack.Object
 import Network.MessagePackRpc.Client
- 
 import Control.Concurrent
 import Control.Monad
  
-hello :: RpcMethod (T.Text -> Int -> IO [(T.Text,Int,Int)])
+data Window = Window 
+    {
+        _windowTitle::T.Text,
+        _windowDim::(Int,Int) --,
+        -- _ownedWindows::[Window]
+    } deriving Show            
+
+instance Unpackable Window where
+    get = undefined 
+
+instance Packable Window where
+    from _ = undefined
+
+instance OBJECT Window where
+    toObject _ = undefined
+    tryFromObject (ObjectArray arr) =   
+        case arr of
+          [o1, o2] -> do
+            v1 <- tryFromObject o1
+            v2 <- tryFromObject o2
+            return (Window v1 v2)
+    tryFromObject _ = tryFromObjectError
+        
+tryFromObjectError :: Either String a
+tryFromObjectError = Left "tryFromObject: cannot cast"       
+        
+hello :: RpcMethod (T.Text -> Int -> IO [Window])
 hello = method "hello"
  
 main :: IO ()
