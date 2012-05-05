@@ -26,11 +26,37 @@ import Network.MessagePackRpc.Client
 import Control.Concurrent
 import Control.Monad
  
+data Component = Component
+    {
+        _className::T.Text,
+        _dim::(Int,Int),
+        _children::[Component]
+    } deriving Show
+
+instance Unpackable Component where
+    get = undefined 
+
+instance Packable Component  where
+    from _ = undefined
+
+instance OBJECT Component where
+    toObject _ = undefined
+    tryFromObject (ObjectArray arr) =   
+        case arr of
+          [o1, o2, o3] -> do
+            v1 <- tryFromObject o1
+            v2 <- tryFromObject o2
+            v3 <- tryFromObject o3
+            return (Component v1 v2 v3)
+          _ -> tryFromObjectError
+    tryFromObject _ = tryFromObjectError
+
 data Window = Window 
     {
         _windowTitle::T.Text,
-        _windowDim::(Int,Int) --,
-        -- _ownedWindows::[Window]
+        _windowDim::(Int,Int),
+        _topc::Component,
+        _ownedWindows::[Window]
     } deriving Show            
 
 instance Unpackable Window where
@@ -43,10 +69,13 @@ instance OBJECT Window where
     toObject _ = undefined
     tryFromObject (ObjectArray arr) =   
         case arr of
-          [o1, o2] -> do
+          [o1, o2, o3, o4] -> do
             v1 <- tryFromObject o1
             v2 <- tryFromObject o2
-            return (Window v1 v2)
+            v3 <- tryFromObject o3
+            v4 <- tryFromObject o4
+            return (Window v1 v2 v3 v4)
+          _ -> tryFromObjectError
     tryFromObject _ = tryFromObjectError
         
 tryFromObjectError :: Either String a
