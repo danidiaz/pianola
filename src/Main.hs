@@ -29,6 +29,7 @@ import Control.Monad
 data Component = Component
     {
         _className::T.Text,
+        _pos::(Int,Int),
         _dim::(Int,Int),
         _children::[Component]
     } deriving Show
@@ -43,11 +44,12 @@ instance OBJECT Component where
     toObject _ = undefined
     tryFromObject (ObjectArray arr) =   
         case arr of
-          [o1, o2, o3] -> do
+          [o1, o2, o3, o4] -> do
             v1 <- tryFromObject o1
             v2 <- tryFromObject o2
             v3 <- tryFromObject o3
-            return (Component v1 v2 v3)
+            v4 <- tryFromObject o4
+            return (Component v1 v2 v3 v4)
           _ -> tryFromObjectError
     tryFromObject _ = tryFromObjectError
 
