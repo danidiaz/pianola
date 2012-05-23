@@ -120,7 +120,7 @@ tryFromObjectError :: Either String a
 tryFromObjectError = Left "tryFromObject: cannot cast"       
         
 hello :: RpcMethod (T.Text -> Int -> IO [Window])
-hello = method "hello"
+hello = method "get"
  
 main :: IO ()
 main = do
