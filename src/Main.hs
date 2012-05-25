@@ -27,6 +27,35 @@ import Network.MessagePackRpc.Client
 import Control.Concurrent
 import Control.Monad
  
+type Window = Tree WindowInfo
+
+data WindowInfo = WindowInfo
+    {
+        _windowTitle::T.Text,
+        _windowDim::(Int,Int),
+        _topc::Component
+    } deriving Show            
+
+type Component = Tree ComponentInfo
+
+data ComponentInfo = ComponentInfo
+    {
+        _pos::(Int,Int),
+        _dim::(Int,Int),
+        _name::Maybe T.Text,
+        _tooltip::Maybe T.Text,
+        _text::Maybe T.Text,
+        _enabled::Bool,
+        _componentType::ComponentType
+    } deriving Show
+
+data ComponentType =
+     Panel
+    |Button T.Text
+    |TextField T.Text
+    |Other T.Text
+    deriving Show
+
 instance Unpackable (Tree a) where
     get = undefined
 
@@ -43,12 +72,45 @@ instance OBJECT a => OBJECT (Tree a) where
             return (Node v1 v2)
     tryFromObject _ = tryFromObjectError
     
-data ComponentType =
-     PanelComponent
-    |ButtonComponent T.Text
-    |TextFieldComponent T.Text
-    |OtherComponent T.Text
-    deriving Show
+instance Unpackable WindowInfo where
+    get = undefined 
+
+instance Packable WindowInfo where
+    from _ = undefined
+
+instance OBJECT WindowInfo where
+    toObject _ = undefined
+    tryFromObject (ObjectArray arr) =   
+        case arr of
+          [o1, o2, o3] -> do
+            v1 <- tryFromObject o1
+            v2 <- tryFromObject o2
+            v3 <- tryFromObject o3
+            return (WindowInfo v1 v2 v3)
+          _ -> tryFromObjectError
+    tryFromObject _ = tryFromObjectError
+
+instance Unpackable ComponentInfo where
+    get = undefined 
+
+instance Packable ComponentInfo  where
+    from _ = undefined
+
+instance OBJECT ComponentInfo where
+    toObject _ = undefined
+    tryFromObject (ObjectArray arr) =   
+        case arr of
+          [o1, o2, o3, o4, o5, o6, o7] -> do
+            v1 <- tryFromObject o1
+            v2 <- tryFromObject o2
+            v3 <- tryFromObject o3
+            v4 <- tryFromObject o4
+            v5 <- tryFromObject o5
+            v6 <- tryFromObject o6
+            v7 <- tryFromObject o7
+            return (ComponentInfo v1 v2 v3 v4 v5 v6 v7)
+          _ -> tryFromObjectError
+    tryFromObject _ = tryFromObjectError
 
 instance Unpackable ComponentType where
     get = undefined 
@@ -63,77 +125,17 @@ instance OBJECT ComponentType where
           [o1, o2] -> do
             typeTag <- tryFromObject o1
             case typeTag::Int of
-                1 -> return PanelComponent            
+                1 -> return Panel
                 2 -> do 
                     v2 <- tryFromObject o2
-                    return (ButtonComponent v2)
+                    return (Button v2)
                 3 -> do
                     v2 <- tryFromObject o2
-                    return (TextFieldComponent v2)
+                    return (TextField v2)
                 4 -> do
                     v2 <- tryFromObject o2
-                    return (OtherComponent v2)
+                    return (Other v2)
                 _ -> tryFromObjectError 
-          _ -> tryFromObjectError
-    tryFromObject _ = tryFromObjectError
-
-data Component = Component
-    {
-        _name::Maybe T.Text,
-        _tooltip::Maybe T.Text,
-        _text::Maybe T.Text,
-        _pos::(Int,Int),
-        _dim::(Int,Int),
-        _componentType::ComponentType,
-        _children::[Component]
-    } deriving Show
-
-instance Unpackable Component where
-    get = undefined 
-
-instance Packable Component  where
-    from _ = undefined
-
-instance OBJECT Component where
-    toObject _ = undefined
-    tryFromObject (ObjectArray arr) =   
-        case arr of
-          [o1, o2, o3, o4, o5, o6, o7] -> do
-            v1 <- tryFromObject o1
-            v2 <- tryFromObject o2
-            v3 <- tryFromObject o3
-            v4 <- tryFromObject o4
-            v5 <- tryFromObject o5
-            v6 <- tryFromObject o6
-            v7 <- tryFromObject o7
-            return (Component v1 v2 v3 v4 v5 v6 v7)
-          _ -> tryFromObjectError
-    tryFromObject _ = tryFromObjectError
-
-data Window = Window 
-    {
-        _windowTitle::T.Text,
-        _windowDim::(Int,Int),
-        _topc::Component,
-        _ownedWindows::[Window]
-    } deriving Show            
-
-instance Unpackable Window where
-    get = undefined 
-
-instance Packable Window where
-    from _ = undefined
-
-instance OBJECT Window where
-    toObject _ = undefined
-    tryFromObject (ObjectArray arr) =   
-        case arr of
-          [o1, o2, o3, o4] -> do
-            v1 <- tryFromObject o1
-            v2 <- tryFromObject o2
-            v3 <- tryFromObject o3
-            v4 <- tryFromObject o4
-            return (Window v1 v2 v3 v4)
           _ -> tryFromObjectError
     tryFromObject _ = tryFromObjectError
         
