@@ -62,7 +62,9 @@ instance OBJECT ComponentType where
 
 data Component = Component
     {
-        _className::T.Text,
+        _name::Maybe T.Text,
+        _tooltip::Maybe T.Text,
+        _text::Maybe T.Text,
         _pos::(Int,Int),
         _dim::(Int,Int),
         _componentType::ComponentType,
@@ -79,13 +81,15 @@ instance OBJECT Component where
     toObject _ = undefined
     tryFromObject (ObjectArray arr) =   
         case arr of
-          [o1, o2, o3, o4, o5] -> do
+          [o1, o2, o3, o4, o5, o6, o7] -> do
             v1 <- tryFromObject o1
             v2 <- tryFromObject o2
             v3 <- tryFromObject o3
             v4 <- tryFromObject o4
             v5 <- tryFromObject o5
-            return (Component v1 v2 v3 v4 v5)
+            v6 <- tryFromObject o6
+            v7 <- tryFromObject o7
+            return (Component v1 v2 v3 v4 v5 v6 v7)
           _ -> tryFromObjectError
     tryFromObject _ = tryFromObjectError
 
