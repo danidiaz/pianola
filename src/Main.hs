@@ -12,6 +12,7 @@ import Data.List
 import Data.Lens.Common
 import Data.Lens.Template
 import Data.Default
+import Data.Tree
 import qualified Data.Text as T
 import Control.Category
 import Control.Monad
@@ -26,6 +27,22 @@ import Network.MessagePackRpc.Client
 import Control.Concurrent
 import Control.Monad
  
+instance Unpackable (Tree a) where
+    get = undefined
+
+instance Packable (Tree a) where
+    from _ = undefined
+
+instance OBJECT a => OBJECT (Tree a) where
+    toObject _ = undefined
+    tryFromObject (ObjectArray arr) =   
+        case arr of
+          [o1, o2] -> do
+            v1 <- tryFromObject o1
+            v2 <- tryFromObject o2
+            return (Node v1 v2)
+    tryFromObject _ = tryFromObjectError
+    
 data ComponentType =
      PanelComponent
     |ButtonComponent T.Text
