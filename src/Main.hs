@@ -14,18 +14,22 @@ import Data.Lens.Template
 import Data.Default
 import Data.Tree
 import qualified Data.Text as T
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Conduit as C
+import qualified Data.Conduit.Binary as CB
+import qualified Data.Conduit.Attoparsec as CA
 import Control.Category
 import Control.Monad
 import Control.Monad.Error
 import Control.Applicative
 import Control.Exception
-
+import Network
 import Blaze.ByteString.Builder
 import Data.MessagePack
 import Data.MessagePack.Object
-import Network.MessagePackRpc.Client
 import Control.Concurrent
 import Control.Monad
+import Debug.Trace (trace)
  
 type Window = Tree WindowInfo
 
@@ -56,99 +60,92 @@ data ComponentType =
     |Other T.Text
     deriving Show
 
-instance Unpackable (Tree a) where
-    get = undefined
-
-instance Packable (Tree a) where
-    from _ = undefined
-
-instance OBJECT a => OBJECT (Tree a) where
-    toObject _ = undefined
-    tryFromObject (ObjectArray arr) =   
-        case arr of
-          [o1, o2] -> do
-            v1 <- tryFromObject o1
-            v2 <- tryFromObject o2
-            return (Node v1 v2)
-    tryFromObject _ = tryFromObjectError
+instance Unpackable a => Unpackable (Tree a) where
+    get = do
+        v1 <- get
+        v2 <- get
+        return (Node v1 v2)
     
 instance Unpackable WindowInfo where
-    get = undefined 
-
-instance Packable WindowInfo where
-    from _ = undefined
-
-instance OBJECT WindowInfo where
-    toObject _ = undefined
-    tryFromObject (ObjectArray arr) =   
-        case arr of
-          [o1, o2, o3] -> do
-            v1 <- tryFromObject o1
-            v2 <- tryFromObject o2
-            v3 <- tryFromObject o3
-            return (WindowInfo v1 v2 v3)
-          _ -> tryFromObjectError
-    tryFromObject _ = tryFromObjectError
+    get = do
+        v1 <- get
+        v2 <- get
+        v3 <- get
+        return (WindowInfo v1 v2 v3)
 
 instance Unpackable ComponentInfo where
-    get = undefined 
-
-instance Packable ComponentInfo  where
-    from _ = undefined
-
-instance OBJECT ComponentInfo where
-    toObject _ = undefined
-    tryFromObject (ObjectArray arr) =   
-        case arr of
-          [o1, o2, o3, o4, o5, o6, o7] -> do
-            v1 <- tryFromObject o1
-            v2 <- tryFromObject o2
-            v3 <- tryFromObject o3
-            v4 <- tryFromObject o4
-            v5 <- tryFromObject o5
-            v6 <- tryFromObject o6
-            v7 <- tryFromObject o7
-            return (ComponentInfo v1 v2 v3 v4 v5 v6 v7)
-          _ -> tryFromObjectError
-    tryFromObject _ = tryFromObjectError
+    get = do
+        v1 <- get
+        v2 <- get
+        v3 <- get
+        v4 <- get
+        v5 <- get
+        v6 <- get
+        v7 <- get
+        return (ComponentInfo v1 v2 v3 v4 v5 v6 v7)
 
 instance Unpackable ComponentType where
-    get = undefined 
+    get = do
+        typeTag <- get
+        case typeTag::Int of
+            1 -> return Panel
+            2 -> do 
+                v2 <- get
+                return (Button v2)
+            3 -> do
+                v2 <- get
+                return (TextField v2)
+            4 -> do
+                v2 <- get
+                return (Other v2)
 
-instance Packable ComponentType  where
-    from _ = undefined
+--
+--
+--
+data Connection
+  = Connection
+    { connHandle :: MVar Handle }
 
-instance OBJECT ComponentType where
-    toObject _ = undefined
-    tryFromObject (ObjectArray arr) =   
-        case arr of
-          [o1, o2] -> do
-            typeTag <- tryFromObject o1
-            case typeTag::Int of
-                1 -> return Panel
-                2 -> do 
-                    v2 <- tryFromObject o2
-                    return (Button v2)
-                3 -> do
-                    v2 <- tryFromObject o2
-                    return (TextField v2)
-                4 -> do
-                    v2 <- tryFromObject o2
-                    return (Other v2)
-                _ -> tryFromObjectError 
-          _ -> tryFromObjectError
-    tryFromObject _ = tryFromObjectError
-        
-tryFromObjectError :: Either String a
-tryFromObjectError = Left "tryFromObject: cannot cast"       
-        
-hello :: RpcMethod (T.Text -> Int -> IO [Window])
-hello = method "get"
+-- | Connect to RPC server
+connect :: String -- ^ Host name
+           -> Int -- ^ Port number
+           -> IO Connection -- ^ Connection
+connect addr port = withSocketsDo $ do
+  h <- connectTo addr (PortNumber $ fromIntegral port)
+  mh <- newMVar h
+  return $ Connection
+    { connHandle = mh
+    }
+
+-- | Disconnect a connection
+disconnect :: Connection -> IO ()
+disconnect Connection { connHandle = mh } =
+  hClose =<< takeMVar mh
+
+rpcGETCALL :: Connection -> IO [Window]
+rpcGETCALL Connection{ connHandle = mh } = withMVar mh $ \h -> do
+  BL.hPutStr h $ pack $ "get"
+  hFlush h
+  C.runResourceT $ CB.sourceHandle h C.$$ do
+    wlist <- CA.sinkParser get
+    --BL.hPutStr h $ pack "close"
+    --hFlush h
+    return wlist
+
+rpcCLOSE :: Connection -> IO ()
+rpcCLOSE Connection{ connHandle = mh } = withMVar mh $ \h -> do
+  BL.hPutStr h $ pack $ "close"
+  hFlush h
+--
+--
+--
  
 main :: IO ()
 main = do
   args <- getArgs 
   conn <- connect (head args) 26060
-  wlist <- hello conn (T.pack "hello") 4
+  wlist <- rpcGETCALL conn
   mapM_ (putStrLn . show) wlist
-
+  rpcCLOSE conn
+  disconnect conn
+   
