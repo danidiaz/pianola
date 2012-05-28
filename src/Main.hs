@@ -14,10 +14,10 @@ import Data.Lens.Template
 import Data.Default
 import Data.Tree
 import qualified Data.Text as T
+import qualified Data.Iteratee as I
+import qualified Data.Iteratee.IO.Handle as IH
+import qualified Data.Attoparsec.Iteratee as AI
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.Conduit as C
-import qualified Data.Conduit.Binary as CB
-import qualified Data.Conduit.Attoparsec as CA
 import Control.Category
 import Control.Monad
 import Control.Monad.Error
@@ -107,9 +107,9 @@ rpcCall host port what2do = withSocketsDo $ do
   
 getGuiState :: Handle -> IO [Window]
 getGuiState h = do   
-  BL.hPutStr h $ pack $ "get"
+  BL.hPutStr h . pack $ "get"
   hFlush h
-  C.runResourceT $ CB.sourceHandle h C.$$ CA.sinkParser get
+  I.run =<< IH.enumHandle 1024 h (AI.parserToIteratee get)
     
 main :: IO ()
 main = do
