@@ -99,53 +99,23 @@ instance Unpackable ComponentType where
                 v2 <- get
                 return (Other v2)
 
---
---
---
-data Connection
-  = Connection
-    { connHandle :: MVar Handle }
-
--- | Connect to RPC server
-connect :: String -- ^ Host name
-           -> Int -- ^ Port number
-           -> IO Connection -- ^ Connection
-connect addr port = withSocketsDo $ do
-  h <- connectTo addr (PortNumber $ fromIntegral port)
-  mh <- newMVar h
-  return $ Connection
-    { connHandle = mh
-    }
-
--- | Disconnect a connection
-disconnect :: Connection -> IO ()
-disconnect Connection { connHandle = mh } =
-  hClose =<< takeMVar mh
-
-rpcGETCALL :: Connection -> IO [Window]
-rpcGETCALL Connection{ connHandle = mh } = withMVar mh $ \h -> do
+rpcCall :: HostName -> PortID -> (Handle -> IO a) -> IO a
+rpcCall host port what2do = withSocketsDo $ do
+  bracket (connectTo host port)
+          hClose
+          what2do
+  
+getGuiState :: Handle -> IO [Window]
+getGuiState h = do   
   BL.hPutStr h $ pack $ "get"
   hFlush h
-  C.runResourceT $ CB.sourceHandle h C.$$ do
-    wlist <- CA.sinkParser get
-    --BL.hPutStr h $ pack "close"
-    --hFlush h
-    return wlist
-
-rpcCLOSE :: Connection -> IO ()
-rpcCLOSE Connection{ connHandle = mh } = withMVar mh $ \h -> do
-  BL.hPutStr h $ pack $ "close"
-  hFlush h
---
---
---
- 
+  C.runResourceT $ CB.sourceHandle h C.$$ CA.sinkParser get
+    
 main :: IO ()
 main = do
   args <- getArgs 
-  conn <- connect (head args) 26060
-  wlist <- rpcGETCALL conn
+  let addr = head args
+      port = PortNumber $ fromIntegral 26060
+  wlist <- rpcCall addr port getGuiState
   mapM_ (putStrLn . show) wlist
-  rpcCLOSE conn
-  disconnect conn
    
