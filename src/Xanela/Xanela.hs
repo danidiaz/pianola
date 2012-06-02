@@ -1,13 +1,15 @@
 {-# LANGUAGE TemplateHaskell,GeneralizedNewtypeDeriving #-}
 
 module Xanela (
+        Xanela,
+        unXanela, 
+        Endpoint (..),
+        gui,
         Window,
         WindowInfo,
         Component,
         ComponentInfo,
-        ComponentType,
-        rpcCall,
-        getGuiState    
+        ComponentType
     ) where
 
 import Prelude hiding (catch,(.))
@@ -21,6 +23,8 @@ import Data.Lens.Common
 import Data.Lens.Template
 import Data.Default
 import Data.Tree
+import Data.Foldable
+import Data.Traversable
 import qualified Data.Text as T
 import qualified Data.Iteratee as I
 import qualified Data.Iteratee.IO.Handle as IH
@@ -38,10 +42,30 @@ import Data.MessagePack
 import Data.MessagePack.Object
 import Control.Concurrent
 import Control.Monad
+import Control.Monad.Trans
 import Debug.Trace (trace)
 
-newtype Xanela a = Xanela (ReaderT Int IO a)
+newtype Xanela a = Xanela { unXanela:: ReaderT Endpoint IO a }
   deriving (Functor, Monad, MonadIO, Applicative)
+
+data Endpoint = Endpoint {
+        hostName::HostName,
+        portID::PortID
+    }
+
+gui:: Xanela [Window]
+gui = Xanela $ do
+  endpoint <- ask
+  liftIO $ rpcCall endpoint $ \h -> do
+      BL.hPutStr h . pack $ "get"
+      hFlush h
+      I.run =<< IH.enumHandle 1024 h (AI.parserToIteratee get)
+
+rpcCall :: Endpoint -> (Handle -> IO a) -> IO a
+rpcCall endpoint what2do = withSocketsDo $ do
+  bracket (connectTo (hostName endpoint) (portID endpoint))
+          hClose
+          what2do
 
 type Window = Tree WindowInfo
 
@@ -111,15 +135,4 @@ instance Unpackable a => Unpackable (Tree a) where
         v2 <- get
         return (Node v1 v2)
 
-rpcCall :: HostName -> PortID -> (Handle -> IO a) -> IO a
-rpcCall host port what2do = withSocketsDo $ do
-  bracket (connectTo host port)
-          hClose
-          what2do
-  
-getGuiState :: Handle -> IO [Window]
-getGuiState h = do   
-  BL.hPutStr h . pack $ "get"
-  hFlush h
-  I.run =<< IH.enumHandle 1024 h (AI.parserToIteratee get)
-    
+

@@ -29,6 +29,7 @@ import Data.MessagePack
 import Data.MessagePack.Object
 import Control.Concurrent
 import Control.Monad
+import Control.Monad.Reader
 import Xanela
 import Debug.Trace (trace)
  
@@ -36,7 +37,8 @@ main :: IO ()
 main = do
   args <- getArgs 
   let addr = head args
-      port = PortNumber $ fromIntegral 26060
-  wlist <- rpcCall addr port getGuiState
+      port = PortNumber . fromIntegral $ 26060
+      endpoint = Endpoint addr port
+  wlist <- runReaderT (unXanela gui) endpoint
   mapM_ (putStrLn . show) wlist
    
