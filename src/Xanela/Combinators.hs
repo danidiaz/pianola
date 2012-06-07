@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell,GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TemplateHaskell,GeneralizedNewtypeDeriving,OverloadedStrings #-}
 
 module Xanela.Combinators (
         clickButtonWithText
@@ -44,12 +44,13 @@ l2l = msum . map return
 
 clickButtonWithText:: [Window] -> Xanela ()
 clickButtonWithText wl = do
-    let button = do
+    let button::Logic (Xanela ())
+        button = do
             w <- l2l wl
             c <- l2l . map _topc . flatten $ w
             ci <- l2l . flatten $ c  
             Just txt <- return . _text $ ci 
-            guard $ (==) txt (T.pack "foo")
+            guard $ txt == "foo"
             Button xa <- return . _componentType $ ci   
             return xa
     observe button
