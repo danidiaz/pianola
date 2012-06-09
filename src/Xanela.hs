@@ -54,7 +54,7 @@ data Endpoint = Endpoint {
     }
 
 instance Show (Xanela a) where
-    show x = "xanela"
+    show x = "_x_"
 
 gui:: Xanela [Window]
 gui = Xanela $ do
@@ -123,7 +123,7 @@ instance Unpackable ComponentInfo where
 
 data ComponentType =
      Panel
-    |Button (Xanela ())
+    |Button (Maybe Bool) (Xanela ())
     |TextField T.Text
     |Other T.Text
     deriving Show
@@ -135,7 +135,8 @@ instance Unpackable ComponentType where
             1 -> return Panel
             2 -> do 
                 v2 <- get
-                return . Button . click $ v2
+                v3 <- get
+                return $ Button v3 (click v2)
             3 -> do
                 v2 <- get
                 return (TextField v2)

@@ -41,6 +41,9 @@ main = do
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
   wlist <- runReaderT (unXanela gui) endpoint
-  mapM_ (putStrLn . show) wlist
+  --mapM_ (putStrLn . show) wlist
   runReaderT (unXanela $ gui >>= clickButtonWithText) endpoint
+  wlist2 <- runReaderT (unXanela $ gui) endpoint
+  mapM_ (putStrLn . drawTree . fmap (show . _componentType) . _topc) (concatMap flatten wlist2)
+      
    

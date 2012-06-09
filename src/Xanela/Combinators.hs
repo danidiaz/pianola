@@ -51,7 +51,7 @@ clickButtonWithText wl = do
             ci <- l2l . flatten $ c  
             Just txt <- return . _text $ ci 
             guard $ txt == "foo"
-            Button xa <- return . _componentType $ ci   
+            Button _ xa <- return . _componentType $ ci   
             return xa
     observe button
 
