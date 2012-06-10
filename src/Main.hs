@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell,OverloadedStrings  #-}
 
 module Main where
 
@@ -43,6 +43,7 @@ main = do
   wlist <- runReaderT (unXanela gui) endpoint
   --mapM_ (putStrLn . show) wlist
   runReaderT (unXanela $ gui >>= clickButtonWithText) endpoint
+  runReaderT (unXanela $ gui >>= setATextField "foo val for text field") endpoint
   wlist2 <- runReaderT (unXanela $ gui) endpoint
   mapM_ (putStrLn . drawTree . fmap (show . _componentType) . _topc) (concatMap flatten wlist2)
       

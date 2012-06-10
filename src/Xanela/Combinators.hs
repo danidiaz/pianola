@@ -1,7 +1,8 @@
 {-# LANGUAGE TemplateHaskell,GeneralizedNewtypeDeriving,OverloadedStrings #-}
 
 module Xanela.Combinators (
-        clickButtonWithText
+        clickButtonWithText,
+        setATextField
     ) where
 
 import Prelude hiding (catch,(.))
@@ -55,4 +56,14 @@ clickButtonWithText wl = do
             return xa
     observe button
 
-
+setATextField:: T.Text -> [Window] -> Xanela ()
+setATextField text wl = do
+    let uptdateText::Logic (T.Text -> Xanela ())
+        uptdateText = do
+            w <- l2l wl
+            c <- l2l . map _topc . flatten $ w
+            ci <- l2l . flatten $ c  
+            TextField (Just f) <- return . _componentType $ ci   
+            return f 
+    observe uptdateText text
+    

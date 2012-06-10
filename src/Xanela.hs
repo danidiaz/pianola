@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell,GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TemplateHaskell,GeneralizedNewtypeDeriving,FlexibleInstances #-}
 
 module Xanela (
         Xanela,
@@ -75,11 +75,21 @@ click cid = Xanela $ do
       hFlush h
       -- I.run =<< IH.enumHandle 1024 h (AI.parserToIteratee get)
 
+setTextField:: ComponentID -> T.Text -> Xanela ()
+setTextField cid text = Xanela $ do
+  endpoint <- ask
+  liftIO $ rpcCall endpoint $ \h -> do
+      BL.hPutStr h . pack $ "setTextField"
+      BL.hPutStr h . pack $ cid
+      BL.hPutStr h . pack $ text
+      hFlush h
+
 rpcCall :: Endpoint -> (Handle -> IO a) -> IO a
 rpcCall endpoint what2do = withSocketsDo $ do
   bracket (connectTo (hostName endpoint) (portID endpoint))
           hClose
           what2do
+
 
 type Window = Tree WindowInfo
 
@@ -124,9 +134,13 @@ instance Unpackable ComponentInfo where
 data ComponentType =
      Panel
     |Button (Maybe Bool) (Xanela ())
-    |TextField T.Text
+    |TextField (Maybe (T.Text -> (Xanela ())))
+    |Label
     |Other T.Text
     deriving Show
+
+instance Show (b -> Xanela a) where
+    show _ = "_f_"
 
 instance Unpackable ComponentType where
     get = do
@@ -139,8 +153,9 @@ instance Unpackable ComponentType where
                 return $ Button v3 (click v2)
             3 -> do
                 v2 <- get
-                return (TextField v2)
-            4 -> do
+                return (TextField $ fmap setTextField v2)
+            4 -> return Label
+            77 -> do
                 v2 <- get
                 return (Other v2)
 
