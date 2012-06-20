@@ -1,6 +1,7 @@
 {-# LANGUAGE TemplateHaskell,GeneralizedNewtypeDeriving,OverloadedStrings #-}
 
 module Xanela.Combinators (
+        clickMenuWithText,
         clickButtonWithText,
         setATextField
     ) where
@@ -42,6 +43,19 @@ import Debug.Trace (trace)
 
 l2l :: MonadPlus m => [a] -> m a
 l2l = msum . map return
+
+
+clickMenuWithText:: [Window] -> Xanela ()
+clickMenuWithText wl = do
+    let button::Logic (Xanela ())
+        button = do
+            w <- l2l wl
+            Just ms  <- l2l . map _menu . flatten $ w
+            m <- l2l $ concatMap flatten ms
+            let (txt,clicky) = (_itemText m,_itemSelect m)
+            guard $ txt == "submenuitem1"
+            return clicky
+    observe button
 
 clickButtonWithText:: [Window] -> Xanela ()
 clickButtonWithText wl = do

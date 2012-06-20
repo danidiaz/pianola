@@ -42,6 +42,7 @@ main = do
       endpoint = Endpoint addr port
   wlist <- runReaderT (unXanela gui) endpoint
   --mapM_ (putStrLn . show) wlist
+  runReaderT (unXanela $ gui >>= clickMenuWithText) endpoint
   runReaderT (unXanela $ gui >>= clickButtonWithText) endpoint
   runReaderT (unXanela $ gui >>= setATextField "foo val for text field") endpoint
   wlist2 <- runReaderT (unXanela $ gui) endpoint

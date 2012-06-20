@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell,GeneralizedNewtypeDeriving,FlexibleInstances #-}
+{-# LANGUAGE TemplateHaskell,ScopedTypeVariables,GeneralizedNewtypeDeriving,FlexibleInstances #-}
 
 module Xanela (
         Xanela,
@@ -7,6 +7,8 @@ module Xanela (
         gui,
         Window,
         WindowInfo (..),
+        Menu,
+        MenuInfo (..),
         Component,
         ComponentInfo (..),
         ComponentType (..)
@@ -84,6 +86,15 @@ setTextField cid text = Xanela $ do
       BL.hPutStr h . pack $ text
       hFlush h
 
+clickMenu:: [ComponentID] -> Xanela ()
+clickMenu cids = Xanela $ do
+  endpoint <- ask
+  liftIO $ rpcCall endpoint $ \h -> do
+      BL.hPutStr h . pack $ "clickMenu"
+      BL.hPutStr h . pack $ cids
+      hFlush h
+
+
 rpcCall :: Endpoint -> (Handle -> IO a) -> IO a
 rpcCall endpoint what2do = withSocketsDo $ do
   bracket (connectTo (hostName endpoint) (portID endpoint))
@@ -97,6 +108,7 @@ data WindowInfo = WindowInfo
     {
         _windowTitle::T.Text,
         _windowDim::(Int,Int),
+        _menu::Maybe [Menu],
         _topc::Component
     } deriving Show            
 
@@ -105,7 +117,28 @@ instance Unpackable WindowInfo where
         v1 <- get
         v2 <- get
         v3 <- get
-        return (WindowInfo v1 v2 v3)
+        v4 <- get
+        return (WindowInfo v1 v2 v3 v4)
+
+type Menu = Tree MenuInfo
+
+data MenuInfo = MenuInfo
+    {
+        _itemName::Maybe T.Text,
+        _itemText::T.Text,
+        _itemState::Maybe Bool,
+        _itemEnabled::Bool,
+        _itemSelect::Xanela ()
+    } deriving Show
+
+instance Unpackable MenuInfo where
+    get = do
+        v1 <- get
+        v2 <- get
+        v3 <- get
+        v4 <- get
+        v5 <- get
+        return (MenuInfo v1 v2 v3 v4 (clickMenu v5))
 
 type Component = Tree ComponentInfo
 
