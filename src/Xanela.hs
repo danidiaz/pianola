@@ -58,7 +58,9 @@ data Endpoint = Endpoint {
 instance Show (Xanela a) where
     show x = "_x_"
 
-gui:: Xanela [Window]
+type GUI = [Window]
+
+gui:: Xanela GUI
 gui = Xanela $ do
   endpoint <- ask
   liftIO $ rpcCall endpoint $ \h -> do
@@ -66,31 +68,35 @@ gui = Xanela $ do
       hFlush h
       I.run =<< IH.enumHandle 1024 h (AI.parserToIteratee get)
 
+type XanelaID = Int
 type ComponentID = Int
 
-click:: ComponentID -> Xanela ()
-click cid = Xanela $ do
+click:: XanelaID -> ComponentID -> Xanela ()
+click xid cid = Xanela $ do
   endpoint <- ask
   liftIO $ rpcCall endpoint $ \h -> do
       BL.hPutStr h . pack $ "click"
+      BL.hPutStr h . pack $ xid
       BL.hPutStr h . pack $ cid
       hFlush h
       -- I.run =<< IH.enumHandle 1024 h (AI.parserToIteratee get)
 
-setTextField:: ComponentID -> T.Text -> Xanela ()
-setTextField cid text = Xanela $ do
+setTextField:: XanelaID -> ComponentID -> T.Text -> Xanela ()
+setTextField xid cid text = Xanela $ do
   endpoint <- ask
   liftIO $ rpcCall endpoint $ \h -> do
       BL.hPutStr h . pack $ "setTextField"
+      BL.hPutStr h . pack $ xid
       BL.hPutStr h . pack $ cid
       BL.hPutStr h . pack $ text
       hFlush h
 
-clickMenu:: [ComponentID] -> Xanela ()
-clickMenu cids = Xanela $ do
+clickMenu:: XanelaID -> [ComponentID] -> Xanela ()
+clickMenu xid cids = Xanela $ do
   endpoint <- ask
   liftIO $ rpcCall endpoint $ \h -> do
       BL.hPutStr h . pack $ "clickMenu"
+      BL.hPutStr h . pack $ xid
       BL.hPutStr h . pack $ cids
       hFlush h
 
@@ -114,6 +120,7 @@ data WindowInfo = WindowInfo
 
 instance Unpackable WindowInfo where
     get = do
+        xid::Int <- get
         v1 <- get
         v2 <- get
         v3 <- get
@@ -133,12 +140,13 @@ data MenuInfo = MenuInfo
 
 instance Unpackable MenuInfo where
     get = do
+        xid::Int <- get
         v1 <- get
         v2 <- get
         v3 <- get
         v4 <- get
         v5 <- get
-        return (MenuInfo v1 v2 v3 v4 (clickMenu v5))
+        return (MenuInfo v1 v2 v3 v4 (clickMenu xid v5))
 
 type Component = Tree ComponentInfo
 
@@ -155,6 +163,7 @@ data ComponentInfo = ComponentInfo
 
 instance Unpackable ComponentInfo where
     get = do
+        xid::Int <- get
         v1 <- get
         v2 <- get
         v3 <- get
@@ -177,16 +186,17 @@ instance Show (b -> Xanela a) where
 
 instance Unpackable ComponentType where
     get = do
+        xid::Int <- get
         typeTag <- get
         case typeTag::Int of
             1 -> return Panel
             2 -> do 
                 v2 <- get
                 v3 <- get
-                return $ Button v3 (click v2)
+                return $ Button v3 (click xid v2)
             3 -> do
                 v2 <- get
-                return (TextField $ fmap setTextField v2)
+                return . TextField $ fmap (setTextField xid) v2
             4 -> return Label
             77 -> do
                 v2 <- get
