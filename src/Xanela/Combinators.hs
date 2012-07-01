@@ -3,7 +3,11 @@
 module Xanela.Combinators (
         clickMenuWithText,
         clickButtonWithText,
-        setATextField
+        setATextField,
+        rightClickByText,
+        topW,
+        topWpl,
+        prettyPrintPopupLayer
     ) where
 
 import Prelude hiding (catch,(.))
@@ -44,6 +48,17 @@ import Debug.Trace (trace)
 l2l :: MonadPlus m => [a] -> m a
 l2l = msum . map return
 
+topW:: Xanela WindowInfo
+topW = fmap (rootLabel . head) gui
+
+topWpl:: Xanela [Component]
+topWpl = fmap _popupLayer topW 
+
+ppc:: Component -> Tree String
+ppc c = fmap (show . _componentType) c
+
+prettyPrintPopupLayer:: Xanela [String]
+prettyPrintPopupLayer= fmap (fmap (drawTree . ppc)) topWpl
 
 clickMenuWithText:: T.Text -> [Window] -> Xanela ()
 clickMenuWithText desiredText wl = do
@@ -57,15 +72,15 @@ clickMenuWithText desiredText wl = do
             return clicky
     observe button
 
-clickButtonWithText:: [Window] -> Xanela ()
-clickButtonWithText wl = do
+clickButtonWithText:: T.Text -> [Window] -> Xanela ()
+clickButtonWithText desiredtxt wl = do
     let button::Logic (Xanela ())
         button = do
             w <- l2l wl
             c <- l2l . map _topc . flatten $ w
             ci <- l2l . flatten $ c  
             Just txt <- return . _text $ ci 
-            guard $ txt == "foo"
+            guard $ txt == desiredtxt 
             Button _ xa <- return . _componentType $ ci   
             return xa
     observe button
@@ -81,3 +96,15 @@ setATextField text wl = do
             return f 
     observe uptdateText text
     
+
+rightClickByText:: T.Text -> [Window] -> Xanela ()
+rightClickByText desiredtxt wl = do
+    let button::Logic (Xanela ())
+        button = do
+            w <- l2l wl
+            c <- l2l . map _topc . flatten $ w
+            ci <- l2l . flatten $ c  
+            Just txt <- return . _text $ ci 
+            guard $ txt == desiredtxt 
+            return . _rightClick $ ci   
+    observe button

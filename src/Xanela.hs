@@ -100,6 +100,14 @@ clickMenu xid cids = Xanela $ do
       BL.hPutStr h . pack $ cids
       hFlush h
 
+rightClick:: XanelaID -> ComponentID -> Xanela ()
+rightClick xid cid = Xanela $ do
+  endpoint <- ask
+  liftIO $ rpcCall endpoint $ \h -> do
+      BL.hPutStr h . pack $ "rightClick"
+      BL.hPutStr h . pack $ xid
+      BL.hPutStr h . pack $ cid
+      hFlush h
 
 rpcCall :: Endpoint -> (Handle -> IO a) -> IO a
 rpcCall endpoint what2do = withSocketsDo $ do
@@ -115,6 +123,7 @@ data WindowInfo = WindowInfo
         _windowTitle::T.Text,
         _windowDim::(Int,Int),
         _menu::Maybe [Menu],
+        _popupLayer:: [Component],
         _topc::Component
     } deriving Show            
 
@@ -125,7 +134,8 @@ instance Unpackable WindowInfo where
         v2 <- get
         v3 <- get
         v4 <- get
-        return (WindowInfo v1 v2 v3 v4)
+        v5 <- get
+        return (WindowInfo v1 v2 v3 v4 v5)
 
 type Menu = Tree MenuInfo
 
@@ -158,12 +168,14 @@ data ComponentInfo = ComponentInfo
         _tooltip::Maybe T.Text,
         _text::Maybe T.Text,
         _enabled::Bool,
-        _componentType::ComponentType
+        _componentType::ComponentType,
+        _rightClick::Xanela ()
     } deriving Show
 
 instance Unpackable ComponentInfo where
     get = do
         xid::Int <- get
+        cid::Int <- get
         v1 <- get
         v2 <- get
         v3 <- get
@@ -171,7 +183,7 @@ instance Unpackable ComponentInfo where
         v5 <- get
         v6 <- get
         v7 <- get
-        return (ComponentInfo v1 v2 v3 v4 v5 v6 v7)
+        return (ComponentInfo v1 v2 v3 v4 v5 v6 v7 (rightClick xid cid))
 
 data ComponentType =
      Panel

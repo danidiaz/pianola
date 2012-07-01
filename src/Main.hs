@@ -40,13 +40,19 @@ main = do
   let addr = head args
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
-  wlist <- runReaderT (unXanela gui) endpoint
-  --mapM_ (putStrLn . show) wlist
-  runReaderT (unXanela $ gui >>= clickMenuWithText "submenuitem1") endpoint
-  runReaderT (unXanela $ gui >>= clickMenuWithText "submenuitem2") endpoint
-  runReaderT (unXanela $ gui >>= clickButtonWithText) endpoint
-  runReaderT (unXanela $ gui >>= setATextField "foo val for text field") endpoint
-  wlist2 <- runReaderT (unXanela $ gui) endpoint
-  mapM_ (putStrLn . drawTree . fmap (show . _componentType) . _topc) (concatMap flatten wlist2)
+      xanelaDo x = runReaderT (unXanela x) endpoint
+  wlist <- xanelaDo gui
+  xanelaDo $ gui >>= clickMenuWithText "SubMenu1"
+  strlist <- xanelaDo prettyPrintPopupLayer
+  mapM_ putStrLn strlist
+--  xanelaDo $ gui >>= clickMenuWithText "submenuitem1"
+--  xanelaDo $ gui >>= clickMenuWithText "submenuitem2"
+--  xanelaDo $ gui >>= rightClickByText "This is a label"
+--  strlist <- xanelaDo prettyPrintPopupLayer
+--  mapM_ putStrLn strlist
+--  xanelaDo $ gui >>= setATextField "foo val for text field"
+  -- xanelaDo $ gui >>= clickButtonWithText "foo"
+  -- wlist2 <- xanelaDo gui
+  -- mapM_ (putStrLn . drawTree . fmap (show . _componentType) . _topc) (concatMap flatten wlist2)
       
    
