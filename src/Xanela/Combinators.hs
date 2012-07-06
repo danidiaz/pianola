@@ -1,13 +1,18 @@
 {-# LANGUAGE TemplateHaskell,GeneralizedNewtypeDeriving,OverloadedStrings #-}
 
 module Xanela.Combinators (
-        clickMenuWithText,
-        clickButtonWithText,
-        setATextField,
-        rightClickByText,
-        topW,
-        topWpl,
-        prettyPrintPopupLayer
+        window,
+        contents,
+        popup, 
+        menu,
+        text,
+        click,
+        toggle,
+        rightClick,
+        setText,
+        guiAction,
+        pinpoint,
+        xhead                
     ) where
 
 import Prelude hiding (catch,(.))
@@ -16,6 +21,7 @@ import System.Environment
 import System.Console.GetOpt
 import Data.Char
 import qualified Data.Map as M
+import Data.Maybe
 import Data.List
 import Data.Lens.Common
 import Data.Lens.Template
@@ -45,66 +51,57 @@ import Xanela
 import Control.Monad.Logic
 import Debug.Trace (trace)
 
-l2l :: MonadPlus m => [a] -> m a
-l2l = msum . map return
+mplusify :: MonadPlus m => [a] -> m a
+mplusify = msum . map return
 
-topW:: Xanela WindowInfo
-topW = fmap (rootLabel . head) gui
+window :: GUI -> Logic WindowInfo
+window ws = do
+    w <- mplusify ws
+    mplusify $ flatten w
 
-topWpl:: Xanela [Component]
-topWpl = fmap _popupLayer topW 
-
-ppc:: Component -> Tree String
-ppc c = fmap (show . _componentType) c
-
-prettyPrintPopupLayer:: Xanela [String]
-prettyPrintPopupLayer= fmap (fmap (drawTree . ppc)) topWpl
-
-clickMenuWithText:: T.Text -> [Window] -> Xanela ()
-clickMenuWithText desiredText wl = do
-    let button::Logic (Xanela ())
-        button = do
-            w <- l2l wl
-            Just ms  <- l2l . map _menu . flatten $ w
-            m <- l2l $ concatMap flatten ms
-            let (txt,clicky) = (_itemText m,_itemSelect m)
-            guard $ txt == desiredText
-            return clicky
-    observe button
-
-clickButtonWithText:: T.Text -> [Window] -> Xanela ()
-clickButtonWithText desiredtxt wl = do
-    let button::Logic (Xanela ())
-        button = do
-            w <- l2l wl
-            c <- l2l . map _topc . flatten $ w
-            ci <- l2l . flatten $ c  
-            Just txt <- return . _text $ ci 
-            guard $ txt == desiredtxt 
-            Button _ xa <- return . _componentType $ ci   
-            return xa
-    observe button
-
-setATextField:: T.Text -> [Window] -> Xanela ()
-setATextField text wl = do
-    let uptdateText::Logic (T.Text -> Xanela ())
-        uptdateText = do
-            w <- l2l wl
-            c <- l2l . map _topc . flatten $ w
-            ci <- l2l . flatten $ c  
-            TextField (Just f) <- return . _componentType $ ci   
-            return f 
-    observe uptdateText text
+contents :: WindowInfo -> Logic ComponentInfo
+contents = mplusify . flatten . _topc
     
+popup :: WindowInfo -> Logic ComponentInfo
+popup w = do 
+    c <- mplusify . _popupLayer $ w
+    mplusify . flatten $ c
 
-rightClickByText:: T.Text -> [Window] -> Xanela ()
-rightClickByText desiredtxt wl = do
-    let button::Logic (Xanela ())
-        button = do
-            w <- l2l wl
-            c <- l2l . map _topc . flatten $ w
-            ci <- l2l . flatten $ c  
-            Just txt <- return . _text $ ci 
-            guard $ txt == desiredtxt 
-            return . _rightClick $ ci   
-    observe button
+menu :: WindowInfo -> Logic ComponentInfo
+menu w = do
+    c <- mplusify . _menu $ w
+    mplusify . flatten $ c
+
+text:: T.Text -> ComponentInfo -> Logic ComponentInfo
+text desiredtxt c = case _text c of 
+    Just txt -> do guard $ txt == desiredtxt 
+                   return c
+    _ -> mzero
+
+click:: ComponentInfo -> Logic (Xanela ())
+click c = case _componentType c of
+    Button _ xa -> return xa
+    _ -> mzero
+
+toggle:: Bool -> ComponentInfo -> Logic (Xanela ())
+toggle state c = case _componentType c of
+    Button (Just state) xa -> return xa
+    _ -> mzero
+
+rightClick:: ComponentInfo -> Logic (Xanela ())
+rightClick = return . _rightClick
+
+setText:: T.Text -> ComponentInfo -> Logic (Xanela ())
+setText txt c = case _componentType c of
+    TextField (Just f) -> return $ f txt
+    _ -> mzero
+
+guiAction:: (GUI -> Logic (Xanela ())) -> Xanela ()
+guiAction f = gui >>= observe . f
+
+pinpoint:: [a] -> Xanela a
+pinpoint = return . head
+
+xhead:: [a] -> Xanela a
+xhead = return . head 
+

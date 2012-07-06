@@ -30,6 +30,7 @@ import Data.MessagePack.Object
 import Control.Concurrent
 import Control.Monad
 import Control.Monad.Reader
+import Control.Monad.Logic
 import Xanela
 import Xanela.Combinators
 import Debug.Trace (trace)
@@ -41,10 +42,14 @@ main = do
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
       xanelaDo x = runReaderT (unXanela x) endpoint
-  wlist <- xanelaDo gui
-  xanelaDo $ gui >>= clickMenuWithText "SubMenu1"
-  strlist <- xanelaDo prettyPrintPopupLayer
-  mapM_ putStrLn strlist
+      xanela = do
+                 gui >>= join . pinpoint . observeAll . (window >=> contents >=> setText "foo val for text field")  
+                 gui >>= \g -> join . pinpoint . observeAll $ do
+                    window g >>= contents >>= text "foo" >>= click 
+  xanelaDo xanela    
+      
+--  wlist <- xanelaDo gui
+--  mapM_ putStrLn strlist
 --  xanelaDo $ gui >>= clickMenuWithText "submenuitem1"
 --  xanelaDo $ gui >>= clickMenuWithText "submenuitem2"
 --  xanelaDo $ gui >>= rightClickByText "This is a label"

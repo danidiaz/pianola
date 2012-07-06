@@ -5,10 +5,9 @@ module Xanela (
         unXanela, 
         Endpoint (..),
         gui,
+        GUI,
         Window,
         WindowInfo (..),
-        Menu,
-        MenuInfo (..),
         Component,
         ComponentInfo (..),
         ComponentType (..)
@@ -81,6 +80,15 @@ click xid cid = Xanela $ do
       hFlush h
       -- I.run =<< IH.enumHandle 1024 h (AI.parserToIteratee get)
 
+rightClick:: XanelaID -> ComponentID -> Xanela ()
+rightClick xid cid = Xanela $ do
+  endpoint <- ask
+  liftIO $ rpcCall endpoint $ \h -> do
+      BL.hPutStr h . pack $ "rightClick"
+      BL.hPutStr h . pack $ xid
+      BL.hPutStr h . pack $ cid
+      hFlush h
+
 setTextField:: XanelaID -> ComponentID -> T.Text -> Xanela ()
 setTextField xid cid text = Xanela $ do
   endpoint <- ask
@@ -91,30 +99,11 @@ setTextField xid cid text = Xanela $ do
       BL.hPutStr h . pack $ text
       hFlush h
 
-clickMenu:: XanelaID -> [ComponentID] -> Xanela ()
-clickMenu xid cids = Xanela $ do
-  endpoint <- ask
-  liftIO $ rpcCall endpoint $ \h -> do
-      BL.hPutStr h . pack $ "clickMenu"
-      BL.hPutStr h . pack $ xid
-      BL.hPutStr h . pack $ cids
-      hFlush h
-
-rightClick:: XanelaID -> ComponentID -> Xanela ()
-rightClick xid cid = Xanela $ do
-  endpoint <- ask
-  liftIO $ rpcCall endpoint $ \h -> do
-      BL.hPutStr h . pack $ "rightClick"
-      BL.hPutStr h . pack $ xid
-      BL.hPutStr h . pack $ cid
-      hFlush h
-
 rpcCall :: Endpoint -> (Handle -> IO a) -> IO a
 rpcCall endpoint what2do = withSocketsDo $ do
   bracket (connectTo (hostName endpoint) (portID endpoint))
           hClose
           what2do
-
 
 type Window = Tree WindowInfo
 
@@ -122,7 +111,7 @@ data WindowInfo = WindowInfo
     {
         _windowTitle::T.Text,
         _windowDim::(Int,Int),
-        _menu::Maybe [Menu],
+        _menu::[Component],
         _popupLayer:: [Component],
         _topc::Component
     } deriving Show            
@@ -136,27 +125,6 @@ instance Unpackable WindowInfo where
         v4 <- get
         v5 <- get
         return (WindowInfo v1 v2 v3 v4 v5)
-
-type Menu = Tree MenuInfo
-
-data MenuInfo = MenuInfo
-    {
-        _itemName::Maybe T.Text,
-        _itemText::T.Text,
-        _itemState::Maybe Bool,
-        _itemEnabled::Bool,
-        _itemSelect::Xanela ()
-    } deriving Show
-
-instance Unpackable MenuInfo where
-    get = do
-        xid::Int <- get
-        v1 <- get
-        v2 <- get
-        v3 <- get
-        v4 <- get
-        v5 <- get
-        return (MenuInfo v1 v2 v3 v4 (clickMenu xid v5))
 
 type Component = Tree ComponentInfo
 
@@ -190,6 +158,7 @@ data ComponentType =
     |Button (Maybe Bool) (Xanela ())
     |TextField (Maybe (T.Text -> (Xanela ())))
     |Label
+    |PopupMenu  
     |Other T.Text
     deriving Show
 
@@ -210,6 +179,7 @@ instance Unpackable ComponentType where
                 v2 <- get
                 return . TextField $ fmap (setTextField xid) v2
             4 -> return Label
+            5 -> return PopupMenu
             77 -> do
                 v2 <- get
                 return (Other v2)
