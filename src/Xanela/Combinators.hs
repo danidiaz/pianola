@@ -10,7 +10,6 @@ module Xanela.Combinators (
         toggle,
         rightClick,
         setText,
-        guiAction,
         pinpoint,
         xhead                
     ) where
@@ -95,9 +94,6 @@ setText:: T.Text -> ComponentInfo -> Logic (Xanela ())
 setText txt c = case _componentType c of
     TextField (Just f) -> return $ f txt
     _ -> mzero
-
-guiAction:: (GUI -> Logic (Xanela ())) -> Xanela ()
-guiAction f = gui >>= observe . f
 
 pinpoint:: [a] -> Xanela a
 pinpoint = return . head
