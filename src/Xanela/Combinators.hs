@@ -11,7 +11,7 @@ module Xanela.Combinators (
         rightClick,
         setText,
         pinpoint,
-        xhead                
+        pinhead
     ) where
 
 import Prelude hiding (catch,(.))
@@ -96,8 +96,10 @@ setText txt c = case _componentType c of
     _ -> mzero
 
 pinpoint:: [a] -> Xanela a
-pinpoint = return . head
+pinpoint [a] = return a
+pinpoint _ = throwError PinpointError
 
-xhead:: [a] -> Xanela a
-xhead = return . head 
+pinhead:: [a] -> Xanela a
+pinhead (x:xs) = return x
+pinhead _ = throwError PinpointError
 

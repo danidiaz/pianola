@@ -41,12 +41,17 @@ main = do
   let addr = head args
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
-      xanelaDo x = runReaderT (unXanela x) endpoint
+      xanelaDo x = runErrorT $ runReaderT (unXanela x) endpoint
       xanela = do
                  gui >>= join . pinpoint . observeAll . (window >=> contents >=> setText "foo val for text field")  
                  gui >>= \g -> join . pinpoint . observeAll $ do
                     window g >>= contents >>= text "foo" >>= click 
-  xanelaDo xanela    
+                 gui >>= \g -> join . pinpoint . observeAll $ do
+                    window g >>= contents >>= text "dialog button" >>= click 
+  result <- xanelaDo xanela    
+  case result of 
+    Left err -> putStrLn . show $ err
+    Right _ -> putStrLn "All ok!"
       
 --  wlist <- xanelaDo gui
 --  mapM_ putStrLn strlist

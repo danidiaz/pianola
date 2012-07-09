@@ -4,6 +4,7 @@ module Xanela (
         Xanela,
         unXanela, 
         Endpoint (..),
+        XanelaError (..),
         gui,
         GUI,
         Window,
@@ -46,16 +47,25 @@ import Control.Monad
 import Control.Monad.Trans
 import Debug.Trace (trace)
 
-newtype Xanela a = Xanela { unXanela:: ReaderT Endpoint IO a }
-  deriving (Functor, Monad, MonadIO, Applicative)
+newtype Xanela a = Xanela { unXanela:: ReaderT Endpoint (ErrorT XanelaError IO) a }
+  deriving (Functor, Monad, MonadIO, MonadError XanelaError, Applicative)
+
+instance Show (Xanela a) where
+    show x = "_x_"
 
 data Endpoint = Endpoint {
         hostName::HostName,
         portID::PortID
     }
 
-instance Show (Xanela a) where
-    show x = "_x_"
+data XanelaError = 
+     PinpointError
+    |GenericError String
+     deriving Show 
+
+instance Error XanelaError where 
+    strMsg m = GenericError m
+
 
 type GUI = [Window]
 
