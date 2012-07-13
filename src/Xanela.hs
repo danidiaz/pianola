@@ -1,10 +1,11 @@
 {-# LANGUAGE TemplateHaskell,ScopedTypeVariables,GeneralizedNewtypeDeriving,FlexibleInstances #-}
 
 module Xanela (
-        Xanela,
-        unXanela, 
+        Xanela (..),
         Endpoint (..),
         XanelaError (..),
+        liftEitherToXanela,
+        liftMaybeToXanela, 
         gui,
         GUI,
         Window,
@@ -21,8 +22,6 @@ import System.Console.GetOpt
 import Data.Char
 import qualified Data.Map as M
 import Data.List
-import Data.Lens.Common
-import Data.Lens.Template
 import Data.Default
 import Data.Tree
 import Data.Foldable
@@ -33,8 +32,8 @@ import qualified Data.Iteratee.IO.Handle as IH
 import qualified Data.Attoparsec.Iteratee as AI
 import qualified Data.ByteString.Lazy as BL
 import Control.Category
+import Control.Error
 import Control.Monad
-import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Applicative
 import Control.Exception
@@ -47,8 +46,8 @@ import Control.Monad
 import Control.Monad.Trans
 import Debug.Trace (trace)
 
-newtype Xanela a = Xanela { unXanela:: ReaderT Endpoint (ErrorT XanelaError IO) a }
-  deriving (Functor, Monad, MonadIO, MonadError XanelaError, Applicative)
+newtype Xanela a = Xanela { unXanela:: ReaderT Endpoint (EitherT XanelaError IO) a }
+  deriving (Functor, Monad, MonadIO, Applicative)
 
 instance Show (Xanela a) where
     show x = "_x_"
@@ -58,14 +57,13 @@ data Endpoint = Endpoint {
         portID::PortID
     }
 
-data XanelaError = 
-     PinpointError
-    |GenericError String
-     deriving Show 
+data XanelaError = PinpointError deriving Show 
 
-instance Error XanelaError where 
-    strMsg m = GenericError m
+liftEitherToXanela :: Either XanelaError a -> Xanela a
+liftEitherToXanela = Xanela . lift . liftEither 
 
+liftMaybeToXanela :: XanelaError -> Maybe a -> Xanela a
+liftMaybeToXanela e x = liftEitherToXanela . note e $ x
 
 type GUI = [Window]
 

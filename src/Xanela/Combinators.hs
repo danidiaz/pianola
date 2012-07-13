@@ -10,8 +10,7 @@ module Xanela.Combinators (
         toggle,
         rightClick,
         setText,
-        pinpoint,
-        pinhead
+        tryObserveUnique
     ) where
 
 import Prelude hiding (catch,(.))
@@ -22,8 +21,6 @@ import Data.Char
 import qualified Data.Map as M
 import Data.Maybe
 import Data.List
-import Data.Lens.Common
-import Data.Lens.Template
 import Data.Default
 import Data.Tree
 --import Data.Foldable
@@ -34,8 +31,8 @@ import qualified Data.Iteratee.IO.Handle as IH
 import qualified Data.Attoparsec.Iteratee as AI
 import qualified Data.ByteString.Lazy as BL
 import Control.Category
+import Control.Error
 import Control.Monad
-import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Applicative
 import Control.Exception
@@ -95,11 +92,7 @@ setText txt c = case _componentType c of
     TextField (Just f) -> return $ f txt
     _ -> mzero
 
-pinpoint:: [a] -> Xanela a
-pinpoint [a] = return a
-pinpoint _ = throwError PinpointError
-
-pinhead:: [a] -> Xanela a
-pinhead (x:xs) = return x
-pinhead _ = throwError PinpointError
-
+tryObserveUnique:: Logic a -> Maybe a 
+tryObserveUnique logic = case observeAll logic of
+    x:[] -> Just x
+    _ -> Nothing 
