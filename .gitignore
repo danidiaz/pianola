@@ -6,3 +6,4 @@ TAGS
 *.swp
 .project
 .classpath
+Session.vim

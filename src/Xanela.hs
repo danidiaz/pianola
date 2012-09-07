@@ -4,8 +4,6 @@ module Xanela (
         Xanela (..),
         Endpoint (..),
         XanelaError (..),
-        liftEitherToXanela,
-        liftMaybeToXanela, 
         gui,
         GUI,
         Window,
@@ -58,12 +56,6 @@ data Endpoint = Endpoint {
     }
 
 data XanelaError = PinpointError deriving Show 
-
-liftEitherToXanela :: Either XanelaError a -> Xanela a
-liftEitherToXanela = Xanela . lift . liftEither 
-
-liftMaybeToXanela :: XanelaError -> Maybe a -> Xanela a
-liftMaybeToXanela e x = liftEitherToXanela . note e $ x
 
 type GUI = [Window]
 
