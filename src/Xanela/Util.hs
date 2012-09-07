@@ -67,10 +67,10 @@ instance (Unpackable a, Unpackable b) => Unpackable (Either a b) where
     get = do
         tag <- get::Parser Int
         case tag of
-            0 -> do
+            1 -> do
                 v0 <- get
                 return $ Left v0
-            1 -> do 
+            0 -> do 
                 v1 <- get
                 return $ Right v1
 
