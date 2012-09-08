@@ -71,6 +71,6 @@ runInIO ( Free x ) = case x of
                        nextFree <- liftIO $ rpcCall endp $ doStuff iterIO    
                        runInIO nextFree 
     Delay i n -> do
-                    liftIO $ threadDelay i
+                    liftIO . threadDelay . (*1000000) $ i
                     runInIO n
-
+runInIO ( Pure a ) = return a 

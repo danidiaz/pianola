@@ -21,10 +21,7 @@ module Xanela.Types (
         contentsflat,
         text,
         wait,
-        click,
-        toggle,
-        rightClick,
-        setText
+        click
     ) where
 
 import Prelude hiding (catch,(.))
@@ -150,23 +147,10 @@ text t c = do
     guard $ t == t'
     return c
 
-wait::MonadBase n m => Int -> GUI n -> m (GUI n)
-wait i = liftBase . flip _wait4changes i
+wait::MonadBase n m => GUI n -> m (GUI n)
+wait = liftBase . flip _wait4changes
 
 click:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (GUI n)
 click (_componentType -> Button _ a) = liftBase a
 click _ = mzero
-
-toggle:: (MonadBase n m, MonadPlus m) => Bool -> ComponentInfo n -> m (GUI n)
-toggle state c = case _componentType c of 
-    Button (Just state) a -> liftBase a
-    _ -> mzero
-
-rightClick:: (MonadBase n m) => ComponentInfo n -> m (GUI n)
-rightClick = liftBase . _rightClick
-
-setText:: (MonadBase n m, MonadPlus m) => T.Text -> ComponentInfo n -> m (GUI n)
-setText txt c = case _componentType c of
-    TextField (Just f) -> liftBase . f $ txt
-    _ -> mzero
 -- end logic helpers

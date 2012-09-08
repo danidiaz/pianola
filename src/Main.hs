@@ -43,18 +43,29 @@ import Xanela.Types.Protocol
 import Xanela.Types.Protocol.IO
 import Debug.Trace (trace)
  
-data AssertError = AssertError T.Text
-
 type Search m = LogicT (EitherT AssertError m)
+
+data AssertError = AssertError T.Text
 
 instance MonadBase b m => MonadBase b (Search m) where
     liftBase = lift.lift.liftBase
 
-type TestCase = MonadBase n (Search m) => GUI n -> Search m () 
+type TestCase = MonadBase n (Search m) => Search m (GUI n) -> Search m () 
 
 testCase:: TestCase
-testCase g = do 
-    windowsflat g >>= contentsflat >>= text "foo" >>= click >> return ()
+testCase g = g >>= wait t
+               >>= windowsflat >>= contentsflat >>= text "foo" >>= click 
+               >>= wait t
+               >>= windowsflat >>= contentsflat >>= text "dialog button" >>= click 
+               >>= wait t
+               >>= windowsflat >>= menuflat >>= text "Menu1" >>= click
+               >>= wait t
+               >>= windowsflat >>= popupflat >>= text "SubMenu1" >>= click
+               >>= wait t
+               >>= windowsflat >>= popupflat >>= text "submenuitem2" >>= toggle False
+               >>= wait t
+               >>  return ()
+    where t = 2
 
 main :: IO ()
 main = do
@@ -63,8 +74,7 @@ main = do
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
       p = runEitherT . observeAllT $ do
-            g <- lift.lift $ getgui 
-            testCase g
+            testCase.lift.lift $ getgui 
       pio = runEitherT . runInIO . runEitherT $ p   
   r <- runReaderT pio endpoint 
   case r of
