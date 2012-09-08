@@ -1,10 +1,6 @@
 {-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module Xanela.Util (
         mapFreeT,

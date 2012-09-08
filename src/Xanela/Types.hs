@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables, Rank2Types #-}
+{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
