@@ -14,7 +14,6 @@ module Xanela.Types (
         Component (..),
         ComponentInfo (..),
         ComponentType (..),
-        mapGUI,
         windowsflat,
         menuflat,
         popupflat,
@@ -80,35 +79,6 @@ data ComponentType m =
     |Label
     |PopupMenu  
     |Other T.Text
-
-mapGUI:: (Monad m, Monad n) => (forall a.m a -> n a) -> GUI m -> GUI n
-mapGUI mf = 
-    let mapGUIAction = mf . liftM mapGUI'   
-        mapGUI' gr = gr
-            {
-                _gui = fmap mapWindow' $ _gui gr,
-                _wait4changes = fmap mapGUIAction $ _wait4changes gr
-            }
-        mapWindow' = fmap mapWindowInfo'
-        mapWindowInfo' wi = wi
-            {
-                _menu =  fmap mapComponent' $ _menu wi,
-                _popupLayer = fmap mapComponent' $ _popupLayer wi,
-                _topc =  mapComponent' $ _topc wi
-            }
-        mapComponent' = fmap mapComponentInfo'
-        mapComponentInfo' ci = ci
-            {
-                _componentType = mapComponentType' $ _componentType ci,
-                _rightClick = mapGUIAction $ _rightClick ci
-            }
-        mapComponentType' Panel = Panel
-        mapComponentType' ( Button m a ) = Button m $ mapGUIAction a
-        mapComponentType' ( TextField m ) = TextField $ (liftM.fmap $ mapGUIAction) m
-        mapComponentType' Label = Label
-        mapComponentType' PopupMenu = PopupMenu
-        mapComponentType' ( Other t ) = Other t
-    in mapGUI'
 
 -- logic helpers
 windowsflat:: MonadPlus m => GUI n -> m (WindowInfo n)
