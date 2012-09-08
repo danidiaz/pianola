@@ -11,44 +11,25 @@ module Xanela.Types.Protocol (
         getgui
     ) where
 
-import Prelude hiding (catch)
-import System.IO
-import System.Environment
-import System.Console.GetOpt
-import Data.Char
-import qualified Data.Map as M
-import Data.List
-import Data.Default
-import Data.Tree
---import Data.Foldable
-import Data.Traversable
+import Prelude hiding (catch,(.),id)
+import Data.MessagePack
+import Data.Attoparsec.ByteString
 import qualified Data.Text as T
 import qualified Data.Iteratee as I
-import qualified Data.Iteratee.IO.Handle as IH
 import qualified Data.Attoparsec.Iteratee as AI
-import Data.Attoparsec.ByteString
--- import qualified Data.ByteString as BL hiding (pack)
-import Control.Error
-import Control.Monad
-import Control.Monad.Reader
-import Control.Applicative
-import Control.Exception
-import Network
--- import Blaze.ByteString.Builder
-import Data.MessagePack
-import Data.MessagePack.Object
-import Control.Concurrent
-import Control.Monad
-import Control.Monad.Logic
-import Control.Monad.Free
-import Control.Monad.Trans
-import Control.Monad.Identity
-import Control.Monad.Base
 import qualified Data.ByteString as B 
 import qualified Data.ByteString.Lazy as BL
+import Control.Category
+import Control.Error
+import Control.Monad
+import Control.Applicative
+import Control.Monad.Base
+import Control.Monad.Trans
+import Control.Monad.Free
+import Control.Monad.Identity
+
 import Xanela.Types
 import Xanela.Util
-import Debug.Trace (trace)
 
 data ProtocolF x = Call [BL.ByteString] (I.Iteratee B.ByteString Identity x) 
              |Delay Int x

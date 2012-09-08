@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables, FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Xanela.Types.Protocol.IO (
         RunInIOError(..),
@@ -8,41 +8,25 @@ module Xanela.Types.Protocol.IO (
 
 import Prelude hiding (catch,(.))
 import System.IO
-import System.Environment
-import System.Console.GetOpt
-import Data.Char
-import qualified Data.Map as M
-import Data.List
-import Data.Default
-import Data.Tree
---import Data.Foldable
-import Data.Traversable
 import qualified Data.Text as T
 import qualified Data.Iteratee as I
 import qualified Data.Iteratee.IO.Handle as IH
-import qualified Data.Attoparsec.Iteratee as AI
-import Data.Attoparsec.ByteString
--- import qualified Data.ByteString as BL hiding (pack)
+import Network 
 import Control.Category
 import Control.Error
-import Control.Monad
-import Control.Monad.Reader
 import Control.Applicative
 import Control.Exception
-import Network 
--- import Blaze.ByteString.Builder
-import Data.MessagePack
-import Data.MessagePack.Object
 import Control.Concurrent
 import Control.Monad
+import Control.Monad.Reader
 import Control.Monad.Logic
 import Control.Monad.Free
 import Control.Monad.Trans
 import Control.Monad.Identity
 import qualified Data.ByteString as B 
 import qualified Data.ByteString.Lazy as BL
+
 import Xanela.Types.Protocol
-import Debug.Trace (trace)
 
 data RunInIOError = CommError T.Text | ParseError T.Text
 
