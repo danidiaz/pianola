@@ -44,7 +44,7 @@ instance MonadBase b m => MonadBase b (Search m) where
 type TestCase = MonadBase n (Search m) => GUI n -> Search m ()
 
 testCase:: TestCase
-testCase = (wait t >=> windowsflat) `prefixK` [
+testCase = prefixK_ ( wait t >=> windowsflat ) [
                     contentsflat >=> text "foo" >=> click,
                     contentsflat >=> text "dialog button" >=> click,
                     menuflat >=> text "Menu1" >=> click,

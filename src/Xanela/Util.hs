@@ -11,7 +11,9 @@ module Xanela.Util (
         unitK,
         composeKs,
         prefixK,
-        sandwichK
+        prefixK_,
+        sandwichK,
+        sandwichK_
     ) where
 
 import Prelude hiding (catch,(.),id)
@@ -32,16 +34,20 @@ unitK _ = return ()
 composeKs :: Monad m => [a -> m a] -> a -> m a
 composeKs  = foldr (>=>) return
 
-prefixK:: Monad m => (a -> m b) -> [b -> m a] -> a -> m a 
+prefixK:: Monad m => (a -> m b) -> ((a -> m b) -> [b -> m a]) -> a -> m a 
 prefixK prefix kl = 
-    let kl' = map ((>=>) prefix) kl
+    let kl' = map ((>=>) prefix) (kl prefix)
     in composeKs kl'
 
-sandwichK:: Monad m => (a -> m b) -> (c -> m a) -> [b -> m c] -> a -> m a 
+prefixK_ f1 l = prefixK f1 (\_->l)
+
+sandwichK:: Monad m => (a -> m b) -> (c -> m a) -> ((a -> m b) -> (c -> m a) -> [b -> m c]) -> a -> m a 
 sandwichK prefix suffix kl = 
-    let kl' = map ((>=>) prefix) kl
+    let kl' = map ((>=>) prefix) (kl prefix suffix)
         kl'' = map ((<=<) suffix) kl' 
     in composeKs kl''
+
+sandwichK_ f1 f2 l = sandwichK f1 f2 (\_ _->l)
 
 -- this may come in handy to map pipes
 mapFreeT::  (Functor f, Monad m, Monad m') => (forall a. m a -> m' a) -> FreeT f m a -> FreeT f m' a
