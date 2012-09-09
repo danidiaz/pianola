@@ -1,6 +1,7 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE PackageImports #-}
 
 module Xanela.Util (
         mapFreeT,
@@ -17,11 +18,14 @@ import Data.Attoparsec.ByteString
 import Control.Monad
 import Control.Applicative
 import Control.Monad.Base
-import Control.Monad.Trans.Free
+import "transformers-free" Control.Monad.Trans.Free
 
 -- this may come in handy to map pipes
-mapFreeT::  (Functor f, Functor m) => (forall a. m a -> m' a) -> FreeT f m a -> FreeT f m' a
-mapFreeT f (FreeT m) = FreeT (f ((fmap.fmap) (mapFreeT f) m))
+mapFreeT::  (Functor f, Monad m, Monad m') => (forall a. m a -> m' a) -> FreeT f m a -> FreeT f m' a
+mapFreeT fm (FreeT m) = 
+    let mapFreeF (Free f) = Free $ fmap (mapFreeT fm) f
+        mapFreeF (Pure a) = Pure a
+    in FreeT . fm . liftM mapFreeF $ m
 
 -- logic helpers
 mplusify :: MonadPlus m => [a] -> m a

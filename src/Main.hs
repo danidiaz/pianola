@@ -19,24 +19,27 @@ import Network
 import Control.Category
 import Control.Error
 import Control.Applicative
+import Control.Proxy
 import Control.Monad
 import Control.Exception
 import Control.Monad.Base
 import Control.Monad.Free
-import Control.Monad.Trans.Free
 import Control.Monad.Reader
 import Control.Monad.Logic
 
+import Xanela.Util
 import Xanela.Types
 import Xanela.Types.Protocol
 import Xanela.Types.Protocol.IO
  
-type Search m = LogicT (EitherT AssertError m)
+type Search m = LogicT (EitherT AssertError (Producer LogEntry m))
 
 data AssertError = AssertError T.Text
 
+type LogEntry = T.Text 
+
 instance MonadBase b m => MonadBase b (Search m) where
-    liftBase = lift.lift.liftBase
+    liftBase = lift.lift.lift.liftBase
 
 type TestCase = MonadBase n (Search m) => Search m (GUI n) -> Search m () 
 
@@ -61,10 +64,16 @@ main = do
   let addr = head args
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
-      p = runEitherT . observeAllT $ do
-            testCase.lift.lift $ getgui 
-      pio = runEitherT . runInIO . runEitherT $ p   
-  r <- runReaderT pio endpoint 
+
+      test::Search Protocol ()
+      test = testCase . liftBase $ getgui
+
+      producer:: Producer LogEntry Protocol (Either AssertError [()])
+      producer = runEitherT . observeAllT $ test
+
+      producerio = mapFreeT runProtocol $ producer 
+      eerio = runPipe $ producerio >+> discard ()
+  r <- flip runReaderT endpoint . runEitherT . runEitherT $ eerio
   case r of
         Left _ -> putStrLn "io error"
         Right r2 -> case r2 of

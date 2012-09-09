@@ -3,7 +3,8 @@
 module Xanela.Types.Protocol.IO (
         RunInIOError(..),
         Endpoint(..),
-        runInIO
+        runFree,
+        runProtocol
     ) where
 
 import Prelude hiding (catch,(.))
@@ -35,8 +36,8 @@ data Endpoint = Endpoint {
         portID::PortID
     }
 
-runInIO:: Free ProtocolF a -> EitherT RunInIOError (ReaderT Endpoint IO) a  
-runInIO ( Free x ) = case x of 
+runFree:: Free ProtocolF a -> EitherT RunInIOError (ReaderT Endpoint IO) a  
+runFree ( Free x ) = case x of 
     Call b i -> let
                     iterIO = I.ilift (return . runIdentity) i
 
@@ -53,8 +54,11 @@ runInIO ( Free x ) = case x of
                 in do
                        endp <- lift ask
                        nextFree <- liftIO $ rpcCall endp $ doStuff iterIO    
-                       runInIO nextFree 
+                       runFree nextFree 
     Delay i n -> do
                     liftIO . threadDelay . (*1000000) $ i
-                    runInIO n
-runInIO ( Pure a ) = return a 
+                    runFree n
+runFree ( Pure a ) = return a 
+
+runProtocol :: Protocol a -> EitherT ServerError (EitherT RunInIOError (ReaderT Endpoint IO)) a  
+runProtocol = EitherT . runFree . runEitherT

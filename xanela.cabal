@@ -30,6 +30,7 @@ executable xanela
         errors >= 1.3.1,
         pipes >= 2.3.0,
         free >= 3.1.1,
+        transformers-free >= 1.0.0,
         transformers-base >= 0.4.1
   default-language: Haskell2010
  
