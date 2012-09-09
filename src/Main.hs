@@ -41,21 +41,17 @@ type LogEntry = T.Text
 instance MonadBase b m => MonadBase b (Search m) where
     liftBase = lift.lift.lift.liftBase
 
-type TestCase = MonadBase n (Search m) => Search m (GUI n) -> Search m () 
+type TestCase = MonadBase n (Search m) => GUI n -> Search m ()
 
 testCase:: TestCase
-testCase g = g >>= wait t
-               >>= windowsflat >>= contentsflat >>= text "foo" >>= click 
-               >>= wait t
-               >>= windowsflat >>= contentsflat >>= text "dialog button" >>= click 
-               >>= wait t
-               >>= windowsflat >>= menuflat >>= text "Menu1" >>= click
-               >>= wait t
-               >>= windowsflat >>= popupflat >>= text "SubMenu1" >>= click
-               >>= wait t
-               >>= windowsflat >>= popupflat >>= text "submenuitem2" >>= toggle False
-               >>= wait t
-               >>  return ()
+testCase = (wait t >=> windowsflat) `prefixK` [
+                    contentsflat >=> text "foo" >=> click,
+                    contentsflat >=> text "dialog button" >=> click,
+                    menuflat >=> text "Menu1" >=> click,
+                    popupflat >=> text "SubMenu1" >=> click,
+                    popupflat >=> text "submenuitem2" >=> toggle False
+                ]
+           >=> unitK
     where t = 2
 
 main :: IO ()
@@ -65,8 +61,8 @@ main = do
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
 
-      test::Search Protocol ()
-      test = testCase . liftBase $ getgui
+      test:: Search Protocol ()
+      test = liftBase getgui >>= testCase
 
       producer:: Producer LogEntry Protocol (Either AssertError [()])
       producer = runEitherT . observeAllT $ test

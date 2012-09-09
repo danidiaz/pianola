@@ -7,10 +7,14 @@ module Xanela.Util (
         mapFreeT,
         mplusify,
         treeflat,
-        forestflat
+        forestflat,
+        unitK,
+        composeKs,
+        prefixK,
+        sandwichK
     ) where
 
-import Prelude hiding (catch,(.))
+import Prelude hiding (catch,(.),id)
 import Control.Category
 import Data.Tree
 import Data.MessagePack
@@ -19,6 +23,25 @@ import Control.Monad
 import Control.Applicative
 import Control.Monad.Base
 import "transformers-free" Control.Monad.Trans.Free
+
+-- Kleisie
+unitK _ = return ()
+
+-- This function was copied from here:
+-- http://stackoverflow.com/questions/8716668/folding-flatmap-bind-over-a-list-of-functions-a-k-a-name-that-combinator
+composeKs :: Monad m => [a -> m a] -> a -> m a
+composeKs  = foldr (>=>) return
+
+prefixK:: Monad m => (a -> m b) -> [b -> m a] -> a -> m a 
+prefixK prefix kl = 
+    let kl' = map ((>=>) prefix) kl
+    in composeKs kl'
+
+sandwichK:: Monad m => (a -> m b) -> (c -> m a) -> [b -> m c] -> a -> m a 
+sandwichK prefix suffix kl = 
+    let kl' = map ((>=>) prefix) kl
+        kl'' = map ((<=<) suffix) kl' 
+    in composeKs kl''
 
 -- this may come in handy to map pipes
 mapFreeT::  (Functor f, Monad m, Monad m') => (forall a. m a -> m' a) -> FreeT f m a -> FreeT f m' a
