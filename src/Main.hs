@@ -44,15 +44,17 @@ instance MonadBase b m => MonadBase b (Search m) where
 type TestCase = MonadBase n (Search m) => GUI n -> Search m ()
 
 testCase:: TestCase
-testCase = prefixK_ ( wait t >=> windowsflat ) [
+testCase gui = do
+         let prefix = wait 2 >=> windowsflat
+         let kl = [ 
                     contentsflat >=> text "foo" >=> click,
                     contentsflat >=> text "dialog button" >=> click,
                     menuflat >=> text "Menu1" >=> click,
                     popupflat >=> text "SubMenu1" >=> click,
-                    popupflat >=> text "submenuitem2" >=> toggle False
-                ]
-           >=> unitK
-    where t = 2
+                    popupflat >=> text "submenuitem2" >=> toggle False 
+                  ]
+         prependK prefix kl $ gui
+         return ()           
 
 main :: IO ()
 main = do
