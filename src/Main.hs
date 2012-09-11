@@ -15,6 +15,7 @@ import System.Environment
 import System.Console.GetOpt
 import Data.Tree
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import Network 
 import Control.Category
 import Control.Error
@@ -41,19 +42,21 @@ type LogEntry = T.Text
 instance MonadBase b m => MonadBase b (Search m) where
     liftBase = lift.lift.lift.liftBase
 
-type TestCase = MonadBase n (Search m) => GUI n -> Search m ()
+logmsg:: Monad m => LogEntry -> Search m ()
+logmsg = lift . lift . yield
+
+type TestCase = (Monad m, MonadBase n (Search m)) => GUI n -> Search m ()
 
 testCase:: TestCase
-testCase gui = do
+testCase g = do
          let prefix = wait 2 >=> windowsflat
-         let kl = [ 
-                    contentsflat >=> text "foo" >=> click,
+             kl = [ contentsflat >=> text "foo" >=> click,
                     contentsflat >=> text "dialog button" >=> click,
                     menuflat >=> text "Menu1" >=> click,
-                    popupflat >=> text "SubMenu1" >=> click,
-                    popupflat >=> text "submenuitem2" >=> toggle False 
-                  ]
-         prependK prefix kl $ gui
+                    popupflat >=> text "SubMenu1" >=> click ]
+         g <- prependK prefix kl $ g
+         logmsg "foo log message"
+         prefix >=> popupflat >=> text "submenuitem2" >=> toggle False $ g
          return ()           
 
 main :: IO ()
@@ -69,8 +72,13 @@ main = do
       producer:: Producer LogEntry Protocol (Either AssertError [()])
       producer = runEitherT . observeAllT $ test
 
-      producerio = mapFreeT runProtocol $ producer 
-      eerio = runPipe $ producerio >+> discard ()
+      producerIO = mapFreeT runProtocol $ producer 
+      -- for a null logger use discard ()
+      logConsumer = do 
+            msg <- await 
+            liftIO $ TIO.putStrLn msg
+            logConsumer
+      eerio = runPipe $ producerIO >+> logConsumer
   r <- flip runReaderT endpoint . runEitherT . runEitherT $ eerio
   case r of
         Left _ -> putStrLn "io error"
