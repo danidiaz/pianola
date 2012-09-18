@@ -27,36 +27,36 @@ import Control.Monad.Base
 import Control.Monad.Free
 import Control.Monad.Reader
 import Control.Monad.Logic
+import Control.Monad.Trans.Maybe
 
 import Xanela.Util
 import Xanela.Types
 import Xanela.Types.Protocol
 import Xanela.Types.Protocol.IO
  
-type Search m = LogicT (EitherT AssertError (Producer LogEntry m))
-
-data AssertError = AssertError T.Text
+type Search m = MaybeT (Producer LogEntry m)
 
 type LogEntry = T.Text 
 
-instance MonadBase b m => MonadBase b (Search m) where
-    liftBase = lift.lift.lift.liftBase
+instance MonadBase b m => MonadBase b (Producer l m) where
+    liftBase = lift.liftBase
 
-logmsg:: Monad m => LogEntry -> Search m ()
-logmsg = lift . lift . yield
+instance MonadBase b m => MonadBase b (LogicT m) where
+    liftBase = lift.liftBase
 
-type TestCase = (Monad m, MonadBase n (Search m)) => GUI n -> Search m ()
+logmsg:: (Monad m, MonadTrans t) => LogEntry -> t (Producer LogEntry m) ()
+logmsg = lift . yield
 
-testCase:: TestCase
+testCase:: (Monad m, MonadBase n m) => GUI n -> Search m ()
 testCase g = do
-         let prefix = wait 2 >=> windowsflat
+         let prefix = wait 2 >=> windowsflat 
              kl = [ contentsflat >=> text "foo" >=> click,
                     contentsflat >=> text "dialog button" >=> click,
                     menuflat >=> text "Menu1" >=> click,
                     popupflat >=> text "SubMenu1" >=> click ]
-         g <- prependK prefix kl $ g
+         g <- sandwich prefix return kl $ g
          logmsg "foo log message"
-         prefix >=> popupflat >=> text "submenuitem2" >=> toggle False $ g
+         maybeify $ prefix >=> popupflat >=> text "submenuitem2" >=> toggle False $ g
          return ()           
 
 main :: IO ()
@@ -69,8 +69,8 @@ main = do
       test:: Search Protocol ()
       test = liftBase getgui >>= testCase
 
-      producer:: Producer LogEntry Protocol (Either AssertError [()])
-      producer = runEitherT . observeAllT $ test
+      producer:: Producer LogEntry Protocol (Maybe ())
+      producer = runMaybeT test
 
       producerIO = mapFreeT runProtocol $ producer 
       -- for a null logger use discard ()
@@ -85,7 +85,5 @@ main = do
         Right r2 -> case r2 of
             Left _ -> putStrLn "procotol error"
             Right r3 -> case r3 of
-                Left _ -> putStrLn "assertion error"
-                Right u -> case u of
-                    [()] -> putStrLn "all ok, only one result"
-                    _ -> putStrLn "oops this shouldn't happen"
+                Nothing -> putStrLn "nothing"
+                Just _ -> putStrLn "all ok, only one result"

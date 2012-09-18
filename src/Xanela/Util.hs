@@ -5,12 +5,15 @@
 
 module Xanela.Util (
         mapFreeT,
-        mplusify,
+        replusify,
         treeflat,
         forestflat,
         composeK,
         prependK,
-        sandwichK
+        appendK,
+        sandwich,
+        maybeify,
+        maybeifyK
     ) where
 
 import Prelude hiding (catch,(.),id)
@@ -21,6 +24,8 @@ import Data.Attoparsec.ByteString
 import Control.Monad
 import Control.Applicative
 import Control.Monad.Base
+import Control.Monad.Trans.Maybe
+import Control.Monad.Logic
 import "transformers-free" Control.Monad.Trans.Free
 
 -- Kleisie
@@ -30,16 +35,14 @@ import "transformers-free" Control.Monad.Trans.Free
 composeK :: Monad m => [a -> m a] -> a -> m a
 composeK  = foldr (>=>) return
 
-prependK:: Monad m => (a -> m b) -> [b -> m a] -> a -> m a 
-prependK prefix kl = 
-    let kl' = map ((>=>) prefix) kl
-    in composeK kl'
+prependK:: (Monad m) => (a -> m b) -> [b -> m c] -> [a -> m c]
+prependK prefix = map $ (>=>) prefix
 
-sandwichK:: Monad m => (a -> m b) -> [b -> m c] -> (c -> m a) -> a -> m a 
-sandwichK prefix kl suffix = 
-    let kl' = map ((>=>) prefix) kl
-        kl'' = map ((<=<) suffix) kl' 
-    in composeK kl''
+appendK:: (Monad m) => (b -> m c) -> [a -> m b] -> [a -> m c]
+appendK suffix = map $ (<=<) suffix
+
+sandwich:: (Monad m) => (a -> LogicT m b) -> (c -> LogicT m a) -> [b -> LogicT m c] -> a -> MaybeT m a
+sandwich prefix suffix = composeK . map maybeifyK . prependK prefix . appendK suffix
 
 -- this may come in handy to map pipes
 mapFreeT::  (Functor f, Monad m, Monad m') => (forall a. m a -> m' a) -> FreeT f m a -> FreeT f m' a
@@ -49,14 +52,21 @@ mapFreeT fm (FreeT m) =
     in FreeT . fm . liftM mapFreeF $ m
 
 -- logic helpers
-mplusify :: MonadPlus m => [a] -> m a
-mplusify = msum . map return
+
+replusify:: MonadPlus m => [a] -> m a
+replusify = msum . map return
+
+maybeify:: Monad m => LogicT m a -> MaybeT m a
+maybeify = MaybeT . liftM replusify . observeManyT 1
+
+maybeifyK :: Monad m => (a -> LogicT m a) -> a -> MaybeT m a 
+maybeifyK = fmap maybeify 
 
 treeflat:: MonadPlus m => Tree a -> m a
-treeflat = mplusify . flatten 
+treeflat = replusify . flatten 
 
 forestflat:: MonadPlus m => Forest a -> m a
-forestflat forest = mplusify forest >>= treeflat 
+forestflat forest = replusify forest >>= treeflat 
 
 -- useful msgpack instances
 instance (Unpackable a, Unpackable b) => Unpackable (Either a b) where
