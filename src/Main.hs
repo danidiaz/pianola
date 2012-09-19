@@ -4,8 +4,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module Main where
 
@@ -31,18 +29,13 @@ import Control.Monad.Trans.Maybe
 
 import Xanela.Util
 import Xanela.Types
+import Xanela.Types.Combinators
 import Xanela.Types.Protocol
 import Xanela.Types.Protocol.IO
  
 type Search m = MaybeT (Producer LogEntry m)
 
 type LogEntry = T.Text 
-
-instance MonadBase b m => MonadBase b (Producer l m) where
-    liftBase = lift.liftBase
-
-instance MonadBase b m => MonadBase b (LogicT m) where
-    liftBase = lift.liftBase
 
 logmsg:: (Monad m, MonadTrans t) => LogEntry -> t (Producer LogEntry m) ()
 logmsg = lift . yield

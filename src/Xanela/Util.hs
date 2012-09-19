@@ -2,6 +2,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Xanela.Util (
         mapFreeT,
@@ -26,6 +28,8 @@ import Control.Applicative
 import Control.Monad.Base
 import Control.Monad.Trans.Maybe
 import Control.Monad.Logic
+import Control.Proxy
+
 import "transformers-free" Control.Monad.Trans.Free
 
 -- Kleisie
@@ -85,3 +89,10 @@ instance Unpackable a => Unpackable (Tree a) where
         v1 <- get
         v2 <- get
         return (Node v1 v2)
+
+-- useful MonadBase instances
+instance MonadBase b m => MonadBase b (Producer l m) where
+    liftBase = lift.liftBase
+
+instance MonadBase b m => MonadBase b (LogicT m) where
+    liftBase = lift.liftBase
