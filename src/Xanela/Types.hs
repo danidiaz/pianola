@@ -110,9 +110,10 @@ click:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (GUI n)
 click (_componentType -> Button _ a) = liftBase a
 click _ = mzero
 
-toggle:: (MonadBase n m, MonadPlus m) => Bool -> ComponentInfo n -> m (GUI n)
-toggle state c = case _componentType c of 
-    Button (Just state) a -> liftBase a
+toggle:: (MonadBase n m, MonadPlus m) => GUI n -> Bool -> ComponentInfo n -> m (GUI n)
+toggle gui state c = case _componentType c of 
+    Button (Just state') a | state /= state' -> liftBase a
+                           | otherwise -> return gui -- do nothing
     _ -> mzero
 
 rightClick:: (MonadBase n m) => ComponentInfo n -> m (GUI n)

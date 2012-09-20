@@ -49,7 +49,7 @@ testCase g = do
                     popupflat >=> text "SubMenu1" >=> click ]
          g <- sandwich prefix return kl $ g
          logmsg "foo log message"
-         maybeify $ prefix >=> popupflat >=> text "submenuitem2" >=> toggle False $ g
+         maybeify $ prefix >=> popupflat >=> text "submenuitem2" >=> toggle g True $ g
          return ()           
 
 main :: IO ()
