@@ -47,12 +47,12 @@ testCase g = do
                     contentsflat >=> textEq "dialog button" >=> click,
                     menuflat >=> textEq "Menu1" >=> click,
                     popupflat >=> textEq "SubMenu1" >=> click ]
-         g <- sandwich prefix return kl $ g
+         g <- sandwich prefix kl return $ g
          logmsg "foo log message"
          g <- maybeify $ prefix >=> popupflat >=> textEq "submenuitem2" >=> toggle g True $ g
          logmsg "now for a second menu"
          g <- wait 2 g
-         g <- withMenuBarEq windowsflat (wait 2) ["Menu1","SubMenu1","submenuitem1"] $ g
+         g <- withMenuBarEq windowsflat ["Menu1","SubMenu1","submenuitem1"] (wait 2) $ g
          c <- maybeify $ windowsflat >=> contentsflat >=> textEq "foo" $ g
          logmsg "mmmmmmm"   
          click c

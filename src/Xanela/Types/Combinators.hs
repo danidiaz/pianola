@@ -28,15 +28,15 @@ import Xanela.Util
 import Xanela.Types
 
 withMenuBar::(MonadBase n m) => (GUI n -> LogicT m (WindowInfo n)) -> 
-                                (GUI n -> LogicT m (GUI n)) -> 
                                 [T.Text -> Bool] ->
+                                (GUI n -> LogicT m (GUI n)) -> 
                                 GUI n -> MaybeT m (GUI n) 
-withMenuBar winlocator callback [] g = mzero
-withMenuBar winlocator callback ( p:ps ) g = do
+withMenuBar winlocator [] callback g = mzero
+withMenuBar winlocator ( p:ps ) callback g = do
     g <- maybeify $ winlocator >=> menuflat >=> text p >=> click $ g
-    sandwich (winlocator >=> popupflat) (click >=> callback) (map text ps) $ g
+    sandwich (winlocator >=> popupflat) (map text ps) (click >=> callback) $ g
  
-withMenuBarEq winlocator callback ts = withMenuBar winlocator callback (map (==) ts)
+withMenuBarEq winlocator ts callback = withMenuBar winlocator (map (==) ts) callback 
      
 
 

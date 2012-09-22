@@ -45,8 +45,8 @@ prependK prefix = map $ (>=>) prefix
 appendK:: (Monad m) => (b -> m c) -> [a -> m b] -> [a -> m c]
 appendK suffix = map $ (<=<) suffix
 
-sandwich:: (Monad m) => (a -> LogicT m b) -> (c -> LogicT m a) -> [b -> LogicT m c] -> a -> MaybeT m a
-sandwich prefix suffix = composeK . map maybeifyK . prependK prefix . appendK suffix
+sandwich:: (Monad m) => (a -> LogicT m b) -> [b -> LogicT m c] -> (c -> LogicT m a) ->a -> MaybeT m a
+sandwich prefix l suffix = composeK . map maybeifyK . prependK prefix . appendK suffix $ l
 
 -- this may come in handy to map pipes
 mapFreeT::  (Functor f, Monad m, Monad m') => (forall a. m a -> m' a) -> FreeT f m a -> FreeT f m' a
