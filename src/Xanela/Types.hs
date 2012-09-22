@@ -20,6 +20,7 @@ module Xanela.Types (
         contentsflat,
         wholewindowflat,
         text,
+        textEq,
         wait,
         click,
         toggle,
@@ -97,11 +98,14 @@ contentsflat =  treeflat . _topc
 wholewindowflat::MonadPlus m => WindowInfo n -> m (ComponentInfo n)
 wholewindowflat w = msum $ map ($w) [menuflat,popupflat,contentsflat]
 
-text:: MonadPlus m => T.Text -> ComponentInfo n -> m (ComponentInfo n)
-text t c = do
-    t' <- justZ._text $ c 
-    guard $ t == t'
+text:: MonadPlus m => (T.Text -> Bool) -> ComponentInfo n -> m (ComponentInfo n)
+text f c = do
+    t <- justZ._text $ c 
+    guard $ f t
     return c
+
+textEq:: MonadPlus m => T.Text -> ComponentInfo n -> m (ComponentInfo n)
+textEq t = text $ (==) t
 
 wait::MonadBase n m => Int -> GUI n -> m (GUI n)
 wait i = liftBase . flip _wait4changes i

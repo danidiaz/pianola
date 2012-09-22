@@ -43,13 +43,19 @@ logmsg = lift . yield
 testCase:: (Monad m, MonadBase n m) => GUI n -> Search m ()
 testCase g = do
          let prefix = wait 2 >=> windowsflat 
-             kl = [ contentsflat >=> text "foo" >=> click,
-                    contentsflat >=> text "dialog button" >=> click,
-                    menuflat >=> text "Menu1" >=> click,
-                    popupflat >=> text "SubMenu1" >=> click ]
+             kl = [ contentsflat >=> textEq "foo" >=> click,
+                    contentsflat >=> textEq "dialog button" >=> click,
+                    menuflat >=> textEq "Menu1" >=> click,
+                    popupflat >=> textEq "SubMenu1" >=> click ]
          g <- sandwich prefix return kl $ g
          logmsg "foo log message"
-         maybeify $ prefix >=> popupflat >=> text "submenuitem2" >=> toggle g True $ g
+         g <- maybeify $ prefix >=> popupflat >=> textEq "submenuitem2" >=> toggle g True $ g
+         logmsg "now for a second menu"
+         g <- wait 2 g
+         g <- withMenuBarEq windowsflat (wait 2) ["Menu1","SubMenu1","submenuitem1"] $ g
+         c <- maybeify $ windowsflat >=> contentsflat >=> textEq "foo" $ g
+         logmsg "mmmmmmm"   
+         click c
          return ()           
 
 main :: IO ()
