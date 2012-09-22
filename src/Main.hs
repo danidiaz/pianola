@@ -33,14 +33,12 @@ import Xanela.Types.Combinators
 import Xanela.Types.Protocol
 import Xanela.Types.Protocol.IO
  
-type Search m = MaybeT (Producer LogEntry m)
-
 type LogEntry = T.Text 
 
 logmsg:: (Monad m, MonadTrans t) => LogEntry -> t (Producer LogEntry m) ()
 logmsg = lift . yield
 
-testCase:: (Monad m, MonadBase n m) => GUI n -> Search m ()
+testCase:: (Monad m, MonadBase n m) => GUI n -> MaybeT (Producer LogEntry m) ()
 testCase g = do
          let prefix = wait 2 >=> windowsflat 
              kl = [ contentsflat >=> textEq "foo" >=> click,
@@ -65,7 +63,7 @@ main = do
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
 
-      test:: Search Protocol ()
+      test:: MaybeT (Producer LogEntry Protocol) ()
       test = liftBase getgui >>= testCase
 
       producer:: Producer LogEntry Protocol (Maybe ())
