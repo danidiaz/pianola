@@ -33,15 +33,26 @@ import Xanela.Types
 import Xanela.Types.Combinators
 import Xanela.Types.Protocol
 import Xanela.Types.Protocol.IO
- 
+
+class XanelaLog l where
+    xnllog::LogEntry -> l ()
+    logmsg::T.Text -> l ()
+    logimg::Image -> l ()
+
+    logmsg = xnllog . TextEntry
+    logimg = xnllog . ImageEntry
+
 data LogEntry = TextEntry T.Text 
                 |ImageEntry Image
 
-logmsg:: (Monad m, MonadTrans t) => T.Text -> t (Producer LogEntry m) ()
-logmsg = lift . yield . TextEntry
+instance Monad m => XanelaLog (Producer LogEntry m) where
+    xnllog = yield
 
-logimg:: (Monad m, MonadTrans t) => Image -> t (Producer LogEntry m) ()
-logimg = lift . yield . ImageEntry
+instance (Monad l, XanelaLog l) => XanelaLog (LogicT l) where
+    xnllog = lift . xnllog
+
+instance (Monad l, XanelaLog l) => XanelaLog (MaybeT l) where
+    xnllog = lift . xnllog
 
 testCase:: (Monad m, MonadBase n m) => GUI n -> MaybeT (Producer LogEntry m) ()
 testCase g = do
