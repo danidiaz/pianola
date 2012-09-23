@@ -76,12 +76,16 @@ instance Unpackable (GUI Protocol) where
 instance Unpackable (WindowInfo Protocol) where
     get = do
         xid <- get::Parser Int
+        wid <- get::Parser Int
         v1 <- get
         v2 <- get
         v3 <- get
         v4 <- get
         v5 <- get
-        return (WindowInfo v1 v2 v3 v4 v5)
+        let getWindowImage = do
+                image_or_fail <- call [pack "getWindowImage", pack xid, pack wid] (AI.parserToIteratee get)
+                hoistEither image_or_fail::Protocol Image
+        return (WindowInfo v1 v2 v3 v4 v5 getWindowImage)
 
 instance Unpackable (ComponentInfo Protocol) where
     get = do

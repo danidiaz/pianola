@@ -11,6 +11,8 @@ module Xanela.Types (
         GUIAction,
         Window (..),
         WindowInfo (..),
+        Image,
+        image,
         Component (..),
         ComponentInfo (..),
         ComponentType (..),
@@ -30,6 +32,7 @@ module Xanela.Types (
 
 import Prelude hiding (catch,(.))
 import Data.Tree
+import Data.ByteString (ByteString)
 import qualified Data.Text as T
 import Control.Category
 import Control.Error
@@ -51,13 +54,16 @@ type GUIAction m = m (GUI m)
 
 type Window m = Tree (WindowInfo m)
 
+type Image = ByteString
+
 data WindowInfo m = WindowInfo 
     {
         _windowTitle::T.Text,
         _windowDim::(Int,Int),
         _menu::[Component m],
         _popupLayer:: [Component m],
-        _topc::Component m
+        _topc::Component m,
+        _image::m Image
     } 
 
 type Component m = Tree (ComponentInfo m)
@@ -106,6 +112,9 @@ text f c = do
 
 textEq:: MonadPlus m => T.Text -> ComponentInfo n -> m (ComponentInfo n)
 textEq t = text $ (==) t
+
+image::MonadBase n m => WindowInfo n -> m Image
+image = liftBase . _image
 
 wait::MonadBase n m => Int -> GUI n -> m (GUI n)
 wait i = liftBase . flip _wait4changes i

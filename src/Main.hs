@@ -12,6 +12,7 @@ import System.IO
 import System.Environment
 import System.Console.GetOpt
 import Data.Tree
+import qualified Data.ByteString as B
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Network 
@@ -33,10 +34,14 @@ import Xanela.Types.Combinators
 import Xanela.Types.Protocol
 import Xanela.Types.Protocol.IO
  
-type LogEntry = T.Text 
+data LogEntry = TextEntry T.Text 
+                |ImageEntry Image
 
-logmsg:: (Monad m, MonadTrans t) => LogEntry -> t (Producer LogEntry m) ()
-logmsg = lift . yield
+logmsg:: (Monad m, MonadTrans t) => T.Text -> t (Producer LogEntry m) ()
+logmsg = lift . yield . TextEntry
+
+logimg:: (Monad m, MonadTrans t) => Image -> t (Producer LogEntry m) ()
+logimg = lift . yield . ImageEntry
 
 testCase:: (Monad m, MonadBase n m) => GUI n -> MaybeT (Producer LogEntry m) ()
 testCase g = do
@@ -48,6 +53,9 @@ testCase g = do
          g <- sandwich prefix kl return $ g
          logmsg "foo log message"
          g <- maybeify $ prefix >=> popupflat >=> textEq "submenuitem2" >=> toggle g True $ g
+         logmsg "getting a screenshot"
+         i <- maybeify $ windowsflat >=> image $ g
+         logimg i
          logmsg "now for a second menu"
          g <- wait 2 g
          g <- withMenuBarEq windowsflat ["Menu1","SubMenu1","submenuitem1"] (wait 2) $ g
@@ -72,8 +80,10 @@ main = do
       producerIO = mapFreeT runProtocol $ producer 
       -- for a null logger use discard ()
       logConsumer = do 
-            msg <- await 
-            liftIO $ TIO.putStrLn msg
+            entry <- await 
+            case entry of
+                TextEntry txt -> liftIO $ TIO.putStrLn txt
+                ImageEntry image -> liftIO $ B.writeFile "/tmp/loggedxanelaimage.png" image
             logConsumer
       eerio = runPipe $ producerIO >+> logConsumer
   r <- flip runReaderT endpoint . runEitherT . runEitherT $ eerio
