@@ -6,7 +6,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Xanela.Util (
-        mapFreeT,
         replusify,
         treeflat,
         forestflat,
@@ -30,8 +29,6 @@ import Control.Monad.Trans.Maybe
 import Control.Monad.Logic
 import Control.Proxy
 
-import "transformers-free" Control.Monad.Trans.Free
-
 -- Kleisie
 
 -- This function was copied from here:
@@ -47,13 +44,6 @@ appendK suffix = map $ (<=<) suffix
 
 sandwich:: (Monad m) => (a -> LogicT m b) -> [b -> LogicT m c] -> (c -> LogicT m a) ->a -> MaybeT m a
 sandwich prefix l suffix = composeK . map maybeifyK . prependK prefix . appendK suffix $ l
-
--- this may come in handy to map pipes
-mapFreeT::  (Functor f, Monad m, Monad m') => (forall a. m a -> m' a) -> FreeT f m a -> FreeT f m' a
-mapFreeT fm (FreeT m) = 
-    let mapFreeF (Free f) = Free $ fmap (mapFreeT fm) f
-        mapFreeF (Pure a) = Pure a
-    in FreeT . fm . liftM mapFreeF $ m
 
 -- logic helpers
 
@@ -90,8 +80,9 @@ instance Unpackable a => Unpackable (Tree a) where
         v2 <- get
         return (Node v1 v2)
 
+
 -- useful MonadBase instances
-instance MonadBase b m => MonadBase b (Producer l m) where
+instance MonadBase b m => MonadBase b (Proxy x y u v m) where
     liftBase = lift.liftBase
 
 instance MonadBase b m => MonadBase b (LogicT m) where

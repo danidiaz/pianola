@@ -27,6 +27,7 @@ import Control.Monad.Free
 import Control.Monad.Reader
 import Control.Monad.Logic
 import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Free  
 
 import Xanela.Util
 import Xanela.Types
@@ -35,26 +36,32 @@ import Xanela.Types.Protocol
 import Xanela.Types.Protocol.IO
 
 class XanelaLog l where
-    xnllog::LogEntry -> l ()
+    xanelalog::LogEntry -> l ()
     logmsg::T.Text -> l ()
     logimg::Image -> l ()
 
-    logmsg = xnllog . TextEntry
-    logimg = xnllog . ImageEntry
+    logmsg = xanelalog . TextEntry
+    logimg = xanelalog . ImageEntry
 
 data LogEntry = TextEntry T.Text 
                 |ImageEntry Image
 
-instance Monad m => XanelaLog (Producer LogEntry m) where
-    xnllog = yield
+type LogProducer m = Server () LogEntry m
+type LogConsumer m = Client () LogEntry m
+
+
+mapProxy f = Proxy . f . unProxy 
+
+instance Monad m => XanelaLog (LogProducer m) where
+    xanelalog = respond 
 
 instance (Monad l, XanelaLog l) => XanelaLog (LogicT l) where
-    xnllog = lift . xnllog
+    xanelalog = lift . xanelalog
 
 instance (Monad l, XanelaLog l) => XanelaLog (MaybeT l) where
-    xnllog = lift . xnllog
+    xanelalog = lift . xanelalog
 
-testCase:: (Monad m, MonadBase n m) => GUI n -> MaybeT (Producer LogEntry m) ()
+testCase:: (Monad m, MonadBase n m) => GUI n -> MaybeT (LogProducer m) ()
 testCase g = do
          let prefix = wait 2 >=> windowsflat 
              kl = [ contentsflat >=> textEq "foo" >=> click,
@@ -82,21 +89,22 @@ main = do
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
 
-      test:: MaybeT (Producer LogEntry Protocol) ()
+      test:: MaybeT (LogProducer Protocol) ()
       test = liftBase getgui >>= testCase
 
-      producer:: Producer LogEntry Protocol (Maybe ())
+      producer:: LogProducer Protocol (Maybe ())
       producer = runMaybeT test
 
-      producerIO = mapFreeT runProtocol $ producer 
+      producerIO = mapProxy (hoistFreeT runProtocol) producer 
       -- for a null logger use discard ()
+      logConsumer:: MonadIO mio => LogConsumer mio a
       logConsumer = do 
-            entry <- await 
+            entry <- request ()
             case entry of
                 TextEntry txt -> liftIO $ TIO.putStrLn txt
                 ImageEntry image -> liftIO $ B.writeFile "/tmp/loggedxanelaimage.png" image
             logConsumer
-      eerio = runPipe $ producerIO >+> logConsumer
+      eerio = runProxy $ (const producerIO) >-> (const logConsumer)
   r <- flip runReaderT endpoint . runEitherT . runEitherT $ eerio
   case r of
         Left _ -> putStrLn "io error"
