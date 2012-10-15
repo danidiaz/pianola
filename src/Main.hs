@@ -98,7 +98,7 @@ main = do
       producerIO = mapProxy (hoistFreeT runProtocol) producer 
       -- for a null logger use discard ()
       logConsumer:: MonadIO mio => () -> LogConsumer mio a
-      logConsumer = foreverK . const $ do 
+      logConsumer () = forever $ do 
             entry <- request ()
             case entry of
                 TextEntry txt -> liftIO $ TIO.putStrLn txt
