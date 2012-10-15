@@ -95,7 +95,7 @@ main = do
       producer:: LogProducer Protocol (Maybe ())
       producer = runMaybeT test
 
-      producerIO = mapProxy (hoistFreeT runProtocol) producer 
+      producerIO () = mapProxy (hoistFreeT runProtocol) producer 
       -- for a null logger use discard ()
       logConsumer:: MonadIO mio => () -> LogConsumer mio a
       logConsumer () = forever $ do 
@@ -103,7 +103,7 @@ main = do
             case entry of
                 TextEntry txt -> liftIO $ TIO.putStrLn txt
                 ImageEntry image -> liftIO $ B.writeFile "/tmp/loggedxanelaimage.png" image
-      eerio = runProxy $ (const producerIO) >-> logConsumer
+      eerio = runProxy $ producerIO >-> logConsumer
   r <- flip runReaderT endpoint . runEitherT . runEitherT $ eerio
   case r of
         Left _ -> putStrLn "io error"
