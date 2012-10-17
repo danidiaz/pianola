@@ -79,7 +79,11 @@ testCase g = do
          g <- withMenuBarEq windowsflat ["Menu1","SubMenu1","submenuitem1"] (wait 2) $ g
          c <- maybeify $ windowsflat >=> contentsflat >=> textEq "foo" $ g
          logmsg "mmmmmmm"   
-         click c
+         g <- click c
+         g <- wait 2 g
+         g <- maybeify $ windowsflat >=> contentsflat >=> textEq "dialog button" >=> click $ g
+         maybeify $ windowsflat >=> closew $ g
+         logmsg "loggy log"   
          return ()           
 
 main :: IO ()

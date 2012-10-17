@@ -13,6 +13,7 @@ module Xanela.Types (
         WindowInfo (..),
         Image,
         image,
+        closew,
         Component (..),
         ComponentInfo (..),
         ComponentType (..),
@@ -63,7 +64,8 @@ data WindowInfo m = WindowInfo
         _menu::[Component m],
         _popupLayer:: [Component m],
         _topc::Component m,
-        _image::m Image
+        _image::m Image,
+        _close::GUIAction m
     } 
 
 type Component m = Tree (ComponentInfo m)
@@ -115,6 +117,9 @@ textEq t = text $ (==) t
 
 image::MonadBase n m => WindowInfo n -> m Image
 image = liftBase . _image
+
+closew::MonadBase n m => WindowInfo n -> m (GUI n)
+closew = liftBase . _close
 
 wait::MonadBase n m => Int -> GUI n -> m (GUI n)
 wait i = liftBase . flip _wait4changes i
