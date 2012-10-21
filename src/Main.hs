@@ -65,9 +65,7 @@ testCase:: (Monad m, MonadBase n m) => GUI n -> MaybeT (LogProducer m) ()
 testCase g = do
          let prefix = wait 2 >=> windowsflat 
              kl = [ contentsflat >=> textEq "foo" >=> click,
-                    contentsflat >=> textEq "dialog button" >=> click,
-                    menuflat >=> textEq "Menu1" >=> click,
-                    popupflat >=> textEq "SubMenu1" >=> click ]
+                    contentsflat >=> textEq "dialog button" >=> click ]
          g <- maybeifyManyK prefix return kl $ g
          logmsg "foo log message"
          g <- withMenuBarEq prefix (Just True) ["Menu1","SubMenu1","submenuitem2"] $ g
