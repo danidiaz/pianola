@@ -66,22 +66,22 @@ testCase g = do
          let prefix = wait 2 >=> windowsflat 
              kl = [ contentsflat >=> textEq "foo" >=> click,
                     contentsflat >=> textEq "dialog button" >=> click ]
-         g <- maybeifyManyK prefix return kl $ g
-         logmsg "foo log message"
-         g <- withMenuBarEq prefix (Just True) ["Menu1","SubMenu1","submenuitem2"] $ g
-         logmsg "getting a screenshot"
-         i <- maybeify $ windowsflat >=> image $ g
+         g <- maybeifyManyK prefix return kl >=>
+              (<$ logmsg "foo log message") >=>
+              withMenuBarEq prefix (Just True) ["Menu1","SubMenu1","submenuitem2"] >=>
+              (<$ logmsg "getting a screenshot") $ g
+         i <- maybeifyK ( windowsflat >=> image ) $ g
          logimg i
          logmsg "now for a second menu"
-         c <- withMenuBarEq (wait 2 >=> windowsflat) Nothing ["Menu1","SubMenu1","submenuitem1"] >=>
+         g <- withMenuBarEq (wait 2 >=> windowsflat) Nothing ["Menu1","SubMenu1","submenuitem1"] >=>
               wait 2 >=>
-              maybeifyK (windowsflat >=> contentsflat >=> textEq "foo" ) $ g
-         logmsg "mmmmmmm"   
-         g <- click c
-         g <- wait 2 g
-         g <- maybeify $ windowsflat >=> contentsflat >=> textEq "dialog button" >=> click $ g
-         maybeify $ windowsflat >=> closew $ g
-         logmsg "loggy log"   
+              maybeifyK (windowsflat >=> contentsflat >=> textEq "foo" ) >=>
+              (<$ logmsg "mmmmmmm") >=>
+              click >=>
+              wait 2 >=>
+              maybeifyK ( windowsflat >=> contentsflat >=> textEq "dialog button" >=> click ) >=>
+              maybeifyK ( windowsflat >=> closew ) >=>
+              (<$ logmsg "loggy log") $ g
          return ()           
 
 main :: IO ()
