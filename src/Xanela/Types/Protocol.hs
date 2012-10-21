@@ -117,20 +117,27 @@ instance Unpackable (ComponentType Protocol) where
             2 -> do 
                 v2 <- get::Parser Int
                 v3 <- get
+                let toggle b = do
+                        toggle_or_fail <- call [pack "toggle", pack xid, pack v2, pack (b::Bool)] (AI.parserToIteratee get)
+                        hoistEither toggle_or_fail::Protocol ()
+                        getgui
+                return $ Toggleable v3 toggle
+            3 -> do 
+                v2 <- get::Parser Int
                 let click = do
                         click_or_fail <- call [pack "click", pack xid, pack v2] (AI.parserToIteratee get)
                         hoistEither click_or_fail::Protocol ()
                         getgui
-                return $ Button v3 click
-            3 -> do
+                return $ Button click
+            4 -> do
                 v2 <- get::Parser (Maybe Int) 
                 let setText cid txt = do
                         text_or_fail <- call [pack "setTextField", pack xid, pack cid, pack txt] (AI.parserToIteratee get)
                         hoistEither text_or_fail::Protocol ()
                         getgui 
                 return . TextField $ fmap setText v2
-            4 -> return Label
-            5 -> return PopupMenu
+            5 -> return Label
+            6 -> return PopupMenu
             77 -> do
                 v2 <- get
                 return (Other v2)

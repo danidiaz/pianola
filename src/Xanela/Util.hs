@@ -14,7 +14,8 @@ module Xanela.Util (
         appendK,
         sandwich,
         maybeify,
-        maybeifyK
+        maybeifyK,
+        maybeifyManyK
     ) where
 
 import Prelude hiding (catch,(.),id)
@@ -42,8 +43,8 @@ prependK prefix = map $ (>=>) prefix
 appendK:: (Monad m) => (b -> m c) -> [a -> m b] -> [a -> m c]
 appendK suffix = map $ (<=<) suffix
 
-sandwich:: (Monad m) => (a -> LogicT m b) -> [b -> LogicT m c] -> (c -> LogicT m a) ->a -> MaybeT m a
-sandwich prefix l suffix = composeK . map maybeifyK . prependK prefix . appendK suffix $ l
+sandwich:: (Monad m) => (a -> m b) -> (c -> m d) -> [b -> m c] -> [a -> m d]
+sandwich prefix suffix = prependK prefix . appendK suffix
 
 -- logic helpers
 
@@ -55,6 +56,9 @@ maybeify = MaybeT . liftM replusify . observeManyT 1
 
 maybeifyK :: Monad m => (a -> LogicT m a) -> a -> MaybeT m a 
 maybeifyK = fmap maybeify 
+
+maybeifyManyK :: Monad m => (a -> LogicT m b) -> (c -> LogicT m a) -> [b -> LogicT m c] -> a -> MaybeT m a
+maybeifyManyK prefix suffix = composeK . map maybeifyK . sandwich prefix suffix
 
 treeflat:: MonadPlus m => Tree a -> m a
 treeflat = replusify . flatten 

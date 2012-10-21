@@ -68,15 +68,15 @@ testCase g = do
                     contentsflat >=> textEq "dialog button" >=> click,
                     menuflat >=> textEq "Menu1" >=> click,
                     popupflat >=> textEq "SubMenu1" >=> click ]
-         g <- sandwich prefix kl return $ g
+         g <- maybeifyManyK prefix return kl $ g
          logmsg "foo log message"
-         g <- maybeify $ prefix >=> popupflat >=> textEq "submenuitem2" >=> toggle g True $ g
+         g <- maybeify $ prefix >=> popupflat >=> textEq "submenuitem2" >=> toggle True $ g
          logmsg "getting a screenshot"
          i <- maybeify $ windowsflat >=> image $ g
          logimg i
          logmsg "now for a second menu"
          g <- wait 2 g
-         g <- withMenuBarEq windowsflat ["Menu1","SubMenu1","submenuitem1"] (wait 2) $ g
+         g <- withMenuBar (wait 2 >=> windowsflat) Nothing (map (==) ["Menu1","SubMenu1","submenuitem1"]) $ g
          c <- maybeify $ windowsflat >=> contentsflat >=> textEq "foo" $ g
          logmsg "mmmmmmm"   
          g <- click c

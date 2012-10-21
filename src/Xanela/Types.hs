@@ -84,8 +84,9 @@ data ComponentInfo m = ComponentInfo
 
 data ComponentType m =
      Panel
-    |Button (Maybe Bool) (GUIAction m)
-    |TextField (Maybe (T.Text -> GUIAction m))
+    |Toggleable Bool (Bool -> GUIAction m)
+    |Button (GUIAction m)
+    |TextField (Maybe (T.Text -> GUIAction m)) -- Nothing if not editable
     |Label
     |PopupMenu  
     |Other T.Text
@@ -124,15 +125,13 @@ closew = liftBase . _close
 wait::MonadBase n m => Int -> GUI n -> m (GUI n)
 wait i = liftBase . flip _wait4changes i
 
-click:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (GUI n)
-click (_componentType -> Button _ a) = liftBase a
-click _ = mzero
+toggle:: (MonadBase n m, MonadPlus m) => Bool -> ComponentInfo n -> m (GUI n)
+toggle b (_componentType -> Toggleable _ a) = liftBase . a $ b
+toggle _ _ = mzero
 
-toggle:: (MonadBase n m, MonadPlus m) => GUI n -> Bool -> ComponentInfo n -> m (GUI n)
-toggle gui state c = case _componentType c of 
-    Button (Just state') a | state /= state' -> liftBase a
-                           | otherwise -> return gui -- do nothing
-    _ -> mzero
+click:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (GUI n)
+click (_componentType -> Button a) = liftBase a
+click _ = mzero
 
 rightClick:: (MonadBase n m) => ComponentInfo n -> m (GUI n)
 rightClick = liftBase . _rightClick
