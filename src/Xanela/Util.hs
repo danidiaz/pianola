@@ -54,7 +54,7 @@ replusify = msum . map return
 maybeify:: Monad m => LogicT m a -> MaybeT m a
 maybeify = MaybeT . liftM replusify . observeManyT 1
 
-maybeifyK :: Monad m => (a -> LogicT m a) -> a -> MaybeT m a 
+maybeifyK :: Monad m => (a -> LogicT m b) -> a -> MaybeT m b 
 maybeifyK = fmap maybeify 
 
 maybeifyManyK :: Monad m => (a -> LogicT m b) -> (c -> LogicT m a) -> [b -> LogicT m c] -> a -> MaybeT m a

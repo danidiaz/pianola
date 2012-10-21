@@ -7,7 +7,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Xanela.Types.Combinators (
-        withMenuBar
+        withMenuBar,
+        withMenuBarEq
     ) where
 
 import Prelude hiding (catch,(.))
@@ -41,4 +42,6 @@ withMenuBar winlocator actionType ps =
             p'':ps'' -> withMenuBar' p' (reverse ps'') p''
             _ -> const mzero    
         _ -> const mzero
-     
+
+withMenuBarEq winlocator actionType ts = withMenuBar winlocator actionType (map (==) ts) 
+
