@@ -73,8 +73,8 @@ testCase g = do
          i <- maybeify $ windowsflat >=> image $ g
          logimg i
          logmsg "now for a second menu"
-         c <- wait 2 >=>
-              withMenuBarEq (wait 2 >=> windowsflat) Nothing ["Menu1","SubMenu1","submenuitem1"] >=>
+         c <- withMenuBarEq (wait 2 >=> windowsflat) Nothing ["Menu1","SubMenu1","submenuitem1"] >=>
+              wait 2 >=>
               maybeifyK (windowsflat >=> contentsflat >=> textEq "foo" ) $ g
          logmsg "mmmmmmm"   
          g <- click c
