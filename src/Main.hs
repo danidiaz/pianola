@@ -20,6 +20,7 @@ import Control.Category
 import Control.Error
 import Control.Applicative
 import Control.Proxy
+import Control.MFunctor
 import Control.Monad
 import Control.Exception
 import Control.Monad.Base
@@ -48,9 +49,6 @@ data LogEntry = TextEntry T.Text
 
 type LogProducer m = Server () LogEntry m
 type LogConsumer m = Client () LogEntry m
-
-
-mapProxy f = Proxy . f . unProxy 
 
 instance Monad m => XanelaLog (LogProducer m) where
     xanelalog = respond 
@@ -98,7 +96,7 @@ main = do
       producer:: LogProducer Protocol (Maybe ())
       producer = runMaybeT test
 
-      producerIO () = mapProxy (hoistFreeT runProtocol) producer 
+      producerIO () = mapT runProtocol producer 
       -- for a null logger use discard ()
       logConsumer:: MonadIO mio => () -> LogConsumer mio a
       logConsumer () = forever $ do 
