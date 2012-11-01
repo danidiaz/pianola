@@ -34,9 +34,9 @@ withMenuBar::(MonadBase n m) => (GUI n -> LogicT m (WindowInfo n)) ->
 withMenuBar winlocator actionType ps = 
     let lastItemAction = maybe click toggle actionType
         withMenuBar' firstitem middleitems lastitem =  
-            maybeifyK ( winlocator >=> menuflat >=> text firstitem >=> click ) >=>
-            maybeifyManyK (winlocator >=> popupflat) click (map text middleitems) >=>
-            maybeifyK ( winlocator >=> popupflat >=> text lastitem >=> lastItemAction)
+            narrowK ( winlocator >=> menuflat >=> text firstitem >=> click ) >=>
+            narrowManyK (winlocator >=> popupflat) click (map text middleitems) >=>
+            narrowK ( winlocator >=> popupflat >=> text lastitem >=> lastItemAction)
     in case ps of 
         p':ps' ->  case reverse ps' of
             p'':ps'' -> withMenuBar' p' (reverse ps'') p''

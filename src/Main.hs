@@ -64,23 +64,24 @@ instance (Monad l, XanelaLog l) => XanelaLog (MaybeT l) where
 testCase:: (Monad m, MonadBase n m) => GUI n -> MaybeT (LogProducer m) ()
 testCase g = do
          let prefix = wait 2 >=> windowsflat 
-             kl = [ contentsflat >=> textEq "foo" >=> click,
-                    contentsflat >=> textEq "dialog button" >=> click ]
-         g <- maybeifyManyK prefix return kl >=>
+         g <- narrowManyK (prefix >=> contentsflat) click [textEq "foo", textEq "dialog button"] >=>
               (<$ logmsg "foo log message") >=>
               withMenuBarEq prefix (Just True) ["Menu1","SubMenu1","submenuitem2"] >=>
               (<$ logmsg "getting a screenshot") $ g
-         i <- maybeifyK ( windowsflat >=> image ) $ g
+         i <- narrowK ( windowsflat >=> image ) $ g
          logimg i
          logmsg "now for a second menu"
          g <- withMenuBarEq (wait 2 >=> windowsflat) Nothing ["Menu1","SubMenu1","submenuitem1"] >=>
               wait 2 >=>
-              maybeifyK (windowsflat >=> contentsflat >=> textEq "foo" ) >=>
+              narrowK (windowsflat >=> contentsflat >=> textEq "foo" ) >=>
               (<$ logmsg "mmmmmmm") >=>
               click >=>
               wait 2 >=>
-              maybeifyK ( windowsflat >=> contentsflat >=> textEq "dialog button" >=> click ) >=>
-              maybeifyK ( windowsflat >=> closew ) >=>
+              narrowK ( windowsflat >=> contentsflat >=> textEq "dialog button" >=> click ) >=>
+              (<$ logmsg "this should show the combo...") >=>
+              narrowK ( windowsflat >=> contentsflat >=> clickCombo ) >=> 
+              wait 2 >=>
+              narrowK ( windowsflat >=> closew ) >=>
               (<$ logmsg "loggy log") $ g
          return ()           
 

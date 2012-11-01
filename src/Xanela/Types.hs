@@ -17,6 +17,7 @@ module Xanela.Types (
         Component (..),
         ComponentInfo (..),
         ComponentType (..),
+--        ComboBoxCell (..),
         windowsflat,
         menuflat,
         popupflat,
@@ -26,6 +27,7 @@ module Xanela.Types (
         textEq,
         wait,
         click,
+        clickCombo,
         toggle,
         rightClick,
         setText
@@ -88,8 +90,12 @@ data ComponentType m =
     |Button (GUIAction m)
     |TextField (Maybe (T.Text -> GUIAction m)) -- Nothing if not editable
     |Label
+    |ComboBox (Maybe (Component m)) (GUIAction m)
+    -- |ComboBox [ComboBoxCell m]
     |PopupMenu  
     |Other T.Text
+
+-- data ComboBoxCell m = ComboBoxCell (Component m) Bool (GUIAction m) -- the GUIAction selects the corresponding cell
 
 -- logic helpers
 windowsflat:: MonadPlus m => GUI n -> m (WindowInfo n)
@@ -132,6 +138,10 @@ toggle _ _ = mzero
 click:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (GUI n)
 click (_componentType -> Button a) = liftBase a
 click _ = mzero
+
+clickCombo:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (GUI n)
+clickCombo (_componentType -> ComboBox _ a) = liftBase a
+clickCombo _ = mzero
 
 rightClick:: (MonadBase n m) => ComponentInfo n -> m (GUI n)
 rightClick = liftBase . _rightClick

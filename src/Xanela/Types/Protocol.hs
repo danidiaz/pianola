@@ -137,8 +137,32 @@ instance Unpackable (ComponentType Protocol) where
                         getgui 
                 return . TextField $ fmap setText v2
             5 -> return Label
-            6 -> return PopupMenu
+            6 -> do
+                cid <- get::Parser (Maybe Int) 
+                let clickCombo = do
+                        click_or_fail <- call [pack "clickCombo", pack xid, pack cid] (AI.parserToIteratee get)
+                        hoistEither click_or_fail::Protocol ()
+                        getgui 
+                cell <- get 
+                return $ ComboBox cell clickCombo
+            7 -> return PopupMenu
             77 -> do
                 v2 <- get
                 return (Other v2)
 
+{-instance Unpackable (ComboBoxCell Protocol) where
+    get = do
+        xid <- get::Parser Int
+        comboid <- get::Parser Int
+        index <- get::Parser Int
+        c <- get
+        b <- get
+        let selectOption = do
+                select_or_fail <- call [pack "selectOption", pack xid, pack comboid, pack index] (AI.parserToIteratee get)
+                hoistEither select_or_fail::Protocol ()
+                getgui 
+        return $ ComboBoxCell c b selectOption-}
+
+
+
+   
