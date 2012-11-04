@@ -78,8 +78,13 @@ testCase g = do
               narrowK ( windowsflat >=> contentsflat >=> textEq "dialog button" >=> click ) >=>
               (<$ logmsg "this should show the combo...") >=>
               narrowK ( windowsflat >=> contentsflat >=> clickCombo ) >=> 
-              wait 2 >=>
-              narrowK ( windowsflat >=> closew ) >=>
+              wait 2 $ g
+         g <- narrow $ do candidateCell <- windowsflat >=> popupflat >=> cell $ g
+                          c <- treeflat . renderer $ candidateCell 
+                          textEq "ccc" c
+                          liftBase $ select candidateCell  
+         g <- wait 7 $ g
+         g <- narrowK ( windowsflat >=> closew ) >=>
               (<$ logmsg "loggy log") $ g
          return ()           
 

@@ -75,7 +75,7 @@ instance Unpackable (GUI Protocol) where
 
 instance Unpackable (WindowInfo Protocol) where
     get = do
-        xid <- get::Parser Int
+        xanelaid <- get::Parser Int
         wid <- get::Parser Int
         v1 <- get
         v2 <- get
@@ -83,17 +83,17 @@ instance Unpackable (WindowInfo Protocol) where
         v4 <- get
         v5 <- get
         let getWindowImage = do
-                image_or_fail <- call [pack "getWindowImage", pack xid, pack wid] (AI.parserToIteratee get)
+                image_or_fail <- call [pack "getWindowImage", pack xanelaid, pack wid] (AI.parserToIteratee get)
                 hoistEither image_or_fail::Protocol Image
         let closeWindow = do
-                close_or_fail <- call [pack "closeWindow", pack xid, pack wid] (AI.parserToIteratee get)
+                close_or_fail <- call [pack "closeWindow", pack xanelaid, pack wid] (AI.parserToIteratee get)
                 hoistEither close_or_fail::Protocol ()
                 getgui
         return (WindowInfo v1 v2 v3 v4 v5 getWindowImage closeWindow)
 
 instance Unpackable (ComponentInfo Protocol) where
     get = do
-        xid <- get::Parser Int
+        xanelaid <- get::Parser Int
         cid <- get::Parser Int
         v1 <- get
         v2 <- get
@@ -103,14 +103,14 @@ instance Unpackable (ComponentInfo Protocol) where
         v6 <- get
         v7 <- get
         let rightClick = do
-                click_or_fail <- call [pack "rightClick", pack xid, pack cid] (AI.parserToIteratee get)
+                click_or_fail <- call [pack "rightClick", pack xanelaid, pack cid] (AI.parserToIteratee get)
                 hoistEither click_or_fail::Protocol ()
                 getgui
         return (ComponentInfo v1 v2 v3 v4 v5 v6 v7 rightClick)
 
 instance Unpackable (ComponentType Protocol) where
     get = do
-        xid <- get::Parser Int
+        xanelaid <- get::Parser Int
         typeTag <- get::Parser Int
         case typeTag of
             1 -> return Panel
@@ -118,21 +118,21 @@ instance Unpackable (ComponentType Protocol) where
                 v2 <- get::Parser Int
                 v3 <- get
                 let toggle b = do
-                        toggle_or_fail <- call [pack "toggle", pack xid, pack v2, pack (b::Bool)] (AI.parserToIteratee get)
+                        toggle_or_fail <- call [pack "toggle", pack xanelaid, pack v2, pack (b::Bool)] (AI.parserToIteratee get)
                         hoistEither toggle_or_fail::Protocol ()
                         getgui
                 return $ Toggleable v3 toggle
             3 -> do 
                 v2 <- get::Parser Int
                 let click = do
-                        click_or_fail <- call [pack "click", pack xid, pack v2] (AI.parserToIteratee get)
+                        click_or_fail <- call [pack "click", pack xanelaid, pack v2] (AI.parserToIteratee get)
                         hoistEither click_or_fail::Protocol ()
                         getgui
                 return $ Button click
             4 -> do
                 v2 <- get::Parser (Maybe Int) 
                 let setText cid txt = do
-                        text_or_fail <- call [pack "setTextField", pack xid, pack cid, pack txt] (AI.parserToIteratee get)
+                        text_or_fail <- call [pack "setTextField", pack xanelaid, pack cid, pack txt] (AI.parserToIteratee get)
                         hoistEither text_or_fail::Protocol ()
                         getgui 
                 return . TextField $ fmap setText v2
@@ -140,29 +140,27 @@ instance Unpackable (ComponentType Protocol) where
             6 -> do
                 cid <- get::Parser (Maybe Int) 
                 let clickCombo = do
-                        click_or_fail <- call [pack "clickCombo", pack xid, pack cid] (AI.parserToIteratee get)
+                        click_or_fail <- call [pack "clickCombo", pack xanelaid, pack cid] (AI.parserToIteratee get)
                         hoistEither click_or_fail::Protocol ()
                         getgui 
-                cell <- get 
-                return $ ComboBox cell clickCombo
-            7 -> return PopupMenu
+                renderer <- get 
+                return $ ComboBox renderer clickCombo
+            7 -> GUIList <$> get
+            8 -> return PopupMenu
             77 -> do
                 v2 <- get
                 return (Other v2)
 
-{-instance Unpackable (ComboBoxCell Protocol) where
+instance Unpackable (Cell Protocol) where
     get = do
-        xid <- get::Parser Int
-        comboid <- get::Parser Int
-        index <- get::Parser Int
-        c <- get
-        b <- get
-        let selectOption = do
-                select_or_fail <- call [pack "selectOption", pack xid, pack comboid, pack index] (AI.parserToIteratee get)
+        xanelaid <- get::Parser Int
+        componentid <- get::Parser Int
+        rowid <- get::Parser Int
+        columnid <- get::Parser Int
+        renderer <- get
+        let selectCell = do
+                select_or_fail <- call [pack "selectCell", pack xanelaid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
                 hoistEither select_or_fail::Protocol ()
                 getgui 
-        return $ ComboBoxCell c b selectOption-}
+        return $ Cell renderer selectCell
 
-
-
-   
