@@ -66,30 +66,30 @@ instance (Monad l, XanelaLog l) => XanelaLog (MaybeT l) where
 testCase:: (Monad m, MonadBase n m) => GUI n -> MaybeT (LogProducer m) ()
 testCase g = do
          let prefix = wait 2 >=> windowsflat 
-         g <- narrowManyK (prefix >=> contentsflat) click [textEq "foo", textEq "dialog button"] >=>
-              logmsgK "foo log message" >=>
-              withMenuBarEq prefix (Just True) ["Menu1","SubMenu1","submenuitem2"] >=>
-              logmsgK "getting a screenshot" $ g
+         g <- narrowManyK (prefix >=> contentsflat) click [textEq "foo", textEq "dialog button"] g >>=
+              logmsgK "foo log message" >>=
+              withMenuBarEq prefix (Just True) ["Menu1","SubMenu1","submenuitem2"] >>=
+              logmsgK "getting a screenshot"
          i <- narrowK ( windowsflat >=> image ) $ g
          logimg i
          logmsg "now for a second menu"
-         g <- withMenuBarEq (wait 2 >=> windowsflat) Nothing ["Menu1","SubMenu1","submenuitem1"] >=>
-              wait 2 >=>
-              narrowK (windowsflat >=> contentsflat >=> textEq "foo" ) >=>
-              logmsgK "mmmmmmm" >=>
-              click >=>
-              wait 2 >=>
-              narrowK ( windowsflat >=> contentsflat >=> textEq "dialog button" >=> click ) >=>
-              logmsgK "this should show the combo..." >=>
-              narrowK ( windowsflat >=> contentsflat >=> clickCombo ) >=> 
-              wait 2 $ g
+         g <- withMenuBarEq (wait 2 >=> windowsflat) Nothing ["Menu1","SubMenu1","submenuitem1"] g >>=
+              wait 2 >>=
+              narrowK (windowsflat >=> contentsflat >=> textEq "foo" ) >>=
+              logmsgK "mmmmmmm" >>=
+              click >>=
+              wait 2 >>=
+              narrowK ( windowsflat >=> contentsflat >=> textEq "dialog button" >=> click ) >>=
+              logmsgK "this should show the combo..." >>=
+              narrowK ( windowsflat >=> contentsflat >=> clickCombo ) >>= 
+              wait 2
          g <- narrow $ do candidateCell <- windowsflat >=> popupflat >=> cell $ g
                           c <- treeflat . renderer $ candidateCell 
                           textEq "ccc" c
                           liftBase $ select candidateCell  
-         g <- wait 7 $ g
-         g <- narrowK ( windowsflat >=> closew ) >=>
-              logmsgK "loggy log" $ g
+         g <- wait 7 g
+         g <- narrowK ( windowsflat >=> closew ) g >>=
+              logmsgK "loggy log"
          return ()           
 
 main :: IO ()
