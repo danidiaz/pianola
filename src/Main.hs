@@ -36,13 +36,17 @@ import Xanela.Types.Combinators
 import Xanela.Types.Protocol
 import Xanela.Types.Protocol.IO
 
-class XanelaLog l where
-    xanelalog::LogEntry -> l ()
-    logmsg::T.Text -> l ()
-    logimg::Image -> l ()
+class Functor l => XanelaLog l where
+    xanlog::LogEntry -> l ()
 
-    logmsg = xanelalog . TextEntry
-    logimg = xanelalog . ImageEntry
+    logmsg::T.Text -> l ()
+    logmsg = xanlog . TextEntry
+
+    logimg::Image -> l ()
+    logimg = xanlog . ImageEntry
+
+    logmsgK::T.Text -> a -> l a
+    logmsgK msg = (<$ logmsg msg) 
 
 data LogEntry = TextEntry T.Text 
                 |ImageEntry Image
@@ -51,32 +55,32 @@ type LogProducer m = Server () LogEntry m
 type LogConsumer m = Client () LogEntry m
 
 instance Monad m => XanelaLog (LogProducer m) where
-    xanelalog = respond 
+    xanlog = respond 
 
 instance (Monad l, XanelaLog l) => XanelaLog (LogicT l) where
-    xanelalog = lift . xanelalog
+    xanlog = lift . xanlog
 
 instance (Monad l, XanelaLog l) => XanelaLog (MaybeT l) where
-    xanelalog = lift . xanelalog
+    xanlog = lift . xanlog
 
 testCase:: (Monad m, MonadBase n m) => GUI n -> MaybeT (LogProducer m) ()
 testCase g = do
          let prefix = wait 2 >=> windowsflat 
          g <- narrowManyK (prefix >=> contentsflat) click [textEq "foo", textEq "dialog button"] >=>
-              (<$ logmsg "foo log message") >=>
+              logmsgK "foo log message" >=>
               withMenuBarEq prefix (Just True) ["Menu1","SubMenu1","submenuitem2"] >=>
-              (<$ logmsg "getting a screenshot") $ g
+              logmsgK "getting a screenshot" $ g
          i <- narrowK ( windowsflat >=> image ) $ g
          logimg i
          logmsg "now for a second menu"
          g <- withMenuBarEq (wait 2 >=> windowsflat) Nothing ["Menu1","SubMenu1","submenuitem1"] >=>
               wait 2 >=>
               narrowK (windowsflat >=> contentsflat >=> textEq "foo" ) >=>
-              (<$ logmsg "mmmmmmm") >=>
+              logmsgK "mmmmmmm" >=>
               click >=>
               wait 2 >=>
               narrowK ( windowsflat >=> contentsflat >=> textEq "dialog button" >=> click ) >=>
-              (<$ logmsg "this should show the combo...") >=>
+              logmsgK "this should show the combo..." >=>
               narrowK ( windowsflat >=> contentsflat >=> clickCombo ) >=> 
               wait 2 $ g
          g <- narrow $ do candidateCell <- windowsflat >=> popupflat >=> cell $ g
@@ -85,7 +89,7 @@ testCase g = do
                           liftBase $ select candidateCell  
          g <- wait 7 $ g
          g <- narrowK ( windowsflat >=> closew ) >=>
-              (<$ logmsg "loggy log") $ g
+              logmsgK "loggy log" $ g
          return ()           
 
 main :: IO ()
