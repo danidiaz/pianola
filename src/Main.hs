@@ -25,7 +25,7 @@ import Control.Monad
 import Control.Exception
 import Control.Monad.Base
 import Control.Monad.Free
-import Control.Monad.Reader
+import Control.Monad.Trans.Reader
 import Control.Monad.Logic
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Free  
@@ -89,7 +89,7 @@ testCase g = do
                           c <- treeflat . renderer $ candidateCell 
                           textEq "ccc" c
                           liftBase $ select candidateCell  
-         g <- wait 7 g
+         g <- wait 2 g
          g <- narrowK ( windowsflat >=> closew ) g >>=
               logmsgK "loggy log"
          return ()           

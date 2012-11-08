@@ -20,7 +20,7 @@ import Control.Monad
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Base
-import Control.Monad.Trans
+import Control.Monad.Trans.Class
 import Control.Monad.Logic
 import Control.Monad.Trans.Maybe
 
