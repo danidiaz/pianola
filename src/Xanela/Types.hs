@@ -14,6 +14,7 @@ module Xanela.Types (
         Image,
         image,
         closew,
+        escape,
         Component (..),
         ComponentInfo (..),
         ComponentType (..),
@@ -68,6 +69,7 @@ data WindowInfo m = WindowInfo
         _popupLayer:: [Component m],
         _topc::Component m,
         _image::m Image,
+        _escape::GUIAction m,
         _close::GUIAction m
     } 
 
@@ -132,6 +134,9 @@ image = liftBase . _image
 
 closew::MonadBase n m => WindowInfo n -> m (GUI n)
 closew = liftBase . _close
+
+escape::MonadBase n m => WindowInfo n -> m (GUI n)
+escape = liftBase . _escape
 
 wait::MonadBase n m => Int -> GUI n -> m (GUI n)
 wait i = liftBase . flip _wait4changes i

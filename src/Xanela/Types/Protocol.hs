@@ -85,11 +85,15 @@ instance Unpackable (WindowInfo Protocol) where
         let getWindowImage = do
                 image_or_fail <- call [pack "getWindowImage", pack xanelaid, pack wid] (AI.parserToIteratee get)
                 hoistEither image_or_fail::Protocol Image
+        let escape = do
+                escape_or_fail <- call [pack "escape", pack xanelaid, pack wid] (AI.parserToIteratee get)
+                hoistEither escape_or_fail::Protocol ()
+                getgui
         let closeWindow = do
                 close_or_fail <- call [pack "closeWindow", pack xanelaid, pack wid] (AI.parserToIteratee get)
                 hoistEither close_or_fail::Protocol ()
                 getgui
-        return (WindowInfo v1 v2 v3 v4 v5 getWindowImage closeWindow)
+        return (WindowInfo v1 v2 v3 v4 v5 getWindowImage escape closeWindow)
 
 instance Unpackable (ComponentInfo Protocol) where
     get = do
