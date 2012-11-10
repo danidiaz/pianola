@@ -37,7 +37,7 @@ withMenuBar winlocator actionType ps =
         withMenuBar' firstitem middleitems lastitem =  
             narrowK ( winlocator >=> menuflat >=> text firstitem >=> click ) >=>
             narrowManyK (winlocator >=> popupflat) click (map text middleitems) >=>
-            narrowK ( winlocator >=> popupflat >=> text lastitem >=> lastItemAction) >=>
+            narrowK ( winlocator >=> popupflat >=> text lastitem >=> lastItemAction ) >=>
             maybe return (const . escapes . succ . length $ middleitems ) actionType
     in case ps of 
         p':ps' ->  case reverse ps' of

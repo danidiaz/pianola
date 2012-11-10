@@ -89,6 +89,11 @@ testCase g = do
                           c <- treeflat . renderer $ candidateCell 
                           textEq "ccc" c
                           liftBase $ select candidateCell  
+         g <- wait 2 >=> logmsgK "Now for a change of tab" $ g
+         g <- narrow $ do tab <-  windowsflat >=> contentsflat >=> tab $ g
+                          logmsg . tabText $ tab -- logging inside LogicT
+                          guard $ tabText tab == "tab two"  
+                          liftBase $ tabSelect tab   
          g <- wait 2 g
          g <- narrowK ( windowsflat >=> closew ) g >>=
               logmsgK "loggy log"

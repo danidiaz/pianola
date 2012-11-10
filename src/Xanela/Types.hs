@@ -19,6 +19,7 @@ module Xanela.Types (
         ComponentInfo (..),
         ComponentType (..),
         Cell (..),
+        Tab (..),
         windowsflat,
         menuflat,
         popupflat,
@@ -30,6 +31,7 @@ module Xanela.Types (
         click,
         clickCombo,
         cell,
+        tab,
         toggle,
         rightClick,
         setText
@@ -96,12 +98,21 @@ data ComponentType m =
     |ComboBox (Maybe (Component m)) (GUIAction m)
     |GUIList [Cell m]
     |PopupMenu  
+    |TabbedPane [Tab m]
     |Other T.Text
 
 data Cell m = Cell 
     {
         renderer::Component m,
         select::GUIAction m
+    }
+
+data Tab m = Tab
+    {
+        tabText::T.Text,
+        tabTooltip::Maybe T.Text,
+        isTabSelected:: Bool,
+        tabSelect::GUIAction m
     }
 
 -- logic helpers
@@ -156,6 +167,10 @@ clickCombo _ = mzero
 cell:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (Cell n)
 cell (_componentType -> GUIList l) = replusify l
 cell _ = mzero
+
+tab:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (Tab n)
+tab (_componentType -> TabbedPane p) = replusify p
+tab _ = mzero
 
 rightClick:: (MonadBase n m) => ComponentInfo n -> m (GUI n)
 rightClick = liftBase . _rightClick

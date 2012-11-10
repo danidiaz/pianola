@@ -151,6 +151,7 @@ instance Unpackable (ComponentType Protocol) where
                 return $ ComboBox renderer clickCombo
             7 -> GUIList <$> get
             8 -> return PopupMenu
+            70 -> TabbedPane <$> get
             77 -> do
                 v2 <- get
                 return (Other v2)
@@ -168,3 +169,17 @@ instance Unpackable (Cell Protocol) where
                 getgui 
         return $ Cell renderer selectCell
 
+instance Unpackable (Tab Protocol) where
+    get = do
+        xanelaid <- get::Parser Int
+        componentid <- get::Parser Int
+        tabid <- get::Parser Int
+        text <- get
+        tooltipMaybe <- get
+        selected <- get
+        let selecttab = do
+                selecttab_or_fail <- call [pack "selectTab", pack xanelaid, pack componentid, pack tabid] (AI.parserToIteratee get)
+                hoistEither selecttab_or_fail::Protocol ()
+                getgui 
+        return $ Tab text tooltipMaybe selected selecttab
+    
