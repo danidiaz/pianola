@@ -13,7 +13,7 @@ module Xanela.Types (
         WindowInfo (..),
         Image,
         image,
-        closew,
+        close,
         escape,
         Component (..),
         ComponentInfo (..),
@@ -30,7 +30,7 @@ module Xanela.Types (
         wait,
         click,
         clickCombo,
-        cell,
+        listCell,
         tab,
         toggle,
         rightClick,
@@ -97,6 +97,7 @@ data ComponentType m =
     |Label
     |ComboBox (Maybe (Component m)) (GUIAction m)
     |GUIList [Cell m]
+    |GUITable [[Cell m]]
     |PopupMenu  
     |TabbedPane [Tab m]
     |Other T.Text
@@ -104,7 +105,7 @@ data ComponentType m =
 data Cell m = Cell 
     {
         renderer::Component m,
-        select::GUIAction m
+        selectCell::GUIAction m
     }
 
 data Tab m = Tab
@@ -112,7 +113,7 @@ data Tab m = Tab
         tabText::T.Text,
         tabTooltip::Maybe T.Text,
         isTabSelected:: Bool,
-        tabSelect::GUIAction m
+        selectTab::GUIAction m
     }
 
 -- logic helpers
@@ -143,8 +144,8 @@ textEq t = text $ (==) t
 image::MonadBase n m => WindowInfo n -> m Image
 image = liftBase . _image
 
-closew::MonadBase n m => WindowInfo n -> m (GUI n)
-closew = liftBase . _close
+close::MonadBase n m => WindowInfo n -> m (GUI n)
+close = liftBase . _close
 
 escape::MonadBase n m => WindowInfo n -> m (GUI n)
 escape = liftBase . _escape
@@ -164,9 +165,9 @@ clickCombo:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (GUI n)
 clickCombo (_componentType -> ComboBox _ a) = liftBase a
 clickCombo _ = mzero
 
-cell:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (Cell n)
-cell (_componentType -> GUIList l) = replusify l
-cell _ = mzero
+listCell:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (Cell n)
+listCell (_componentType -> GUIList l) = replusify l
+listCell _ = mzero
 
 tab:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (Tab n)
 tab (_componentType -> TabbedPane p) = replusify p

@@ -150,7 +150,8 @@ instance Unpackable (ComponentType Protocol) where
                 renderer <- get 
                 return $ ComboBox renderer clickCombo
             7 -> GUIList <$> get
-            8 -> return PopupMenu
+            8 -> GUITable <$> get
+            50 -> return PopupMenu
             70 -> TabbedPane <$> get
             77 -> do
                 v2 <- get

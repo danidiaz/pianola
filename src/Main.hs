@@ -85,17 +85,17 @@ testCase g = do
               narrowK ( windowsflat >=> contentsflat >=> clickCombo ) >=> 
               wait 2
               $g
-         g <- narrow $ do candidateCell <- windowsflat >=> popupflat >=> cell $ g
+         g <- narrow $ do candidateCell <- windowsflat >=> popupflat >=> listCell $ g
                           c <- treeflat . renderer $ candidateCell 
                           textEq "ccc" c
-                          liftBase $ select candidateCell  
+                          liftBase $ selectCell candidateCell  
          g <- wait 2 >=> logmsgK "Now for a change of tab" $ g
          g <- narrow $ do tab <-  windowsflat >=> contentsflat >=> tab $ g
                           logmsg . tabText $ tab -- logging inside LogicT
                           guard $ tabText tab == "tab two"  
-                          liftBase $ tabSelect tab   
+                          liftBase $ selectTab tab   
          g <- wait 2 g
-         g <- narrowK ( windowsflat >=> closew ) g >>=
+         g <- narrowK ( windowsflat >=> close ) g >>=
               logmsgK "loggy log"
          return ()           
 
