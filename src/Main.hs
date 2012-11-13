@@ -88,7 +88,7 @@ testCase g = do
          g <- narrow $ do candidateCell <- windowsflat >=> popupflat >=> listCell $ g
                           c <- treeflat . renderer $ candidateCell 
                           textEq "ccc" c
-                          liftBase $ selectCell candidateCell  
+                          liftBase $ clickCell candidateCell  
          g <- wait 2 >=> logmsgK "Now for a change of tab" $ g
          g <- narrow $ do tab <-  windowsflat >=> contentsflat >=> tab $ g
                           logmsg . tabText $ tab -- logging inside LogicT

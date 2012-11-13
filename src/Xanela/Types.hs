@@ -105,7 +105,7 @@ data ComponentType m =
 data Cell m = Cell 
     {
         renderer::Component m,
-        selectCell::GUIAction m
+        clickCell::GUIAction m
     }
 
 data Tab m = Tab

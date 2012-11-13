@@ -164,11 +164,11 @@ instance Unpackable (Cell Protocol) where
         rowid <- get::Parser Int
         columnid <- get::Parser Int
         renderer <- get
-        let selectCell = do
-                select_or_fail <- call [pack "selectCell", pack xanelaid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
-                hoistEither select_or_fail::Protocol ()
+        let clickCell = do
+                click_or_fail <- call [pack "clickCell", pack xanelaid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
+                hoistEither click_or_fail::Protocol ()
                 getgui 
-        return $ Cell renderer selectCell
+        return $ Cell renderer clickCell
 
 instance Unpackable (Tab Protocol) where
     get = do
