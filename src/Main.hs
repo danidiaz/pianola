@@ -39,8 +39,8 @@ import Xanela.Types.Protocol.IO
 
 testCase:: (Monad m, MonadBase n m) => GUI n -> MaybeT (LogProducer m) ()
 testCase g = do
-         let prefix = wait 2 >=> windowsflat 
-         g <- narrowManyK (prefix >=> contentsflat) click [textEq "foo", textEq "dialog button"] >=>
+         let prefix = windowsflat 
+         g <- threadKs (wait 2) narrowK (prefix >=> contentsflat) click [textEq "foo", textEq "dialog button"] >=>
               logmsgK "foo log message" >=>
               withMenuBarEq prefix (Just True) ["Menu1","SubMenu1","submenuitem2"] >=>
               logmsgK "getting a screenshot"

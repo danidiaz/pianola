@@ -12,10 +12,11 @@ module Xanela.Util (
         composeK,
         prependK,
         appendK,
-        sandwich,
+        threadKs,
+        --sandwich,
         narrow,
         narrowK,
-        narrowManyK,
+        --narrowManyK,
         XanelaLog(..),
         LogEntry(..),
         Image,
@@ -26,6 +27,7 @@ module Xanela.Util (
 import Prelude hiding (catch,(.),id)
 import Control.Category
 import Data.Tree
+import Data.List
 import Data.MessagePack
 import Data.Attoparsec.ByteString
 import Control.Monad
@@ -50,8 +52,12 @@ prependK prefix = map $ (>=>) prefix
 appendK:: (Monad m) => (b -> m c) -> [a -> m b] -> [a -> m c]
 appendK suffix = map $ (<=<) suffix
 
-sandwich:: (Monad m) => (a -> m b) -> (c -> m d) -> [b -> m c] -> [a -> m d]
-sandwich prefix suffix = prependK prefix . appendK suffix
+{-sandwich:: (Monad m) => (a -> m b) -> (c -> m d) -> [b -> m c] -> [a -> m d]
+sandwich prefix suffix = prependK prefix . appendK suffix-}
+
+threadKs :: (Monad m,Monad n) => (a -> m a) -> ((a -> n a) -> a -> m a) -> (a -> n b) -> (c -> n a) -> [b -> n c] -> a -> m a
+threadKs separatork ktransformer prefix suffix =
+    composeK . intersperse separatork . map ktransformer . prependK prefix . appendK suffix 
 
 -- logic helpers
 
@@ -64,8 +70,8 @@ narrow = MaybeT . liftM replusify . observeManyT 1
 narrowK :: Monad m => (a -> LogicT m b) -> a -> MaybeT m b 
 narrowK = fmap narrow 
 
-narrowManyK :: Monad m => (a -> LogicT m b) -> (c -> LogicT m a) -> [b -> LogicT m c] -> a -> MaybeT m a
-narrowManyK prefix suffix = composeK . map narrowK . sandwich prefix suffix
+{-narrowManyK :: Monad m => (a -> LogicT m b) -> (c -> LogicT m a) -> [b -> LogicT m c] -> a -> MaybeT m a
+narrowManyK prefix suffix = composeK . map narrowK . sandwich prefix suffix-}
 
 treeflat:: MonadPlus m => Tree a -> m a
 treeflat = replusify . flatten 
