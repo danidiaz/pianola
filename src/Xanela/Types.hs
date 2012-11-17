@@ -11,7 +11,6 @@ module Xanela.Types (
         GUIAction,
         Window (..),
         WindowInfo (..),
-        Image,
         image,
         close,
         escape,
@@ -54,14 +53,12 @@ import Xanela.Util
 data GUI m = GUI
     {
         _gui::[Window m],
-        _wait4changes::Int -> GUIAction m
+        _wait::Int -> GUIAction m
     }
 
 type GUIAction m = m (GUI m)
 
 type Window m = Tree (WindowInfo m)
-
-type Image = ByteString
 
 data WindowInfo m = WindowInfo 
     {
@@ -151,7 +148,7 @@ escape::MonadBase n m => WindowInfo n -> m (GUI n)
 escape = liftBase . _escape
 
 wait::MonadBase n m => Int -> GUI n -> m (GUI n)
-wait i = liftBase . flip _wait4changes i
+wait i = liftBase . flip _wait i
 
 toggle:: (MonadBase n m, MonadPlus m) => Bool -> ComponentInfo n -> m (GUI n)
 toggle b (_componentType -> Toggleable _ a) = liftBase . a $ b

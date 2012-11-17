@@ -15,7 +15,12 @@ module Xanela.Util (
         sandwich,
         narrow,
         narrowK,
-        narrowManyK
+        narrowManyK,
+        XanelaLog(..),
+        LogEntry(..),
+        Image,
+        LogConsumer,
+        LogProducer    
     ) where
 
 import Prelude hiding (catch,(.),id)
@@ -29,6 +34,8 @@ import Control.Monad.Base
 import Control.Monad.Trans.Maybe
 import Control.Monad.Logic
 import Control.Proxy
+import qualified Data.Text as T
+import qualified Data.ByteString as B
 
 -- Kleisie
 
@@ -84,10 +91,39 @@ instance Unpackable a => Unpackable (Tree a) where
         v2 <- get
         return (Node v1 v2)
 
-
 -- useful MonadBase instances
 instance MonadBase b m => MonadBase b (Proxy x y u v m) where
     liftBase = lift.liftBase
 
 instance MonadBase b m => MonadBase b (LogicT m) where
     liftBase = lift.liftBase
+
+-- logging
+type Image = B.ByteString
+
+class Functor l => XanelaLog l where
+    xanlog::LogEntry -> l ()
+
+    logmsg::T.Text -> l ()
+    logmsg = xanlog . TextEntry
+
+    logimg::Image -> l ()
+    logimg = xanlog . ImageEntry
+
+    logmsgK::T.Text -> a -> l a
+    logmsgK msg = (<$ logmsg msg) 
+
+data LogEntry = TextEntry T.Text 
+                |ImageEntry Image
+
+type LogProducer m = Server () LogEntry m
+type LogConsumer m = Client () LogEntry m
+
+instance Monad m => XanelaLog (LogProducer m) where
+    xanlog = respond 
+
+instance (Monad l, XanelaLog l) => XanelaLog (LogicT l) where
+    xanlog = lift . xanlog
+
+instance (Monad l, XanelaLog l) => XanelaLog (MaybeT l) where
+    xanlog = lift . xanlog

@@ -36,32 +36,6 @@ import Xanela.Types.Combinators
 import Xanela.Types.Protocol
 import Xanela.Types.Protocol.IO
 
-class Functor l => XanelaLog l where
-    xanlog::LogEntry -> l ()
-
-    logmsg::T.Text -> l ()
-    logmsg = xanlog . TextEntry
-
-    logimg::Image -> l ()
-    logimg = xanlog . ImageEntry
-
-    logmsgK::T.Text -> a -> l a
-    logmsgK msg = (<$ logmsg msg) 
-
-data LogEntry = TextEntry T.Text 
-                |ImageEntry Image
-
-type LogProducer m = Server () LogEntry m
-type LogConsumer m = Client () LogEntry m
-
-instance Monad m => XanelaLog (LogProducer m) where
-    xanlog = respond 
-
-instance (Monad l, XanelaLog l) => XanelaLog (LogicT l) where
-    xanlog = lift . xanlog
-
-instance (Monad l, XanelaLog l) => XanelaLog (MaybeT l) where
-    xanlog = lift . xanlog
 
 testCase:: (Monad m, MonadBase n m) => GUI n -> MaybeT (LogProducer m) ()
 testCase g = do

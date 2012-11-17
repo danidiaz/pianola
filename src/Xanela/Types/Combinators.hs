@@ -27,6 +27,16 @@ import Control.Monad.Trans.Maybe
 import Xanela.Util
 import Xanela.Types
 
+
+retry:: (MonadBase n m) => Int -> [GUI n -> MaybeT (LogProducer m) (GUI n)] -> GUI n -> MaybeT (LogProducer m) (GUI n)
+retry delaytime [] gui = mzero
+retry delaytime (guik:l) gui = MaybeT $ do
+        result <- runMaybeT . guik $ gui
+        case result of 
+            Just j -> return $ Just j 
+            Nothing -> runMaybeT ( wait 1 gui >>= retry delaytime l )
+
+
 withMenuBar::(MonadBase n m) => (GUI n -> LogicT m (WindowInfo n)) -> 
                                 Maybe Bool -> 
                                 [T.Text -> Bool] ->
