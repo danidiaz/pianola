@@ -22,6 +22,7 @@ import Control.Applicative
 import Control.Proxy
 import Control.MFunctor
 import Control.Monad
+import Control.Comonad
 import Control.Exception
 import Control.Monad.Base
 import Control.Monad.Free
@@ -78,18 +79,18 @@ testCase g = do
          g <- wait 2 g
          g <- narrow $ do GUITable ll <- windowsflat >=> contentsflat >=> return . _componentType $ g
                           cell <- replusify . concat $ ll
-                          c <- replusify . flatten . renderer $ cell
+                          c <- treeflat . renderer $ cell
                           txt <- justZ . _text $ c
                           guard $ txt == "4" 
                           liftBase $ doubleClickCell cell
          g <- wait 2 g
-         {-g <- narrow $ do c <- windowsflat >=> contentsflat $ g
-                          GUITable ll <- return . _componentType $ c  
-                          c' <- replusify . flatten $ c
-                          txt <- justZ . _text $ c'
+         g <- narrow $ do ct <- windowsflat >=> contentsflat' $ g
+                          GUITable _ <- return . _componentType . rootLabel $ ct -- is it a table?
+                          c <- treeflat ct -- the table's children
+                          txt <- justZ._text $ c
                           guard $ txt == "4" 
-                          liftBase $ doubleClickCell cell
-         g <- wait 2 g-}
+                          setText "77" c
+         g <- wait 2 g
          g <- narrowK ( windowsflat >=> close ) g >>=
               logmsgK "loggy log"
          return ()           

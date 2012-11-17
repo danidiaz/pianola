@@ -23,6 +23,7 @@ module Xanela.Types (
         menuflat,
         popupflat,
         contentsflat,
+        contentsflat',
         wholewindowflat,
         text,
         textEq,
@@ -126,6 +127,9 @@ popupflat = forestflat . _popupLayer
 
 contentsflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
 contentsflat =  treeflat . _topc
+
+contentsflat':: MonadPlus m => WindowInfo n -> m (Component n)
+contentsflat' =  treeflat' . _topc
 
 wholewindowflat::MonadPlus m => WindowInfo n -> m (ComponentInfo n)
 wholewindowflat w = msum $ map ($w) [menuflat,popupflat,contentsflat]
