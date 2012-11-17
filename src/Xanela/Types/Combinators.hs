@@ -46,11 +46,10 @@ withMenuBar winlocator actionType ps =
         escapes n = composeK . replicate n . narrowK $ winlocator >=> escape
         withMenuBar' firstitem middleitems lastitem =  
             let retryfyK = retry 1 . (:) (const mzero) . replicate 7
-                middleactions = map text middleitems
             in narrowK ( winlocator >=> menuflat >=> text firstitem >=> click ) >=>
-               threadKs return (retryfyK.narrowK) (winlocator >=> popupflat,click) middleactions >=>
+               threadKs pure (retryfyK.narrowK) (winlocator >=> popupflat,click) (map text middleitems) >=>
                (retryfyK.narrowK $ winlocator >=> popupflat >=> text lastitem >=> lastItemAction ) >=>
-               maybe return (const . escapes . succ . length $ middleitems ) actionType
+               maybe pure (const . escapes . succ . length $ middleitems ) actionType
     in case ps of 
         p':ps' ->  case reverse ps' of
             p'':ps'' -> withMenuBar' p' (reverse ps'') p''

@@ -48,7 +48,7 @@ testCase g = do
          i <- narrowK ( windowsflat >=> image ) $ g
          logimg i
          logmsg "now for a second menu"
-         g <- withMenuBarEq (wait 2 >=> windowsflat) Nothing ["Menu1","SubMenu1","submenuitem1"] >=>
+         g <- withMenuBarEq prefix Nothing ["Menu1","SubMenu1","submenuitem1"] >=>
               wait 2 >=>
               narrowK (windowsflat >=> contentsflat >=> textEq "foo" ) >=>
               logmsgK "mmmmmmm" >=>
@@ -76,6 +76,20 @@ testCase g = do
                           guard $ txt == "7" 
                           liftBase $ clickCell cell
          g <- wait 2 g
+         g <- narrow $ do GUITable ll <- windowsflat >=> contentsflat >=> return . _componentType $ g
+                          cell <- replusify . concat $ ll
+                          c <- replusify . flatten . renderer $ cell
+                          txt <- justZ . _text $ c
+                          guard $ txt == "4" 
+                          liftBase $ doubleClickCell cell
+         g <- wait 2 g
+         {-g <- narrow $ do c <- windowsflat >=> contentsflat $ g
+                          GUITable ll <- return . _componentType $ c  
+                          c' <- replusify . flatten $ c
+                          txt <- justZ . _text $ c'
+                          guard $ txt == "4" 
+                          liftBase $ doubleClickCell cell
+         g <- wait 2 g-}
          g <- narrowK ( windowsflat >=> close ) g >>=
               logmsgK "loggy log"
          return ()           

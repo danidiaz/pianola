@@ -168,7 +168,11 @@ instance Unpackable (Cell Protocol) where
                 click_or_fail <- call [pack "clickCell", pack xanelaid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
                 hoistEither click_or_fail::Protocol ()
                 getgui 
-        return $ Cell renderer clickCell
+        let doubleClickCell = do
+                click_or_fail <- call [pack "doubleClickCell", pack xanelaid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
+                hoistEither click_or_fail::Protocol ()
+                getgui 
+        return $ Cell renderer clickCell doubleClickCell
 
 instance Unpackable (Tab Protocol) where
     get = do
