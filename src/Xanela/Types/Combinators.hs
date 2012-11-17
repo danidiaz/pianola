@@ -48,7 +48,7 @@ withMenuBar winlocator actionType ps =
             let retryfyK = retry 1 . (:) (const mzero) . replicate 7
                 middleactions = map text middleitems
             in narrowK ( winlocator >=> menuflat >=> text firstitem >=> click ) >=>
-               threadKs return (retryfyK.narrowK) (winlocator >=> popupflat) click middleactions >=>
+               threadKs return (retryfyK.narrowK) (winlocator >=> popupflat,click) middleactions >=>
                (retryfyK.narrowK $ winlocator >=> popupflat >=> text lastitem >=> lastItemAction ) >=>
                maybe return (const . escapes . succ . length $ middleitems ) actionType
     in case ps of 

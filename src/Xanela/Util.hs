@@ -55,8 +55,8 @@ appendK suffix = map $ (<=<) suffix
 {-sandwich:: (Monad m) => (a -> m b) -> (c -> m d) -> [b -> m c] -> [a -> m d]
 sandwich prefix suffix = prependK prefix . appendK suffix-}
 
-threadKs :: (Monad m,Monad n) => (a -> m a) -> ((a -> n a) -> a -> m a) -> (a -> n b) -> (c -> n a) -> [b -> n c] -> a -> m a
-threadKs separatork ktransformer prefix suffix =
+threadKs :: (Monad m,Monad n) => (a -> m a) -> ((a -> n a) -> a -> m a) -> (a -> n b, c -> n a) -> [b -> n c] -> a -> m a
+threadKs separatork ktransformer (prefix,suffix) =
     composeK . intersperse separatork . map ktransformer . prependK prefix . appendK suffix 
 
 -- logic helpers
