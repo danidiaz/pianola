@@ -149,8 +149,9 @@ instance Unpackable (ComponentType Protocol) where
                         getgui 
                 renderer <- get 
                 return $ ComboBox renderer clickCombo
-            7 -> GUIList <$> get
-            8 -> GUITable <$> get
+            7 -> List <$> get
+            8 -> Table <$> get
+            9 -> Treegui <$> get
             50 -> return PopupMenu
             70 -> TabbedPane <$> get
             77 -> do

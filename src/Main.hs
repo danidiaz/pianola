@@ -70,14 +70,14 @@ testCase g = do
                           guard $ tabText tab == "tab two"  
                           liftBase $ selectTab tab   
          g <- wait 2 g
-         g <- narrow $ do GUITable ll <- windowsflat >=> contentsflat >=> return . _componentType $ g
+         g <- narrow $ do Table ll <- windowsflat >=> contentsflat >=> return . _componentType $ g
                           cell <- replusify . concat $ ll
                           c <- replusify . flatten . renderer $ cell
                           txt <- justZ . _text $ c
                           guard $ txt == "7" 
                           liftBase $ clickCell cell
          g <- wait 2 g
-         g <- narrow $ do GUITable ll <- windowsflat >=> contentsflat >=> return . _componentType $ g
+         g <- narrow $ do Table ll <- windowsflat >=> contentsflat >=> return . _componentType $ g
                           cell <- replusify . concat $ ll
                           c <- treeflat . renderer $ cell
                           txt <- justZ . _text $ c
@@ -85,7 +85,7 @@ testCase g = do
                           liftBase $ doubleClickCell cell
          g <- wait 2 g
          g <- narrow $ do ct <- windowsflat >=> contentsflat' $ g
-                          GUITable _ <- return . _componentType . rootLabel $ ct -- is it a table?
+                          Table _ <- return . _componentType . rootLabel $ ct -- is it a table?
                           c <- treeflat ct -- the table's children
                           txt <- justZ._text $ c
                           guard $ txt == "4" 

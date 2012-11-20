@@ -94,8 +94,9 @@ data ComponentType m =
     |TextField (Maybe (T.Text -> GUIAction m)) -- Nothing if not editable
     |Label
     |ComboBox (Maybe (Component m)) (GUIAction m)
-    |GUIList [Cell m]
-    |GUITable [[Cell m]]
+    |List [Cell m]
+    |Table [[Cell m]]
+    |Treegui (Forest (Cell m))
     |PopupMenu  
     |TabbedPane [Tab m]
     |Other T.Text
@@ -168,7 +169,7 @@ clickCombo (_componentType -> ComboBox _ a) = liftBase a
 clickCombo _ = mzero
 
 listCell:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (Cell n)
-listCell (_componentType -> GUIList l) = replusify l
+listCell (_componentType -> List l) = replusify l
 listCell _ = mzero
 
 tab:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (Tab n)

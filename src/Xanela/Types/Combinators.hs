@@ -30,8 +30,8 @@ import Control.Monad.Trans.Maybe
 import Xanela.Util
 import Xanela.Types
 
-type MK ti to m = ti m -> MaybeT (LogProducer m) (to m)
-type LK ti to m = ti m -> LogicT (LogProducer m) (to m)
+type MK it ot m = it m -> MaybeT (LogProducer m) (ot m)
+type LK it ot m = it m -> LogicT (LogProducer m) (ot m)
 
 retry:: (Monad m,MonadBase m m) => Int -> [MK GUI GUI m] -> MK GUI GUI m
 retry delaytime [] gui = mzero
