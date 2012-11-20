@@ -88,6 +88,7 @@ instance Unpackable a => Unpackable (Tree a) where
     get = Node <$> get <*> get
 
 -- useful MonadBase instances
+
 instance MonadBase b m => MonadBase b (Proxy x y u v m) where
     liftBase = lift.liftBase
 

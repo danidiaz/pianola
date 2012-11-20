@@ -7,6 +7,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Xanela.Types.Combinators (
+        MK,
+        LK,
         retry,
         withMenuBar,
         withMenuBarEq
@@ -28,8 +30,10 @@ import Control.Monad.Trans.Maybe
 import Xanela.Util
 import Xanela.Types
 
+type MK ti to m = ti m -> MaybeT (LogProducer m) (to m)
+type LK ti to m = ti m -> LogicT (LogProducer m) (to m)
 
-retry:: (MonadBase n m) => Int -> [GUI n -> MaybeT m (GUI n)] -> GUI n -> MaybeT m (GUI n)
+retry:: (Monad m,MonadBase m m) => Int -> [MK GUI GUI m] -> MK GUI GUI m
 retry delaytime [] gui = mzero
 retry delaytime (guik:l) gui = MaybeT $ do
         result <- runMaybeT . guik $ gui
@@ -37,10 +41,7 @@ retry delaytime (guik:l) gui = MaybeT $ do
             Just j -> return $ Just j 
             Nothing -> runMaybeT ( wait 1 gui >>= retry delaytime l )
 
-withMenuBar::(MonadBase n m) => (GUI n -> LogicT m (WindowInfo n)) -> 
-                                Maybe Bool -> 
-                                [T.Text -> Bool] ->
-                                GUI n -> MaybeT m (GUI n) 
+withMenuBar::(Monad m, MonadBase m m) => LK GUI WindowInfo m -> Maybe Bool -> [T.Text -> Bool] -> MK GUI GUI m
 withMenuBar winlocator actionType ps = 
     let lastItemAction = maybe click toggle actionType
         escapes n = composeK . replicate n . narrowK $ winlocator >=> escape

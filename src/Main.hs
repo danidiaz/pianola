@@ -38,7 +38,7 @@ import Xanela.Types.Protocol
 import Xanela.Types.Protocol.IO
 
 
-testCase:: (Monad m, MonadBase n m) => GUI n -> MaybeT (LogProducer m) ()
+testCase:: (Monad m, MonadBase m m) => MK GUI GUI m
 testCase g = do
          let prefix = windowsflat 
          g <- threadKs (wait 2) narrowK (prefix >=> contentsflat,click) [textEq "foo", textEq "dialog button"] >=>
@@ -91,9 +91,7 @@ testCase g = do
                           guard $ txt == "4" 
                           setText "77" c
          g <- wait 2 g
-         g <- narrowK ( windowsflat >=> close ) g >>=
-              logmsgK "loggy log"
-         return ()           
+         narrowK ( windowsflat >=> close ) >=> logmsgK "loggy log" $ g
 
 main :: IO ()
 main = do
@@ -102,10 +100,10 @@ main = do
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
 
-      test:: MaybeT (LogProducer Protocol) ()
+      test:: MaybeT (LogProducer Protocol) (GUI Protocol)
       test = liftBase getgui >>= testCase
 
-      producer:: LogProducer Protocol (Maybe ())
+      producer:: LogProducer Protocol (Maybe (GUI Protocol))
       producer = runMaybeT test
 
       producerIO () = mapT runProtocol producer 
