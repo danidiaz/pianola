@@ -91,6 +91,11 @@ testCase g = do
                           guard $ txt == "4" 
                           setText "77" c
          g <- wait 2 g
+         g <- narrow $ do tab <-  windowsflat >=> contentsflat >=> tab $ g
+                          logmsg . tabText $ tab -- logging inside LogicT
+                          guard $ tabText tab == "tab JTree a"  
+                          liftBase $ selectTab tab   
+         g <- wait 2 g
          narrowK ( windowsflat >=> close ) >=> logmsgK "loggy log" $ g
 
 main :: IO ()
