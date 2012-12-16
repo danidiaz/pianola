@@ -166,15 +166,21 @@ instance Unpackable (Cell Protocol) where
         rowid <- get::Parser Int
         columnid <- get::Parser Int
         renderer <- get
+        isTreeCell <- get
         let clickCell = do
                 click_or_fail <- call [pack "clickCell", pack xanelaid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
                 hoistEither click_or_fail::Protocol ()
                 getgui 
-        let doubleClickCell = do
+            doubleClickCell = do
                 click_or_fail <- call [pack "doubleClickCell", pack xanelaid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
                 hoistEither click_or_fail::Protocol ()
                 getgui 
-        return $ Cell renderer clickCell doubleClickCell
+            expandCollapse b = do
+                expand_or_fail <- call [pack "expandCollapse", pack xanelaid, pack componentid, pack rowid] (AI.parserToIteratee get)
+                hoistEither expand_or_fail::Protocol ()
+                getgui 
+            
+        return $ Cell renderer clickCell doubleClickCell (guard isTreeCell *> pure expandCollapse)
 
 instance Unpackable (Tab Protocol) where
     get = do

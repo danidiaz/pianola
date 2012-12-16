@@ -105,7 +105,8 @@ data Cell m = Cell
     {
         renderer::Component m,
         clickCell::GUIAction m,
-        doubleClickCell::GUIAction m
+        doubleClickCell::GUIAction m,
+        expand:: Maybe (Bool -> GUIAction m)
     }
 
 data Tab m = Tab
