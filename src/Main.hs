@@ -96,6 +96,15 @@ testCase g = do
                           guard $ tabText tab == "tab JTree a"  
                           liftBase $ selectTab tab   
          g <- wait 2 g
+         g <- narrow $ do Treegui forest <- windowsflat >=> contentsflat >=> return . _componentType $ g
+                          tree <- replusify forest
+                          cell <- treeflat tree 
+                          c <- treeflat . renderer $ cell
+                          txt <- justZ . _text $ c
+                          guard $ txt == "leaf a" 
+                          expandf <- justZ . expand $ cell
+                          liftBase $ expandf True
+         g <- wait 2 g
          narrowK ( windowsflat >=> close ) >=> logmsgK "loggy log" $ g
 
 main :: IO ()
