@@ -63,7 +63,7 @@ instance Unpackable (ServerError) where
 
 getgui :: Protocol (GUI Protocol)
 getgui = do 
-            gui_or_fail <- call [pack "get"] (AI.parserToIteratee get)
+            gui_or_fail <- call [pack "snapshot"] (AI.parserToIteratee get)
             hoistEither gui_or_fail
 
 instance Unpackable (GUI Protocol) where
@@ -76,7 +76,7 @@ instance Unpackable (GUI Protocol) where
 
 instance Unpackable (WindowInfo Protocol) where
     get = do
-        xanelaid <- get::Parser Int
+        snapid <- get::Parser Int
         wid <- get::Parser Int
         v1 <- get
         v2 <- get
@@ -84,21 +84,21 @@ instance Unpackable (WindowInfo Protocol) where
         v4 <- get
         v5 <- get
         let getWindowImage = do
-                image_or_fail <- call [pack "getWindowImage", pack xanelaid, pack wid] (AI.parserToIteratee get)
+                image_or_fail <- call [pack "getWindowImage", pack snapid, pack wid] (AI.parserToIteratee get)
                 hoistEither image_or_fail::Protocol Image
         let escape = do
-                escape_or_fail <- call [pack "escape", pack xanelaid, pack wid] (AI.parserToIteratee get)
+                escape_or_fail <- call [pack "escape", pack snapid, pack wid] (AI.parserToIteratee get)
                 hoistEither escape_or_fail::Protocol ()
                 getgui
         let closeWindow = do
-                close_or_fail <- call [pack "closeWindow", pack xanelaid, pack wid] (AI.parserToIteratee get)
+                close_or_fail <- call [pack "closeWindow", pack snapid, pack wid] (AI.parserToIteratee get)
                 hoistEither close_or_fail::Protocol ()
                 getgui
         return (WindowInfo v1 v2 v3 v4 v5 getWindowImage escape closeWindow)
 
 instance Unpackable (ComponentInfo Protocol) where
     get = do
-        xanelaid <- get::Parser Int
+        snapid <- get::Parser Int
         cid <- get::Parser Int
         v1 <- get
         v2 <- get
@@ -108,14 +108,14 @@ instance Unpackable (ComponentInfo Protocol) where
         v6 <- get
         v7 <- get
         let rightClick = do
-                click_or_fail <- call [pack "rightClick", pack xanelaid, pack cid] (AI.parserToIteratee get)
+                click_or_fail <- call [pack "rightClick", pack snapid, pack cid] (AI.parserToIteratee get)
                 hoistEither click_or_fail::Protocol ()
                 getgui
         return (ComponentInfo v1 v2 v3 v4 v5 v6 v7 rightClick)
 
 instance Unpackable (ComponentType Protocol) where
     get = do
-        xanelaid <- get::Parser Int
+        snapid <- get::Parser Int
         typeTag <- get::Parser Int
         case typeTag of
             1 -> return Panel
@@ -123,21 +123,21 @@ instance Unpackable (ComponentType Protocol) where
                 v2 <- get::Parser Int
                 v3 <- get
                 let toggle b = do
-                        toggle_or_fail <- call [pack "toggle", pack xanelaid, pack v2, pack (b::Bool)] (AI.parserToIteratee get)
+                        toggle_or_fail <- call [pack "toggle", pack snapid, pack v2, pack (b::Bool)] (AI.parserToIteratee get)
                         hoistEither toggle_or_fail::Protocol ()
                         getgui
                 return $ Toggleable v3 toggle
             3 -> do 
                 v2 <- get::Parser Int
                 let click = do
-                        click_or_fail <- call [pack "click", pack xanelaid, pack v2] (AI.parserToIteratee get)
+                        click_or_fail <- call [pack "click", pack snapid, pack v2] (AI.parserToIteratee get)
                         hoistEither click_or_fail::Protocol ()
                         getgui
                 return $ Button click
             4 -> do
                 v2 <- get::Parser (Maybe Int) 
                 let setText cid txt = do
-                        text_or_fail <- call [pack "setTextField", pack xanelaid, pack cid, pack txt] (AI.parserToIteratee get)
+                        text_or_fail <- call [pack "setTextField", pack snapid, pack cid, pack txt] (AI.parserToIteratee get)
                         hoistEither text_or_fail::Protocol ()
                         getgui 
                 return . TextField $ fmap setText v2
@@ -145,7 +145,7 @@ instance Unpackable (ComponentType Protocol) where
             6 -> do
                 cid <- get::Parser (Maybe Int) 
                 let clickCombo = do
-                        click_or_fail <- call [pack "clickCombo", pack xanelaid, pack cid] (AI.parserToIteratee get)
+                        click_or_fail <- call [pack "clickCombo", pack snapid, pack cid] (AI.parserToIteratee get)
                         hoistEither click_or_fail::Protocol ()
                         getgui 
                 renderer <- get 
@@ -161,22 +161,22 @@ instance Unpackable (ComponentType Protocol) where
 
 instance Unpackable (Cell Protocol) where
     get = do
-        xanelaid <- get::Parser Int
+        snapid <- get::Parser Int
         componentid <- get::Parser Int
         rowid <- get::Parser Int
         columnid <- get::Parser Int
         renderer <- get
         isTreeCell <- get
         let clickCell = do
-                click_or_fail <- call [pack "clickCell", pack xanelaid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
+                click_or_fail <- call [pack "clickCell", pack snapid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
                 hoistEither click_or_fail::Protocol ()
                 getgui 
             doubleClickCell = do
-                click_or_fail <- call [pack "doubleClickCell", pack xanelaid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
+                click_or_fail <- call [pack "doubleClickCell", pack snapid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
                 hoistEither click_or_fail::Protocol ()
                 getgui 
             expandCollapse b = do
-                expand_or_fail <- call [pack "expandCollapseCell", pack xanelaid, pack componentid, pack rowid, pack b] (AI.parserToIteratee get)
+                expand_or_fail <- call [pack "expandCollapseCell", pack snapid, pack componentid, pack rowid, pack b] (AI.parserToIteratee get)
                 hoistEither expand_or_fail::Protocol ()
                 getgui 
             
@@ -184,14 +184,14 @@ instance Unpackable (Cell Protocol) where
 
 instance Unpackable (Tab Protocol) where
     get = do
-        xanelaid <- get::Parser Int
+        snapid <- get::Parser Int
         componentid <- get::Parser Int
         tabid <- get::Parser Int
         text <- get
         tooltipMaybe <- get
         selected <- get
         let selecttab = do
-                selecttab_or_fail <- call [pack "selectTab", pack xanelaid, pack componentid, pack tabid] (AI.parserToIteratee get)
+                selecttab_or_fail <- call [pack "selectTab", pack snapid, pack componentid, pack tabid] (AI.parserToIteratee get)
                 hoistEither selecttab_or_fail::Protocol ()
                 getgui 
         return $ Tab text tooltipMaybe selected selecttab

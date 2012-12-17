@@ -120,7 +120,7 @@ main = do
       producer:: LogProducer Protocol (Maybe (GUI Protocol))
       producer = runMaybeT test
 
-      producerIO () = mapT runProtocol producer 
+      producerIO () = hoist runProtocol producer 
       -- for a null logger use discard ()
       logConsumer:: MonadIO mio => () -> LogConsumer mio a
       logConsumer () = forever $ do 

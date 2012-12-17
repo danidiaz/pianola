@@ -35,7 +35,7 @@ import Control.Applicative
 import Control.Monad.Base
 import Control.Monad.Trans.Maybe
 import Control.Monad.Logic
-import Control.Proxy
+import Control.Proxy (Producer,Consumer,ProxyFast, respond)
 import qualified Data.Text as T
 import qualified Data.ByteString as B
 
@@ -89,7 +89,7 @@ instance Unpackable a => Unpackable (Tree a) where
 
 -- useful MonadBase instances
 
-instance MonadBase b m => MonadBase b (Proxy x y u v m) where
+instance MonadBase b m => MonadBase b (ProxyFast x y u v m) where
     liftBase = lift.liftBase
 
 instance MonadBase b m => MonadBase b (LogicT m) where
@@ -113,8 +113,8 @@ class Functor l => XanelaLog l where
 data LogEntry = TextEntry T.Text 
                 |ImageEntry Image
 
-type LogProducer m = Server () LogEntry m
-type LogConsumer m = Client () LogEntry m
+type LogProducer m = Producer ProxyFast LogEntry m
+type LogConsumer m = Consumer ProxyFast LogEntry m
 
 instance Monad m => XanelaLog (LogProducer m) where
     xanlog = respond 
