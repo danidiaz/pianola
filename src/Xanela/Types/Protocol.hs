@@ -176,7 +176,7 @@ instance Unpackable (Cell Protocol) where
                 hoistEither click_or_fail::Protocol ()
                 getgui 
             expandCollapse b = do
-                expand_or_fail <- call [pack "expandCollapse", pack xanelaid, pack componentid, pack rowid] (AI.parserToIteratee get)
+                expand_or_fail <- call [pack "expandCollapseCell", pack xanelaid, pack componentid, pack rowid, pack b] (AI.parserToIteratee get)
                 hoistEither expand_or_fail::Protocol ()
                 getgui 
             
