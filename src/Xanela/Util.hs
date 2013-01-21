@@ -4,6 +4,9 @@
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveTraversable #-}
 
 module Xanela.Util (
         replusify,
@@ -20,11 +23,21 @@ module Xanela.Util (
         LogEntry(..),
         Image,
         LogConsumer,
-        LogProducer    
+        LogProducer,
+        Nullipotent(..),
+        Sealed(..),
+        ObserverF(..),
+        Observer(..),
+        focus,
+        Pianola(..),
+        Delay,
+        playPianola
     ) where
 
 import Prelude hiding (catch,(.),id)
 import Control.Category
+import Data.Foldable (Foldable)
+import Data.Traversable
 import Data.Tree
 import Data.List
 import Data.MessagePack
@@ -33,9 +46,12 @@ import Control.Monad
 import Control.Comonad
 import Control.Applicative
 import Control.Monad.Base
+import Control.Monad.Trans.Writer
 import Control.Monad.Trans.Maybe
-import Control.Monad.Logic
-import Control.Proxy (Producer,Consumer,ProxyFast, respond)
+import Control.Monad.Logic hiding (observe)
+import Control.Monad.Free
+import Control.MFunctor
+import Control.Proxy -- (Producer,Consumer,ProxyFast, respond, fromListS,>->)
 import qualified Data.Text as T
 import qualified Data.ByteString as B
 
@@ -124,3 +140,56 @@ instance (Monad l, XanelaLog l) => XanelaLog (LogicT l) where
 
 instance (Monad l, XanelaLog l) => XanelaLog (MaybeT l) where
     xanlog = lift . xanlog
+
+-- 
+newtype Nullipotent m a = Nullipotent { runNullipotent:: m a }
+   deriving (Eq, Ord, Read, Show, Functor, Foldable, Traversable)
+   
+instance (Monad m) => Monad (Nullipotent m) where
+   (Nullipotent m) >>= k = Nullipotent $ m >>= (runNullipotent . k)
+   return = Nullipotent . return
+   
+data Sealed m = Sealed {
+       tags:: [T.Text],
+       unseal:: m ()
+   }
+   
+type Pr t = Producer ProxyFast t
+
+type Observation l m a = MaybeT (Pr l (Nullipotent m)) a 
+
+data ObserverF l o a = ObserverF { unObserverF :: forall m. Monad m => o m -> Observation l m a }
+   
+instance Functor (ObserverF l o) where
+   fmap f (ObserverF x) = ObserverF $ (fmap.liftM) f x
+
+type Observer l o = Free (ObserverF l o)
+
+focus :: (forall m. Monad m => o m -> Observation l m (o' m)) -> Observer l o' a -> Observer l o a
+focus prefix v =
+   let nattrans (ObserverF k) = ObserverF $ prefix >=> k
+   in hoistFree nattrans v
+
+runObserver :: Monad m => m (o m) -> Observer l o a -> MaybeT (Pr l m) a
+runObserver _ (Pure b) = return b
+runObserver mom (Free f) =
+   let removeNullipotent = fmap.mapMaybeT $ hoist runNullipotent
+   in join $ (lift . lift $ mom) >>= removeNullipotent (unObserverF $ runObserver mom <$> f)
+
+type Delay = Int
+
+type Pianola l' l o m a = Pr (Sealed m) (Pr Delay (MaybeT (Pr l' (Observer l o)))) a 
+
+playPianola :: Monad m => m (o m) -> Pianola l' l o m a -> Pr Delay (MaybeT (Pr l' (MaybeT (Pr l m)))) a
+playPianola mom pi =
+    let pianola' = hoist (hoist (mapMaybeT (hoist $ runObserver mom))) $ pi 
+        injector () = forever $ do
+            s <- request ()
+            lift . lift . lift . lift . lift . lift $ unseal s -- this should be private
+    in runProxy $ const pianola' >-> injector
+
+    
+
+
+
+

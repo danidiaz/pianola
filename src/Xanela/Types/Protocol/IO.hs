@@ -37,28 +37,23 @@ data Endpoint = Endpoint {
     }
 
 runFree:: Free ProtocolF a -> EitherT RunInIOError (ReaderT Endpoint IO) a  
-runFree ( Free x ) = case x of 
-    Call b i -> let
-                    iterIO = I.ilift (return . runIdentity) i
+runFree ( Free (Call b i) ) = do
+    let
+        iterIO = I.ilift (return . runIdentity) i
 
-                    rpcCall :: Endpoint -> (Handle -> IO b) -> IO b
-                    rpcCall endpoint what2do = withSocketsDo $ do
-                          bracket (connectTo (hostName endpoint) (portID endpoint))
-                                  hClose
-                                  what2do
-                    
-                    doStuff ii h = do
-                        mapM_ (BL.hPutStr h) b
-                        hFlush h
-                        I.run =<< IH.enumHandle 1024 h ii   
-                in do
-                       endp <- lift ask
-                       nextFree <- liftIO $ rpcCall endp $ doStuff iterIO    
-                       runFree nextFree 
-    Delay i n -> do
-                    liftIO . threadDelay . (*1000000) $ i
-                    runFree n
-runFree ( Pure a ) = return a 
+        rpcCall :: Endpoint -> (Handle -> IO b) -> IO b
+        rpcCall endpoint what2do = withSocketsDo $ do
+              bracket (connectTo (hostName endpoint) (portID endpoint))
+                      hClose
+                      what2do
+        
+        doStuff ii h = do
+            mapM_ (BL.hPutStr h) b
+            hFlush h
+            I.run =<< IH.enumHandle 1024 h ii   
+   endp <- lift ask
+   nextFree <- liftIO $ rpcCall endp $ doStuff iterIO    
+   runFree nextFree 
 
 runProtocol :: Protocol a -> EitherT ServerError (EitherT RunInIOError (ReaderT Endpoint IO)) a  
 runProtocol = EitherT . runFree . runEitherT

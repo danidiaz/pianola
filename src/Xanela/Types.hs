@@ -8,7 +8,6 @@
 
 module Xanela.Types (
         GUI (..),
-        GUIAction,
         Window (..),
         WindowInfo (..),
         image,
@@ -51,13 +50,7 @@ import Control.Monad.Trans.Class
 
 import Xanela.Util
 
-data GUI m = GUI
-    {
-        _gui::[Window m],
-        _wait::Int -> GUIAction m
-    }
-
-type GUIAction m = m (GUI m)
+type GUI m = Forest (Window m)
 
 type Window m = Tree (WindowInfo m)
 
@@ -68,9 +61,9 @@ data WindowInfo m = WindowInfo
         _menu::[Component m],
         _popupLayer:: [Component m],
         _topc::Component m,
-        _image::m Image,
-        _escape::GUIAction m,
-        _close::GUIAction m
+        _image::Nullipotent m Image,
+        _escape::Sealed m,
+        _close::Sealed m
     } 
 
 type Component m = Tree (ComponentInfo m)
@@ -84,16 +77,16 @@ data ComponentInfo m = ComponentInfo
         _text::Maybe T.Text,
         _enabled::Bool,
         _componentType::ComponentType m,
-        _rightClick::GUIAction m
+        _rightClick::Sealed m
     } 
 
 data ComponentType m =
      Panel
-    |Toggleable Bool (Bool -> GUIAction m)
-    |Button (GUIAction m)
-    |TextField (Maybe (T.Text -> GUIAction m)) -- Nothing if not editable
+    |Toggleable Bool (Bool -> Sealed m)
+    |Button (Sealed m)
+    |TextField (Maybe (T.Text -> Sealed m)) -- Nothing if not editable
     |Label
-    |ComboBox (Maybe (Component m)) (GUIAction m)
+    |ComboBox (Maybe (Component m)) (Sealed m)
     |List [Cell m]
     |Table [[Cell m]]
     |Treegui (Forest (Cell m))
@@ -104,9 +97,9 @@ data ComponentType m =
 data Cell m = Cell 
     {
         renderer::Component m,
-        clickCell::GUIAction m,
-        doubleClickCell::GUIAction m,
-        expand:: Maybe (Bool -> GUIAction m)
+        clickCell::Sealed m,
+        doubleClickCell::Sealed m,
+        expand:: Maybe (Bool -> Sealed m)
     }
 
 data Tab m = Tab
@@ -114,7 +107,7 @@ data Tab m = Tab
         tabText::T.Text,
         tabTooltip::Maybe T.Text,
         isTabSelected:: Bool,
-        selectTab::GUIAction m
+        selectTab::Sealed m
     }
 
 -- logic helpers

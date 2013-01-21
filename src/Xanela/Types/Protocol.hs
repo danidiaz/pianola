@@ -20,6 +20,7 @@ import qualified Data.Attoparsec.Iteratee as AI
 import qualified Data.ByteString as B 
 import qualified Data.ByteString.Lazy as BL
 import Data.Functor.Identity
+import Data.Functor.Compose
 import Control.Category
 import Control.Error
 import Control.Monad
@@ -31,26 +32,14 @@ import Control.Monad.Free
 import Xanela.Types
 import Xanela.Util
 
-
-data ProtocolF x = Call [BL.ByteString] (I.Iteratee B.ByteString Identity x) 
-             |Delay Int x
-
-instance MonadBase Protocol Protocol where
-    liftBase = id
-
-instance Functor ProtocolF where
-    fmap f (Call bs i) = Call bs (fmap f i) 
-    fmap f (Delay i x) = Delay i (f x)
-
-data ServerError = ObsoleteRef | InternalError
+type ProtocolF x = Compose ((,) [BL.ByteString]) (I.Iteratee B.ByteString Identity) x
 
 type Protocol = EitherT ServerError (Free ProtocolF)
 
 call :: [BL.ByteString] -> (I.Iteratee B.ByteString Identity x) -> Protocol x
-call bs i = lift . liftF $ Call bs i
+call bs i = lift . liftF $ Compose (bs,i)
 
-delay :: Int -> Protocol ()
-delay i = lift . liftF $ Delay i ()
+data ServerError = ObsoleteRef | InternalError
 
 instance Unpackable (ServerError) where
     get = do
@@ -66,14 +55,6 @@ getgui = do
             gui_or_fail <- call [pack "snapshot"] (AI.parserToIteratee get)
             hoistEither gui_or_fail
 
-instance Unpackable (GUI Protocol) where
-    get = do
-        v1 <- get
-        let delayf d = do
-                            delay d
-                            getgui
-        return $ GUI v1 delayf
-
 instance Unpackable (WindowInfo Protocol) where
     get = do
         snapid <- get::Parser Int
@@ -83,17 +64,15 @@ instance Unpackable (WindowInfo Protocol) where
         v3 <- get
         v4 <- get
         v5 <- get
-        let getWindowImage = do
+        let getWindowImage = Nullipotent $ do
                 image_or_fail <- call [pack "getWindowImage", pack snapid, pack wid] (AI.parserToIteratee get)
                 hoistEither image_or_fail::Protocol Image
-        let escape = do
+        let escape = Sealed [] $ do
                 escape_or_fail <- call [pack "escape", pack snapid, pack wid] (AI.parserToIteratee get)
                 hoistEither escape_or_fail::Protocol ()
-                getgui
-        let closeWindow = do
+        let closeWindow = Sealed [] $ do
                 close_or_fail <- call [pack "closeWindow", pack snapid, pack wid] (AI.parserToIteratee get)
                 hoistEither close_or_fail::Protocol ()
-                getgui
         return (WindowInfo v1 v2 v3 v4 v5 getWindowImage escape closeWindow)
 
 instance Unpackable (ComponentInfo Protocol) where
@@ -107,10 +86,9 @@ instance Unpackable (ComponentInfo Protocol) where
         v5 <- get
         v6 <- get
         v7 <- get
-        let rightClick = do
+        let rightClick = Sealed [] $ do
                 click_or_fail <- call [pack "rightClick", pack snapid, pack cid] (AI.parserToIteratee get)
                 hoistEither click_or_fail::Protocol ()
-                getgui
         return (ComponentInfo v1 v2 v3 v4 v5 v6 v7 rightClick)
 
 instance Unpackable (ComponentType Protocol) where
@@ -122,29 +100,26 @@ instance Unpackable (ComponentType Protocol) where
             2 -> do 
                 v2 <- get::Parser Int
                 v3 <- get
-                let toggle b = do
+                let toggle b = Sealed [] $ do
                         toggle_or_fail <- call [pack "toggle", pack snapid, pack v2, pack (b::Bool)] (AI.parserToIteratee get)
                         hoistEither toggle_or_fail::Protocol ()
-                        getgui
                 return $ Toggleable v3 toggle
             3 -> do 
                 v2 <- get::Parser Int
-                let click = do
+                let click = Sealed [] $ do
                         click_or_fail <- call [pack "click", pack snapid, pack v2] (AI.parserToIteratee get)
                         hoistEither click_or_fail::Protocol ()
-                        getgui
                 return $ Button click
             4 -> do
                 v2 <- get::Parser (Maybe Int) 
-                let setText cid txt = do
+                let setText cid txt = Sealed [] $ do
                         text_or_fail <- call [pack "setTextField", pack snapid, pack cid, pack txt] (AI.parserToIteratee get)
                         hoistEither text_or_fail::Protocol ()
-                        getgui 
                 return . TextField $ fmap setText v2
             5 -> return Label
             6 -> do
                 cid <- get::Parser (Maybe Int) 
-                let clickCombo = do
+                let clickCombo = Sealed [] $ do
                         click_or_fail <- call [pack "clickCombo", pack snapid, pack cid] (AI.parserToIteratee get)
                         hoistEither click_or_fail::Protocol ()
                         getgui 
@@ -167,18 +142,15 @@ instance Unpackable (Cell Protocol) where
         columnid <- get::Parser Int
         renderer <- get
         isTreeCell <- get
-        let clickCell = do
+        let clickCell = Sealed [] $ do
                 click_or_fail <- call [pack "clickCell", pack snapid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
                 hoistEither click_or_fail::Protocol ()
-                getgui 
-            doubleClickCell = do
+            doubleClickCell = Sealed [] $ do
                 click_or_fail <- call [pack "doubleClickCell", pack snapid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
                 hoistEither click_or_fail::Protocol ()
-                getgui 
-            expandCollapse b = do
+            expandCollapse b = Sealed [] $ do
                 expand_or_fail <- call [pack "expandCollapseCell", pack snapid, pack componentid, pack rowid, pack b] (AI.parserToIteratee get)
                 hoistEither expand_or_fail::Protocol ()
-                getgui 
             
         return $ Cell renderer clickCell doubleClickCell (guard isTreeCell *> pure expandCollapse)
 
@@ -190,9 +162,8 @@ instance Unpackable (Tab Protocol) where
         text <- get
         tooltipMaybe <- get
         selected <- get
-        let selecttab = do
+        let selecttab = Sealed [] $ do
                 selecttab_or_fail <- call [pack "selectTab", pack snapid, pack componentid, pack tabid] (AI.parserToIteratee get)
                 hoistEither selecttab_or_fail::Protocol ()
-                getgui 
         return $ Tab text tooltipMaybe selected selecttab
     
