@@ -8,7 +8,7 @@
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
 
-module Xanela.Util (
+module Pianola.Util (
         replusify,
         treeflat,
         treeflat',
@@ -19,7 +19,7 @@ module Xanela.Util (
         threadKs,
         narrow,
         narrowK,
-        XanelaLog(..),
+        PianolaLog(..),
         LogEntry(..),
         Image,
         LogConsumer,
@@ -114,7 +114,7 @@ instance MonadBase b m => MonadBase b (LogicT m) where
 -- logging
 type Image = B.ByteString
 
-class Functor l => XanelaLog l where
+class Functor l => PianolaLog l where
     xanlog::LogEntry -> l ()
 
     logmsg::T.Text -> l ()
@@ -132,13 +132,13 @@ data LogEntry = TextEntry T.Text
 type LogProducer m = Producer ProxyFast LogEntry m
 type LogConsumer m = Consumer ProxyFast LogEntry m
 
-instance Monad m => XanelaLog (LogProducer m) where
+instance Monad m => PianolaLog (LogProducer m) where
     xanlog = respond 
 
-instance (Monad l, XanelaLog l) => XanelaLog (LogicT l) where
+instance (Monad l, PianolaLog l) => PianolaLog (LogicT l) where
     xanlog = lift . xanlog
 
-instance (Monad l, XanelaLog l) => XanelaLog (MaybeT l) where
+instance (Monad l, PianolaLog l) => PianolaLog (MaybeT l) where
     xanlog = lift . xanlog
 
 -- 

@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Xanela.Types.Protocol.IO (
+module Pianola.Protocol.IO (
         RunInIOError(..),
         Endpoint(..),
         runFree,
@@ -27,7 +27,7 @@ import Control.Monad.Trans.Class
 import qualified Data.ByteString as B 
 import qualified Data.ByteString.Lazy as BL
 
-import Xanela.Types.Protocol
+import Pianola.Protocol
 
 data RunInIOError = CommError T.Text | ParseError T.Text
 

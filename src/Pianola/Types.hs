@@ -6,7 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Xanela.Types (
+module Pianola.Types (
         GUI (..),
         Window (..),
         WindowInfo (..),
@@ -48,7 +48,7 @@ import Control.Monad
 import Control.Monad.Base
 import Control.Monad.Trans.Class
 
-import Xanela.Util
+import Pianola.Util
 
 type GUI m = Forest (Window m)
 

@@ -31,11 +31,12 @@ import Control.Monad.Logic
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Free  
 
-import Xanela.Util
-import Xanela.Types
-import Xanela.Types.Combinators
-import Xanela.Types.Protocol
-import Xanela.Types.Protocol.IO
+import Pianola
+import Pianola.Util
+import Pianola.Types
+import Pianola.Types.Combinators
+import Pianola.Types.Protocol
+import Pianola.Types.Protocol.IO
 
 
 testCase:: (Monad m, MonadBase m m) => MK GUI GUI m

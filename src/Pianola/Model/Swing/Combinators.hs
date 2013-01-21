@@ -6,7 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Xanela.Types.Combinators (
+module Pianola.Model.Swing.Combinators (
         MK,
         LK,
         retry,
@@ -27,8 +27,8 @@ import Control.Monad.Trans.Class
 import Control.Monad.Logic
 import Control.Monad.Trans.Maybe
 
-import Xanela.Util
-import Xanela.Types
+import Pianola.Util
+import Pianola.Model.Swing
 
 type MK it ot m = it m -> MaybeT (LogProducer m) (ot m)
 type LK it ot m = it m -> LogicT (LogProducer m) (ot m)

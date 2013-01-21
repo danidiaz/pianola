@@ -4,10 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Xanela.Types.Protocol (
-        ServerError (..),
-        ProtocolF (..),
-        Protocol (..),
+module Pianola.Model.Swing.Protocol (
         getgui
     ) where
 
@@ -29,26 +26,9 @@ import Control.Monad.Base
 import Control.Monad.Trans.Class
 import Control.Monad.Free
 
-import Xanela.Types
-import Xanela.Util
-
-type ProtocolF x = Compose ((,) [BL.ByteString]) (I.Iteratee B.ByteString Identity) x
-
-type Protocol = EitherT ServerError (Free ProtocolF)
-
-call :: [BL.ByteString] -> (I.Iteratee B.ByteString Identity x) -> Protocol x
-call bs i = lift . liftF $ Compose (bs,i)
-
-data ServerError = ObsoleteRef | InternalError
-
-instance Unpackable (ServerError) where
-    get = do
-        tag <- get::Parser Int
-        case tag of
-            1 -> do
-                return $ ObsoleteRef
-            2 -> do 
-                return $ InternalError
+import Pianola.Util
+import Pianola.Protocol
+import Pianola.Model.Swing
 
 getgui :: Protocol (GUI Protocol)
 getgui = do 
