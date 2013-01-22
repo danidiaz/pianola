@@ -10,30 +10,11 @@ module Pianola.Model.Swing (
         GUI (..),
         Window (..),
         WindowInfo (..),
-        image,
-        close,
-        escape,
         Component (..),
         ComponentInfo (..),
         ComponentType (..),
         Cell (..),
-        Tab (..),
-        windowsflat,
-        menuflat,
-        popupflat,
-        contentsflat,
-        contentsflat',
-        wholewindowflat,
-        text,
-        textEq,
-        wait,
-        click,
-        clickCombo,
-        listCell,
-        tab,
-        toggle,
-        rightClick,
-        setText
+        Tab (..)
     ) where
 
 import Prelude hiding (catch,(.))
@@ -111,70 +92,66 @@ data Tab m = Tab
     }
 
 -- logic helpers
-windowsflat:: MonadPlus m => GUI n -> m (WindowInfo n)
-windowsflat = forestflat . _gui
 
-menuflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
-menuflat = forestflat . _menu
+-- menuflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
+-- menuflat = forestflat . _menu
+-- 
+-- popupflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
+-- popupflat = forestflat . _popupLayer
+-- 
+-- contentsflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
+-- contentsflat =  treeflat . _topc
+-- 
+-- contentsflat':: MonadPlus m => WindowInfo n -> m (Component n)
+-- contentsflat' =  treeflat' . _topc
 
-popupflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
-popupflat = forestflat . _popupLayer
+-- wholewindowflat::MonadPlus m => WindowInfo n -> m (ComponentInfo n)
+-- wholewindowflat w = msum $ map ($w) [menuflat,popupflat,contentsflat]
 
-contentsflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
-contentsflat =  treeflat . _topc
-
-contentsflat':: MonadPlus m => WindowInfo n -> m (Component n)
-contentsflat' =  treeflat' . _topc
-
-wholewindowflat::MonadPlus m => WindowInfo n -> m (ComponentInfo n)
-wholewindowflat w = msum $ map ($w) [menuflat,popupflat,contentsflat]
-
-text:: MonadPlus m => (T.Text -> Bool) -> ComponentInfo n -> m (ComponentInfo n)
-text f c = do
-    t <- justZ._text $ c 
-    guard $ f t
-    return c
-
-textEq:: MonadPlus m => T.Text -> ComponentInfo n -> m (ComponentInfo n)
-textEq t = text $ (==) t
-
-image::MonadBase n m => WindowInfo n -> m Image
-image = liftBase . _image
-
-close::MonadBase n m => WindowInfo n -> m (GUI n)
-close = liftBase . _close
-
-escape::MonadBase n m => WindowInfo n -> m (GUI n)
-escape = liftBase . _escape
-
-wait::MonadBase n m => Int -> GUI n -> m (GUI n)
-wait i = liftBase . flip _wait i
-
-toggle:: (MonadBase n m, MonadPlus m) => Bool -> ComponentInfo n -> m (GUI n)
-toggle b (_componentType -> Toggleable _ a) = liftBase . a $ b
-toggle _ _ = mzero
-
-click:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (GUI n)
-click (_componentType -> Button a) = liftBase a
-click _ = mzero
-
-clickCombo:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (GUI n)
-clickCombo (_componentType -> ComboBox _ a) = liftBase a
-clickCombo _ = mzero
-
-listCell:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (Cell n)
-listCell (_componentType -> List l) = replusify l
-listCell _ = mzero
-
-tab:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (Tab n)
-tab (_componentType -> TabbedPane p) = replusify p
-tab _ = mzero
-
-rightClick:: (MonadBase n m) => ComponentInfo n -> m (GUI n)
-rightClick = liftBase . _rightClick
-
-setText:: (MonadBase n m, MonadPlus m) => T.Text -> ComponentInfo n -> m (GUI n)
-setText txt c = case _componentType c of
-    TextField (Just f) -> liftBase . f $ txt
-    _ -> mzero
+-- text:: MonadPlus m => (T.Text -> Bool) -> ComponentInfo n -> m (ComponentInfo n)
+-- text f c = do
+--     t <- justZ._text $ c 
+--     guard $ f t
+--     return c
+-- 
+-- textEq:: MonadPlus m => T.Text -> ComponentInfo n -> m (ComponentInfo n)
+-- textEq t = text $ (==) t
+-- 
+-- image::MonadBase n m => WindowInfo n -> m Image
+-- image = liftBase . _image
+-- 
+-- close::MonadBase n m => WindowInfo n -> m (GUI n)
+-- close = liftBase . _close
+-- 
+-- escape::MonadBase n m => WindowInfo n -> m (GUI n)
+-- escape = liftBase . _escape
+-- 
+-- 
+-- toggle:: (MonadBase n m, MonadPlus m) => Bool -> ComponentInfo n -> m (GUI n)
+-- toggle b (_componentType -> Toggleable _ a) = liftBase . a $ b
+-- toggle _ _ = mzero
+-- 
+-- click:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (GUI n)
+-- click (_componentType -> Button a) = liftBase a
+-- click _ = mzero
+-- 
+-- clickCombo:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (GUI n)
+-- clickCombo (_componentType -> ComboBox _ a) = liftBase a
+-- clickCombo _ = mzero
+-- 
+-- listCell:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (Cell n)
+-- listCell (_componentType -> List l) = replusify l
+-- listCell _ = mzero
+-- 
+-- tab:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (Tab n)
+-- tab (_componentType -> TabbedPane p) = replusify p
+-- tab _ = mzero
+-- 
+-- rightClick:: (MonadBase n m) => ComponentInfo n -> m (GUI n)
+-- rightClick = liftBase . _rightClick
+-- 
+-- setText:: (MonadBase n m, MonadPlus m) => T.Text -> ComponentInfo n -> m (GUI n)
+-- setText txt c = case _componentType c of
+--     TextField (Just f) -> liftBase . f $ txt
+--     _ -> mzero
 -- end logic helpers

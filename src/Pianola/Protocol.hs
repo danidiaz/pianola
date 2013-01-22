@@ -6,9 +6,9 @@
 
 module Pianola.Protocol (
         ServerError (..),
-        ProtocolF (..),
+        ProtocolF,
         Protocol (..),
-        getgui
+        call
     ) where
 
 import Prelude hiding (catch,(.),id)
@@ -29,10 +29,10 @@ import Control.Monad.Base
 import Control.Monad.Trans.Class
 import Control.Monad.Free
 
-import Pianola.Types
+import Pianola.Model.Swing
 import Pianola.Util
 
-type ProtocolF x = Compose ((,) [BL.ByteString]) (I.Iteratee B.ByteString Identity) x
+type ProtocolF = Compose ((,) [BL.ByteString]) (I.Iteratee B.ByteString Identity) 
 
 type Protocol = EitherT ServerError (Free ProtocolF)
 

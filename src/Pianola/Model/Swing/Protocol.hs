@@ -102,7 +102,6 @@ instance Unpackable (ComponentType Protocol) where
                 let clickCombo = Sealed [] $ do
                         click_or_fail <- call [pack "clickCombo", pack snapid, pack cid] (AI.parserToIteratee get)
                         hoistEither click_or_fail::Protocol ()
-                        getgui 
                 renderer <- get 
                 return $ ComboBox renderer clickCombo
             7 -> List <$> get

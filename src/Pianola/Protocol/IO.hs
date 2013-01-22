@@ -13,6 +13,7 @@ import qualified Data.Text as T
 import qualified Data.Iteratee as I
 import qualified Data.Iteratee.IO.Handle as IH
 import Network 
+import Data.Functor.Compose
 import Control.Category
 import Control.Error
 import Control.Applicative
@@ -37,9 +38,9 @@ data Endpoint = Endpoint {
     }
 
 runFree:: Free ProtocolF a -> EitherT RunInIOError (ReaderT Endpoint IO) a  
-runFree ( Free (Call b i) ) = do
-    let
-        iterIO = I.ilift (return . runIdentity) i
+--runFree ( Free (Call b i) ) = do
+runFree ( Free (Compose (b,i)) ) = do
+    let iterIO = I.ilift (return . runIdentity) i
 
         rpcCall :: Endpoint -> (Handle -> IO b) -> IO b
         rpcCall endpoint what2do = withSocketsDo $ do
@@ -51,9 +52,9 @@ runFree ( Free (Call b i) ) = do
             mapM_ (BL.hPutStr h) b
             hFlush h
             I.run =<< IH.enumHandle 1024 h ii   
-   endp <- lift ask
-   nextFree <- liftIO $ rpcCall endp $ doStuff iterIO    
-   runFree nextFree 
+    endp <- lift ask
+    nextFree <- liftIO $ rpcCall endp $ doStuff iterIO    
+    runFree nextFree 
 
 runProtocol :: Protocol a -> EitherT ServerError (EitherT RunInIOError (ReaderT Endpoint IO)) a  
 runProtocol = EitherT . runFree . runEitherT

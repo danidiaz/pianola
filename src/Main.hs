@@ -33,10 +33,9 @@ import Control.Monad.Trans.Free
 
 import Pianola
 import Pianola.Util
-import Pianola.Types
-import Pianola.Types.Combinators
-import Pianola.Types.Protocol
-import Pianola.Types.Protocol.IO
+import Pianola.Model.Swing
+import Pianola.Model.Swing.Protocol
+import Pianola.Protocol.IO
 
 
 testCase:: (Monad m, MonadBase m m) => MK GUI GUI m
