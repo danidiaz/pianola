@@ -33,10 +33,15 @@ import Control.Monad.Trans.Free
 
 import Pianola
 import Pianola.Util
+import Pianola.Protocol
 import Pianola.Model.Swing
 import Pianola.Model.Swing.Protocol
 import Pianola.Protocol.IO
 
+type Test :: Pianola PianolaLog PianolaLog GUI Protocol ()
+
+testCase1:: Test
+testCase1 = 
 
 testCase:: (Monad m, MonadBase m m) => MK GUI GUI m
 testCase g = do
