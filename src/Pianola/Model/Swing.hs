@@ -22,7 +22,10 @@ module Pianola.Model.Swing (
         textEq,
         click,
         toggle,
-        clickCombo
+        clickCombo,
+        listCell,
+        tab,
+        setText
     ) where
 
 import Prelude hiding (catch,(.))
@@ -145,24 +148,24 @@ click:: MonadPlus n => ComponentInfo m -> n (Sealed m)
 click (_componentType -> Button a) = return a
 click _ = mzero
 
-clickCombo:: (MonadPlus n) => ComponentInfo m -> n (Sealed m)
+clickCombo:: MonadPlus n => ComponentInfo m -> n (Sealed m)
 clickCombo (_componentType -> ComboBox _ a) = return a
 clickCombo _ = mzero
 
- 
--- listCell:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (Cell n)
--- listCell (_componentType -> List l) = replusify l
--- listCell _ = mzero
--- 
--- tab:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (Tab n)
--- tab (_componentType -> TabbedPane p) = replusify p
--- tab _ = mzero
--- 
--- rightClick:: (MonadBase n m) => ComponentInfo n -> m (GUI n)
--- rightClick = liftBase . _rightClick
--- 
--- setText:: (MonadBase n m, MonadPlus m) => T.Text -> ComponentInfo n -> m (GUI n)
--- setText txt c = case _componentType c of
---     TextField (Just f) -> liftBase . f $ txt
---     _ -> mzero
+listCell:: MonadPlus m => ComponentInfo n -> m (Cell n)
+listCell (_componentType -> List l) = replusify l
+listCell _ = mzero
+
+tab:: MonadPlus m => ComponentInfo n -> m (Tab n)
+tab (_componentType -> TabbedPane p) = replusify p
+tab _ = mzero
+
+--rightClick:: MonadPlus m => ComponentInfo n -> m ()
+--rightClick = liftBase . _rightClick
+
+setText:: MonadPlus m => T.Text -> ComponentInfo n -> m (Sealed n)
+setText txt c = case _componentType c of
+    TextField (Just f) -> return $ f txt
+    _ -> mzero
+
 -- end logic helpers

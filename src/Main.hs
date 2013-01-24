@@ -39,70 +39,77 @@ import Pianola.Model.Swing.Protocol
 import Pianola.Model.Swing.Combinators
 import Pianola.Protocol.IO
 
-type Test :: Pianola PianolaLog PianolaLog GUI Protocol ()
+type Test = Pianola GUI PianolaLog Protocol ()
 
 testCase1:: Test
-testCase1 = 
+testCase1 = focus_ forestflat $ do
+    poke_ $ contentsflat >=> textEq "foo" >=> click
+    poke_ $ contentsflat >=> textEq "dialog button" >=> click
+    logmsg "foo log message"
+    withMenuBarEq ["Menu1","SubMenu1","submenuitem2"] $ Just True
+    logmsg "getting a screenshot"
+    logimg =<< peek_ (forestflat >=> liftNp . _image) 
+    return () 
 
 testCase:: (Monad m, MonadBase m m) => MK GUI GUI m
 testCase g = do
-         let prefix = windowsflat 
+         let prefix = forestflat 
          g <- threadKs (wait 2) narrowK (prefix >=> contentsflat,click) [textEq "foo", textEq "dialog button"] >=>
               logmsgK "foo log message" >=>
               withMenuBarEq prefix (Just True) ["Menu1","SubMenu1","submenuitem2"] >=>
               logmsgK "getting a screenshot"
               $g
-         i <- narrowK ( windowsflat >=> image ) $ g
+         i <- narrowK ( forestflat >=> image ) $ g
          logimg i
          logmsg "now for a second menu"
          g <- withMenuBarEq prefix Nothing ["Menu1","SubMenu1","submenuitem1"] >=>
               wait 2 >=>
-              narrowK (windowsflat >=> contentsflat >=> textEq "foo" ) >=>
+              narrowK (forestflat >=> contentsflat >=> textEq "foo" ) >=>
               logmsgK "mmmmmmm" >=>
               click >=>
               wait 2 >=>
-              narrowK ( windowsflat >=> contentsflat >=> textEq "dialog button" >=> click ) >=>
+              narrowK ( forestflat >=> contentsflat >=> textEq "dialog button" >=> click ) >=>
               logmsgK "this should show the combo..." >=>
-              narrowK ( windowsflat >=> contentsflat >=> clickCombo ) >=> 
+              narrowK ( forestflat >=> contentsflat >=> clickCombo ) >=> 
               wait 2
               $g
-         g <- narrow $ do candidateCell <- windowsflat >=> popupflat >=> listCell $ g
+         g <- narrow $ do candidateCell <- forestflat >=> popupflat >=> listCell $ g
                           c <- treeflat . renderer $ candidateCell 
                           textEq "ccc" c
                           liftBase $ clickCell candidateCell  
          g <- wait 2 >=> logmsgK "Now for a change of tab" $ g
-         g <- narrow $ do tab <-  windowsflat >=> contentsflat >=> tab $ g
+         g <- narrow $ do tab <-  forestflat >=> contentsflat >=> tab $ g
                           logmsg . tabText $ tab -- logging inside LogicT
                           guard $ tabText tab == "tab two"  
                           liftBase $ selectTab tab   
          g <- wait 2 g
-         g <- narrow $ do Table ll <- windowsflat >=> contentsflat >=> return . _componentType $ g
+         g <- narrow $ do Table ll <- forestflat >=> contentsflat >=> return . _componentType $ g
                           cell <- replusify . concat $ ll
                           c <- replusify . flatten . renderer $ cell
                           txt <- justZ . _text $ c
                           guard $ txt == "7" 
                           liftBase $ clickCell cell
          g <- wait 2 g
-         g <- narrow $ do Table ll <- windowsflat >=> contentsflat >=> return . _componentType $ g
+         g <- narrow $ do Table ll <- forestflat >=> contentsflat >=> return . _componentType $ g
                           cell <- replusify . concat $ ll
                           c <- treeflat . renderer $ cell
                           txt <- justZ . _text $ c
                           guard $ txt == "4" 
                           liftBase $ doubleClickCell cell
          g <- wait 2 g
-         g <- narrow $ do ct <- windowsflat >=> contentsflat' $ g
+         g <- narrow $ do ct <- forestflat >=> contentsflat' $ g
                           Table _ <- return . _componentType . rootLabel $ ct -- is it a table?
                           c <- treeflat ct -- the table's children
                           txt <- justZ._text $ c
                           guard $ txt == "4" 
                           setText "77" c
          g <- wait 2 g
-         g <- narrow $ do tab <-  windowsflat >=> contentsflat >=> tab $ g
+         g <- narrow $ do tab <-  forestflat >=> contentsflat >=> tab $ g
                           logmsg . tabText $ tab -- logging inside LogicT
                           guard $ tabText tab == "tab JTree a"  
                           liftBase $ selectTab tab   
          g <- wait 2 g
-         g <- narrow $ do Treegui forest <- windowsflat >=> contentsflat >=> return . _componentType $ g
+         g <- narrow $ do Treegui forest <- forestflat >=> contentsflat >=> return . _componentType $ g
                           tree <- replusify forest
                           cell <- treeflat tree 
                           c <- treeflat . renderer $ cell
@@ -111,7 +118,7 @@ testCase g = do
                           expandf <- justZ . expand $ cell
                           liftBase $ expandf True
          g <- wait 2 g
-         narrowK ( windowsflat >=> close ) >=> logmsgK "loggy log" $ g
+         narrowK ( forestflat >=> close ) >=> logmsgK "loggy log" $ g
 
 main :: IO ()
 main = do
