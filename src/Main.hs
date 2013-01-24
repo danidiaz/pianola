@@ -36,6 +36,7 @@ import Pianola.Util
 import Pianola.Protocol
 import Pianola.Model.Swing
 import Pianola.Model.Swing.Protocol
+import Pianola.Model.Swing.Combinators
 import Pianola.Protocol.IO
 
 type Test :: Pianola PianolaLog PianolaLog GUI Protocol ()

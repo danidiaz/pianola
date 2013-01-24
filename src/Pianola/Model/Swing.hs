@@ -14,7 +14,15 @@ module Pianola.Model.Swing (
         ComponentInfo (..),
         ComponentType (..),
         Cell (..),
-        Tab (..)
+        Tab (..),
+        menuflat,
+        popupflat,
+        contentsflat,
+        text,
+        textEq,
+        click,
+        toggle,
+        clickCombo
     ) where
 
 import Prelude hiding (catch,(.))
@@ -93,30 +101,31 @@ data Tab m = Tab
 
 -- logic helpers
 
--- menuflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
--- menuflat = forestflat . _menu
--- 
--- popupflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
--- popupflat = forestflat . _popupLayer
--- 
--- contentsflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
--- contentsflat =  treeflat . _topc
--- 
--- contentsflat':: MonadPlus m => WindowInfo n -> m (Component n)
--- contentsflat' =  treeflat' . _topc
+menuflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
+menuflat = forestflat . _menu
+ 
+popupflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
+popupflat = forestflat . _popupLayer
+ 
+contentsflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
+contentsflat =  treeflat . _topc
+ 
+contentsflat':: MonadPlus m => WindowInfo n -> m (Component n)
+contentsflat' =  treeflat' . _topc
 
--- wholewindowflat::MonadPlus m => WindowInfo n -> m (ComponentInfo n)
--- wholewindowflat w = msum $ map ($w) [menuflat,popupflat,contentsflat]
+wholewindowflat::MonadPlus m => WindowInfo n -> m (ComponentInfo n)
+wholewindowflat w = msum $ map ($w) [menuflat,popupflat,contentsflat]
 
--- text:: MonadPlus m => (T.Text -> Bool) -> ComponentInfo n -> m (ComponentInfo n)
--- text f c = do
---     t <- justZ._text $ c 
---     guard $ f t
---     return c
--- 
--- textEq:: MonadPlus m => T.Text -> ComponentInfo n -> m (ComponentInfo n)
--- textEq t = text $ (==) t
--- 
+text:: MonadPlus m => (T.Text -> Bool) -> ComponentInfo n -> m (ComponentInfo n)
+text f c = do
+    t <- justZ._text $ c 
+    guard $ f t
+    return c
+ 
+textEq:: MonadPlus m => T.Text -> ComponentInfo n -> m (ComponentInfo n)
+textEq t = text $ (==) t
+ 
+
 -- image::MonadBase n m => WindowInfo n -> m Image
 -- image = liftBase . _image
 -- 
@@ -127,18 +136,20 @@ data Tab m = Tab
 -- escape = liftBase . _escape
 -- 
 -- 
--- toggle:: (MonadBase n m, MonadPlus m) => Bool -> ComponentInfo n -> m (GUI n)
--- toggle b (_componentType -> Toggleable _ a) = liftBase . a $ b
--- toggle _ _ = mzero
+toggle:: MonadPlus n => Bool -> ComponentInfo m -> n (Sealed m)
+toggle b (_componentType -> Toggleable _ f) = return $ f b
+toggle _ _ = mzero
 -- 
--- click:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (GUI n)
--- click (_componentType -> Button a) = liftBase a
--- click _ = mzero
 -- 
--- clickCombo:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (GUI n)
--- clickCombo (_componentType -> ComboBox _ a) = liftBase a
--- clickCombo _ = mzero
--- 
+click:: MonadPlus n => ComponentInfo m -> n (Sealed m)
+click (_componentType -> Button a) = return a
+click _ = mzero
+
+clickCombo:: (MonadPlus n) => ComponentInfo m -> n (Sealed m)
+clickCombo (_componentType -> ComboBox _ a) = return a
+clickCombo _ = mzero
+
+ 
 -- listCell:: (MonadBase n m, MonadPlus m) => ComponentInfo n -> m (Cell n)
 -- listCell (_componentType -> List l) = replusify l
 -- listCell _ = mzero
