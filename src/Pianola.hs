@@ -7,7 +7,7 @@
 
 module Pianola (
         ObserverF(..),
-        liftNP,
+        liftNp,
         Observer(..),
         focusO,
         Pianola(..),
@@ -60,7 +60,7 @@ type Glance o l m a = o -> MaybeT (Pr l (Nullipotent m)) a
 
 type Multiglance o l m a = o -> LogicT (Pr l (Nullipotent m)) a
 
-liftNp :: (MonadTrans mt1, MonadTrans mt2, Monad m) => Nullipotent m a -> mt1 (mt2 (Nullipotent m)) a
+liftNp :: (Monad m, MonadTrans mt) => Nullipotent m a -> mt (Pr l (Nullipotent m)) a
 liftNp = lift . lift
 
 type ObserverF o l m = Compose ((->) o) (MaybeT (Pr l (Nullipotent m)))
