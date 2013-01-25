@@ -38,7 +38,6 @@ data Endpoint = Endpoint {
     }
 
 runFree:: Free ProtocolF a -> EitherT RunInIOError (ReaderT Endpoint IO) a  
---runFree ( Free (Call b i) ) = do
 runFree ( Free (Compose (b,i)) ) = do
     let iterIO = I.ilift (return . runIdentity) i
 
@@ -55,6 +54,7 @@ runFree ( Free (Compose (b,i)) ) = do
     endp <- lift ask
     nextFree <- liftIO $ rpcCall endp $ doStuff iterIO    
     runFree nextFree 
+runFree ( Pure a ) = return a 
 
 runProtocol :: Protocol a -> EitherT ServerError (EitherT RunInIOError (ReaderT Endpoint IO)) a  
 runProtocol = EitherT . runFree . runEitherT

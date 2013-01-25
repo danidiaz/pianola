@@ -5,7 +5,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Pianola.Model.Swing.Protocol (
-        getgui
+        snapshot
     ) where
 
 import Prelude hiding (catch,(.),id)
@@ -30,8 +30,8 @@ import Pianola.Util
 import Pianola.Protocol
 import Pianola.Model.Swing
 
-getgui :: Protocol (GUI Protocol)
-getgui = do 
+snapshot :: Protocol (GUI Protocol)
+snapshot = do 
             gui_or_fail <- call [pack "snapshot"] (AI.parserToIteratee get)
             hoistEither gui_or_fail
 

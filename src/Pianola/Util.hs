@@ -129,6 +129,9 @@ type LogConsumer m = Consumer ProxyFast LogEntry m
 instance Monad m => PianolaLog (LogProducer m) where
     xanlog = respond 
 
+--instance (Monad l, PianolaLog l) => PianolaLog (Producer ProxyFast r l) where
+--    xanlog = lift . xanlog
+
 instance (Monad l, PianolaLog l) => PianolaLog (LogicT l) where
     xanlog = lift . xanlog
 

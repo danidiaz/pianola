@@ -129,3 +129,7 @@ focus prefix pi  =
 
 focus_ :: (Functor m, Monad m) => Multiglance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
 focus_ g = focus (narrowK g)
+
+--
+instance Monad m => PianolaLog (Pianola o LogEntry m) where
+    xanlog = lift . lift . lift . xanlog

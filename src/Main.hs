@@ -30,95 +30,100 @@ import Control.Monad.Trans.Reader
 import Control.Monad.Logic
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Free  
+import Control.Concurrent (threadDelay)
 
 import Pianola
 import Pianola.Util
 import Pianola.Protocol
 import Pianola.Model.Swing
-import Pianola.Model.Swing.Protocol
+import Pianola.Model.Swing.Protocol (snapshot)
 import Pianola.Model.Swing.Combinators
 import Pianola.Protocol.IO
 
-type Test = Pianola GUI PianolaLog Protocol ()
+type Test = Pianola (GUI Protocol) LogEntry Protocol ()
 
-testCase1:: Test
-testCase1 = focus_ forestflat $ do
+testCase:: Test
+testCase = focus_ forestflat $ do
     poke_ $ contentsflat >=> textEq "foo" >=> click
     poke_ $ contentsflat >=> textEq "dialog button" >=> click
     logmsg "foo log message"
     withMenuBarEq ["Menu1","SubMenu1","submenuitem2"] $ Just True
     logmsg "getting a screenshot"
-    logimg =<< peek_ (forestflat >=> liftNp . _image) 
-    return () 
+    logimg =<< peek_ (liftNp . _image) 
+    logmsg "now for a second menu"
+    withMenuBarEq ["Menu1","SubMenu1","submenuitem1"] Nothing
+    sleep 2
+    poke_ $ contentsflat >=> textEq "foo" >=> click
+    logmsg "mmmmmmm"
+    sleep 2
+    poke_ $ contentsflat >=> textEq "dialog button" >=> click
+    logmsg "this should show the combo"
+    poke_ $ contentsflat >=> clickCombo
+    sleep 2
+    poke_ $ \g -> do 
+        candidateCell <- popupflat >=> listCell $ g
+        c <- treeflat . renderer $ candidateCell 
+        textEq "ccc" c
+        return $ clickCell candidateCell  
+    sleep 2
+    logmsg "Now for a change of tab" 
+    poke_ $ \g -> do 
+        tab <- contentsflat >=> tab $ g
+        logmsg . tabText $ tab -- logging inside LogicT
+        guard $ tabText tab == "tab two"  
+        return $ selectTab tab   
+    sleep 2
+    poke_ $ \g -> do
+        Table ll <- contentsflat >=> return . _componentType $ g
+        cell <- replusify . concat $ ll
+        c <- replusify . flatten . renderer $ cell
+        txt <- justZ . _text $ c
+        guard $ txt == "7" 
+        return $ clickCell cell
+    sleep 2
+    poke_ $ \g -> do
+        Table ll <- contentsflat >=> return . _componentType $ g
+        cell <- replusify . concat $ ll
+        c <- treeflat . renderer $ cell
+        txt <- justZ . _text $ c
+        guard $ txt == "4" 
+        return $ doubleClickCell cell
+    sleep 2
+    poke_ $ \g -> do    
+        ct <- contentsflat' $ g
+        Table _ <- return . _componentType . rootLabel $ ct -- is it a table?
+        c <- treeflat ct -- the table's children
+        txt <- justZ._text $ c
+        guard $ txt == "4" 
+        setText "77" c
+    sleep 2
+    poke_ $ \g -> do    
+        tab <- contentsflat >=> tab $ g
+        logmsg . tabText $ tab -- logging inside LogicT
+        guard $ tabText tab == "tab JTree a"  
+        return $ selectTab tab   
+    sleep 2
+    poke_ $ \g -> do    
+        Treegui forest <- contentsflat >=> return . _componentType $ g
+        tree <- replusify forest
+        cell <- treeflat tree 
+        c <- treeflat . renderer $ cell
+        txt <- justZ . _text $ c
+        guard $ txt == "leaf a" 
+        expandf <- justZ . expand $ cell
+        return $ expandf True
+    sleep 2
+    poke_ $ return . _close
 
-testCase:: (Monad m, MonadBase m m) => MK GUI GUI m
-testCase g = do
-         let prefix = forestflat 
-         g <- threadKs (wait 2) narrowK (prefix >=> contentsflat,click) [textEq "foo", textEq "dialog button"] >=>
-              logmsgK "foo log message" >=>
-              withMenuBarEq prefix (Just True) ["Menu1","SubMenu1","submenuitem2"] >=>
-              logmsgK "getting a screenshot"
-              $g
-         i <- narrowK ( forestflat >=> image ) $ g
-         logimg i
-         logmsg "now for a second menu"
-         g <- withMenuBarEq prefix Nothing ["Menu1","SubMenu1","submenuitem1"] >=>
-              wait 2 >=>
-              narrowK (forestflat >=> contentsflat >=> textEq "foo" ) >=>
-              logmsgK "mmmmmmm" >=>
-              click >=>
-              wait 2 >=>
-              narrowK ( forestflat >=> contentsflat >=> textEq "dialog button" >=> click ) >=>
-              logmsgK "this should show the combo..." >=>
-              narrowK ( forestflat >=> contentsflat >=> clickCombo ) >=> 
-              wait 2
-              $g
-         g <- narrow $ do candidateCell <- forestflat >=> popupflat >=> listCell $ g
-                          c <- treeflat . renderer $ candidateCell 
-                          textEq "ccc" c
-                          liftBase $ clickCell candidateCell  
-         g <- wait 2 >=> logmsgK "Now for a change of tab" $ g
-         g <- narrow $ do tab <-  forestflat >=> contentsflat >=> tab $ g
-                          logmsg . tabText $ tab -- logging inside LogicT
-                          guard $ tabText tab == "tab two"  
-                          liftBase $ selectTab tab   
-         g <- wait 2 g
-         g <- narrow $ do Table ll <- forestflat >=> contentsflat >=> return . _componentType $ g
-                          cell <- replusify . concat $ ll
-                          c <- replusify . flatten . renderer $ cell
-                          txt <- justZ . _text $ c
-                          guard $ txt == "7" 
-                          liftBase $ clickCell cell
-         g <- wait 2 g
-         g <- narrow $ do Table ll <- forestflat >=> contentsflat >=> return . _componentType $ g
-                          cell <- replusify . concat $ ll
-                          c <- treeflat . renderer $ cell
-                          txt <- justZ . _text $ c
-                          guard $ txt == "4" 
-                          liftBase $ doubleClickCell cell
-         g <- wait 2 g
-         g <- narrow $ do ct <- forestflat >=> contentsflat' $ g
-                          Table _ <- return . _componentType . rootLabel $ ct -- is it a table?
-                          c <- treeflat ct -- the table's children
-                          txt <- justZ._text $ c
-                          guard $ txt == "4" 
-                          setText "77" c
-         g <- wait 2 g
-         g <- narrow $ do tab <-  forestflat >=> contentsflat >=> tab $ g
-                          logmsg . tabText $ tab -- logging inside LogicT
-                          guard $ tabText tab == "tab JTree a"  
-                          liftBase $ selectTab tab   
-         g <- wait 2 g
-         g <- narrow $ do Treegui forest <- forestflat >=> contentsflat >=> return . _componentType $ g
-                          tree <- replusify forest
-                          cell <- treeflat tree 
-                          c <- treeflat . renderer $ cell
-                          txt <- justZ . _text $ c
-                          guard $ txt == "leaf a" 
-                          expandf <- justZ . expand $ cell
-                          liftBase $ expandf True
-         g <- wait 2 g
-         narrowK ( forestflat >=> close ) >=> logmsgK "loggy log" $ g
+delayer :: MonadIO m => Consumer ProxyFast Delay m a
+delayer = forever $ request () >>= liftIO . threadDelay . (*1000000)
+
+logger:: MonadIO mio => LogConsumer mio a
+logger = forever $ do 
+      entry <- request ()
+      case entry of
+          TextEntry txt -> liftIO $ TIO.putStrLn txt
+          ImageEntry image -> liftIO $ B.writeFile "/tmp/loggedxanelaimage.png" image
 
 main :: IO ()
 main = do
@@ -127,26 +132,43 @@ main = do
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
 
-      test:: MaybeT (LogProducer Protocol) (GUI Protocol)
-      test = liftBase getgui >>= testCase
-
-      producer:: LogProducer Protocol (Maybe (GUI Protocol))
-      producer = runMaybeT test
-
-      producerIO () = hoist runProtocol producer 
-      -- for a null logger use discard ()
-      logConsumer:: MonadIO mio => () -> LogConsumer mio a
-      logConsumer () = forever $ do 
-            entry <- request ()
-            case entry of
-                TextEntry txt -> liftIO $ TIO.putStrLn txt
-                ImageEntry image -> liftIO $ B.writeFile "/tmp/loggedxanelaimage.png" image
-      eerio = runProxy $ producerIO >-> logConsumer
-  r <- flip runReaderT endpoint . runEitherT . runEitherT $ eerio
-  case r of
-        Left _ -> putStrLn "io error"
-        Right r2 -> case r2 of
-            Left _ -> putStrLn "procotol error"
+      -- A long peeling process until we reach IO!!!
+      played = play snapshot testCase
+      rebased = hoist (mapMaybeT (hoist (mapMaybeT (hoist runProtocol)))) $ played
+      delayed = runProxy $ const rebased >-> const delayer
+      logged1 = runProxy $ (const $ runMaybeT delayed) >-> const logger
+      logged2 = runProxy $ (const $ runMaybeT logged1) >-> const logger
+  r <- flip runReaderT endpoint . runEitherT . runEitherT $ logged2
+  let msg = case r of
+        Left _ -> "io error"
+        Right r2 -> case r2 of 
+            Left _ -> "protocol error"
             Right r3 -> case r3 of
-                Nothing -> putStrLn "nothing"
-                Just _ -> putStrLn "all ok, only one result"
+                Nothing -> "arrow error"
+                Just r4 -> case r4 of
+                    Nothing -> "pianola error"   
+                    Just () -> "all ok"
+  putStrLn msg
+--      test:: MaybeT (LogProducer Protocol) (GUI Protocol)
+--      test = liftBase getgui >>= testCase
+--
+--      producer:: LogProducer Protocol (Maybe (GUI Protocol))
+--      producer = runMaybeT test
+--
+--      producerIO () = hoist runProtocol producer 
+--      -- for a null logger use discard ()
+--      logConsumer:: MonadIO mio => () -> LogConsumer mio a
+--      logConsumer () = forever $ do 
+--            entry <- request ()
+--            case entry of
+--                TextEntry txt -> liftIO $ TIO.putStrLn txt
+--                ImageEntry image -> liftIO $ B.writeFile "/tmp/loggedxanelaimage.png" image
+--      eerio = runProxy $ producerIO >-> logConsumer
+--  r <- flip runReaderT endpoint . runEitherT . runEitherT $ eerio
+--  case r of
+--        Left _ -> putStrLn "io error"
+--        Right r2 -> case r2 of
+--            Left _ -> putStrLn "procotol error"
+--            Right r3 -> case r3 of
+--                Nothing -> putStrLn "nothing"
+--                Just _ -> putStrLn "all ok, only one result"

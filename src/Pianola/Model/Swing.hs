@@ -18,6 +18,7 @@ module Pianola.Model.Swing (
         menuflat,
         popupflat,
         contentsflat,
+        contentsflat',
         text,
         textEq,
         click,
@@ -42,7 +43,7 @@ import Control.Monad.Trans.Class
 
 import Pianola.Util
 
-type GUI m = Forest (Window m)
+type GUI m = Forest (WindowInfo m)
 
 type Window m = Tree (WindowInfo m)
 
