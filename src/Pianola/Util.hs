@@ -9,6 +9,8 @@
 {-# LANGUAGE DeriveTraversable #-}
 
 module Pianola.Util (
+        eq,
+        eqs,
         replusify,
         treeflat,
         treeflat',
@@ -48,6 +50,13 @@ import Control.MFunctor
 import Control.Proxy -- (Producer,Consumer,ProxyFast, respond, fromListS,>->)
 import qualified Data.Text as T
 import qualified Data.ByteString as B
+
+--
+eq :: Eq a => ((a->Bool) -> b) -> a -> b
+eq f a = f (==a)
+
+eqs :: Eq a => ([a->Bool] -> b) -> [a] -> b
+eqs f a = f $ map (==) a
 
 -- Kleisie
 

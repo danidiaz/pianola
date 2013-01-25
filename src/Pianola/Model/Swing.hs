@@ -15,6 +15,8 @@ module Pianola.Model.Swing (
         ComponentType (..),
         Cell (..),
         Tab (..),
+        titled,
+        titledEq,
         menuflat,
         popupflat,
         contentsflat,
@@ -104,6 +106,15 @@ data Tab m = Tab
     }
 
 -- logic helpers
+
+titled :: MonadPlus m => (T.Text -> Bool) -> GUI n -> m (WindowInfo n)
+titled p gui = do 
+    w <- forestflat gui
+    guard . p . _windowTitle $ w
+    return w
+
+titledEq :: MonadPlus m => T.Text -> GUI n -> m (WindowInfo n)
+titledEq txt = titled $ (==txt) 
 
 menuflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
 menuflat = forestflat . _menu

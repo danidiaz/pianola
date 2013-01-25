@@ -7,8 +7,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Pianola.Model.Swing.Combinators (
-        withMenuBar,
-        withMenuBarEq
+        withMenuBar
     ) where
 
 import Prelude hiding (catch,(.))
@@ -44,8 +43,8 @@ withMenuBar ps liatype@(maybe click toggle -> lastItemAction) =
               _ -> oops
           _ -> oops
   
-withMenuBarEq:: Monad m => [T.Text] -> Maybe Bool -> Pianola (WindowInfo m) l m ()
-withMenuBarEq xs = withMenuBar $ map (==) xs
+--withMenuBarEq:: Monad m => [T.Text] -> Maybe Bool -> Pianola (WindowInfo m) l m ()
+--withMenuBarEq xs = withMenuBar $ map (==) xs
 
 --withMenuBar winlocator actionType ps = 
 --    let lastItemAction = maybe click toggle actionType

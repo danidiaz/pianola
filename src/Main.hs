@@ -43,77 +43,82 @@ import Pianola.Protocol.IO
 type Test = Pianola (GUI Protocol) LogEntry Protocol ()
 
 testCase:: Test
-testCase = focus_ forestflat $ do
-    poke_ $ contentsflat >=> textEq "foo" >=> click
-    poke_ $ contentsflat >=> textEq "dialog button" >=> click
-    logmsg "foo log message"
-    withMenuBarEq ["Menu1","SubMenu1","submenuitem2"] $ Just True
-    logmsg "getting a screenshot"
-    logimg =<< peek_ (liftNp . _image) 
-    logmsg "now for a second menu"
-    withMenuBarEq ["Menu1","SubMenu1","submenuitem1"] Nothing
-    sleep 2
-    poke_ $ contentsflat >=> textEq "foo" >=> click
-    logmsg "mmmmmmm"
-    sleep 2
-    poke_ $ contentsflat >=> textEq "dialog button" >=> click
-    logmsg "this should show the combo"
-    poke_ $ contentsflat >=> clickCombo
-    sleep 2
-    poke_ $ \g -> do 
-        candidateCell <- popupflat >=> listCell $ g
-        c <- treeflat . renderer $ candidateCell 
-        textEq "ccc" c
-        return $ clickCell candidateCell  
-    sleep 2
-    logmsg "Now for a change of tab" 
-    poke_ $ \g -> do 
-        tab <- contentsflat >=> tab $ g
-        logmsg . tabText $ tab -- logging inside LogicT
-        guard $ tabText tab == "tab two"  
-        return $ selectTab tab   
-    sleep 2
-    poke_ $ \g -> do
-        Table ll <- contentsflat >=> return . _componentType $ g
-        cell <- replusify . concat $ ll
-        c <- replusify . flatten . renderer $ cell
-        txt <- justZ . _text $ c
-        guard $ txt == "7" 
-        return $ clickCell cell
-    sleep 2
-    poke_ $ \g -> do
-        Table ll <- contentsflat >=> return . _componentType $ g
-        cell <- replusify . concat $ ll
-        c <- treeflat . renderer $ cell
-        txt <- justZ . _text $ c
-        guard $ txt == "4" 
-        return $ doubleClickCell cell
-    sleep 2
-    poke_ $ \g -> do    
-        ct <- contentsflat' $ g
-        Table _ <- return . _componentType . rootLabel $ ct -- is it a table?
-        c <- treeflat ct -- the table's children
-        txt <- justZ._text $ c
-        guard $ txt == "4" 
-        setText "77" c
-    sleep 2
-    poke_ $ \g -> do    
-        tab <- contentsflat >=> tab $ g
-        logmsg . tabText $ tab -- logging inside LogicT
-        guard $ tabText tab == "tab JTree a"  
-        return $ selectTab tab   
-    sleep 2
-    poke_ $ \g -> do    
-        Treegui forest <- contentsflat >=> return . _componentType $ g
-        tree <- replusify forest
-        cell <- treeflat tree 
-        c <- treeflat . renderer $ cell
-        txt <- justZ . _text $ c
-        guard $ txt == "leaf a" 
-        expandf <- justZ . expand $ cell
-        return $ expandf True
-    sleep 2
-    poke_ $ return . _close
+testCase = do 
+    focus_ (eq titled "foo frame") $ do
+        poke_ $ contentsflat >=> eq text "foo" >=> click
+    focus_ (eq titled "foo dialog") $ do
+        poke_ $ contentsflat >=> eq text "dialog button" >=> click
+    focus_ (eq titled "foo frame") $ do
+        logmsg "foo log message"
+        eqs withMenuBar ["Menu1","SubMenu1","submenuitem2"] $ Just True
+        logmsg "getting a screenshot"
+        logimg =<< peek_ (liftNp . _image) 
+        logmsg "now for a second menu"
+        eqs withMenuBar ["Menu1","SubMenu1","submenuitem1"] Nothing
+        sleep 2
+        poke_ $ contentsflat >=> eq text "foo" >=> click
+        logmsg "mmmmmmm"
+        sleep 2
+    focus_ (eq titled "foo dialog") $ do
+        poke_ $ contentsflat >=> eq text "dialog button" >=> click
+    focus_ (eq titled "foo frame") $ do
+        logmsg "this should show the combo"
+        poke_ $ contentsflat >=> clickCombo
+        sleep 2
+        poke_ $ \g -> do 
+            candidateCell <- popupflat >=> listCell $ g
+            c <- treeflat . renderer $ candidateCell 
+            eq text "ccc" c
+            return $ clickCell candidateCell  
+        sleep 2
+        logmsg "Now for a change of tab" 
+        poke_ $ \g -> do 
+            tab <- contentsflat >=> tab $ g
+            logmsg . tabText $ tab -- logging inside LogicT
+            guard $ tabText tab == "tab two"  
+            return $ selectTab tab   
+        sleep 2
+        poke_ $ \g -> do
+            Table ll <- contentsflat >=> return . _componentType $ g
+            cell <- replusify . concat $ ll
+            c <- replusify . flatten . renderer $ cell
+            txt <- justZ . _text $ c
+            guard $ txt == "7" 
+            return $ clickCell cell
+        sleep 2
+        poke_ $ \g -> do
+            Table ll <- contentsflat >=> return . _componentType $ g
+            cell <- replusify . concat $ ll
+            c <- treeflat . renderer $ cell
+            txt <- justZ . _text $ c
+            guard $ txt == "4" 
+            return $ doubleClickCell cell
+        sleep 2
+        poke_ $ \g -> do    
+            ct <- contentsflat' $ g
+            Table _ <- return . _componentType . rootLabel $ ct -- is it a table?
+            c <- treeflat ct -- the table's children
+            txt <- justZ._text $ c
+            guard $ txt == "4" 
+            setText "77" c
+        sleep 2
+        poke_ $ \g -> do    
+            tab <- contentsflat >=> tab $ g
+            logmsg . tabText $ tab -- logging inside LogicT
+            guard $ tabText tab == "tab JTree a"  
+            return $ selectTab tab   
+        sleep 2
+        poke_ $ \g -> do    
+            Treegui forest <- contentsflat >=> return . _componentType $ g
+            tree <- replusify forest
+            cell <- treeflat tree 
+            c <- treeflat . renderer $ cell
+            txt <- justZ . _text $ c
+            guard $ txt == "leaf a" 
+            expandf <- justZ . expand $ cell
+            return $ expandf True
+        sleep 2
+        poke_ $ return . _close
 
 delayer :: MonadIO m => Consumer ProxyFast Delay m a
 delayer = forever $ request () >>= liftIO . threadDelay . (*1000000)
