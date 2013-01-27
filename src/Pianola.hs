@@ -15,7 +15,9 @@ module Pianola (
         play,
         oops,
         peek,
+        peekl,
         poke,
+        pokel,
         retryPeek,
         retryPoke,
         sleep,
@@ -95,8 +97,14 @@ oops = lift . lift $ mzero
 peek :: Monad m => Glance o l m a -> Pianola o l m a
 peek = lift . lift . lift . lift . liftF . Compose
 
+peekl :: Monad m => Multiglance o l m a -> Pianola o l m a
+peekl = peek.narrowK
+
 poke :: Monad m => Glance o l m (Sealed m) -> Pianola o l m () 
 poke locator = peek locator >>= respond
+
+pokel :: Monad m => Multiglance o l m (Sealed m) -> Pianola o l m () 
+pokel = poke.narrowK
 
 retryPeek :: Monad m => Delay -> [Glance o l m a] -> Pianola o l m a 
 retryPeek _ [] = oops
@@ -115,7 +123,7 @@ focus prefix pi  =
     hoist (hoist (mapMaybeT (hoist $ focusO prefix))) $ pi 
 
 focusl :: (Functor m, Monad m) => Multiglance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
-focusl g = focus (lo g)
+focusl g = focus (narrowK g)
 
 infixl 0 `focus`
 infixl 0 `focusl`

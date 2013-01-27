@@ -21,7 +21,6 @@ module Pianola.Util (
         threadKs,
         narrow,
         narrowK,
-        lo,
         PianolaLog(..),
         LogEntry(..),
         Image,
