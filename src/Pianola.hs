@@ -15,16 +15,12 @@ module Pianola (
         play,
         oops,
         peek,
-        peek_,
         poke,
-        poke_,
         retryPeek,
-        retryPeek_,
         retryPoke,
-        retryPoke_,
         sleep,
-        focus,
-        focus_   
+        focus,  
+        focusmaybe
     ) where
 
 import Prelude hiding (catch,(.))
@@ -59,6 +55,9 @@ type Pr t = Producer ProxyFast t
 type Glance o l m a = o -> MaybeT (Pr l (Nullipotent m)) a
 
 type Multiglance o l m a = o -> LogicT (Pr l (Nullipotent m)) a
+
+--
+--
 
 liftNp :: (Monad m, MonadTrans mt) => Nullipotent m a -> mt (Pr l (Nullipotent m)) a
 liftNp = lift . lift
@@ -96,14 +95,8 @@ oops = lift . lift $ mzero
 peek :: Monad m => Glance o l m a -> Pianola o l m a
 peek = lift . lift . lift . lift . liftF . Compose
 
-peek_ :: Monad m => Multiglance o l m a -> Pianola o l m a
-peek_ = peek . narrowK
-
 poke :: Monad m => Glance o l m (Sealed m) -> Pianola o l m () 
 poke locator = peek locator >>= respond
-
-poke_ :: Monad m => Multiglance o l m (Sealed m) -> Pianola o l m () 
-poke_ = poke . narrowK
 
 retryPeek :: Monad m => Delay -> [Glance o l m a] -> Pianola o l m a 
 retryPeek _ [] = oops
@@ -111,24 +104,18 @@ retryPeek d (x:xs) = do
     a <- peek . fmap (lift . runMaybeT) $ x
     maybe (sleep d >> retryPeek d xs) return a
 
-retryPeek_ :: Monad m => Delay -> [Multiglance o l m a] -> Pianola o l m a 
-retryPeek_ d xs = retryPeek d (map narrowK xs)
-
 retryPoke :: Monad m => Delay -> [Glance o l m (Sealed m)] -> Pianola o l m () 
 retryPoke d xs = retryPeek d xs >>= respond 
-
-retryPoke_ :: Monad m => Delay -> [Multiglance o l m (Sealed m)] -> Pianola o l m () 
-retryPoke_ d xs = retryPoke d (map narrowK xs)
 
 sleep :: Monad m => Delay -> Pianola o l m ()
 sleep = lift . respond 
 
-focus :: (Functor m, Monad m) => Glance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
-focus prefix pi  =
+focusmaybe :: (Functor m, Monad m) => Glance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
+focusmaybe prefix pi  =
     hoist (hoist (mapMaybeT (hoist $ focusO prefix))) $ pi 
 
-focus_ :: (Functor m, Monad m) => Multiglance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
-focus_ g = focus (narrowK g)
+focus :: (Functor m, Monad m) => Multiglance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
+focus g = focusmaybe (nk g)
 
 --
 instance Monad m => PianolaLog (Pianola o LogEntry m) where
