@@ -34,8 +34,8 @@ withMenuBar ps liatype@(maybe click toggle -> lastItemAction) =
       let go firstitem middleitems lastitem = do
              poke_ $ menuflat >=> text firstitem >=> click
              forM_ middleitems $ \f -> 
-                retryPoke_ 1 $ replicate 7 $ popupflat >=> text f >=> return . click
-             retryPoke_ 1 $ replicate 7 $ popupflat >=> text lastitem >=> return . lastItemAction
+                retryPoke_ 1 $ replicate 7 $ popupflat >=> text f >=> click
+             retryPoke_ 1 $ replicate 7 $ popupflat >=> text lastitem >=> lastItemAction
              when (isJust liatype) $ replicateM_ (succ $ length middleitems) (poke $ return . _escape)
       in case (viewl . fromList $ ps) of 
           firstitem :< ps' ->  case viewr ps' of

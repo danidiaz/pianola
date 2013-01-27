@@ -10,7 +10,7 @@
 
 module Pianola.Util (
         eq,
-        eqs,
+        eqm,
         replusify,
         treeflat,
         treeflat',
@@ -55,8 +55,8 @@ import qualified Data.ByteString as B
 eq :: Eq a => ((a->Bool) -> b) -> a -> b
 eq f a = f (==a)
 
-eqs :: Eq a => ([a->Bool] -> b) -> [a] -> b
-eqs f a = f $ map (==) a
+eqm :: Eq a => ([a->Bool] -> b) -> [a] -> b
+eqm f a = f $ map (==) a
 
 -- Kleisie
 

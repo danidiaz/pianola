@@ -50,11 +50,11 @@ testCase = do
         poke_ $ contentsflat >=> eq text "dialog button" >=> click
     focus_ (eq titled "foo frame") $ do
         logmsg "foo log message"
-        eqs withMenuBar ["Menu1","SubMenu1","submenuitem2"] $ Just True
+        eqm withMenuBar ["Menu1","SubMenu1","submenuitem2"] $ Just True
         logmsg "getting a screenshot"
         logimg =<< peek_ (liftNp . _image) 
         logmsg "now for a second menu"
-        eqs withMenuBar ["Menu1","SubMenu1","submenuitem1"] Nothing
+        eqm withMenuBar ["Menu1","SubMenu1","submenuitem1"] Nothing
         sleep 2
         poke_ $ contentsflat >=> eq text "foo" >=> click
         logmsg "mmmmmmm"

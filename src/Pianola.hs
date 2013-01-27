@@ -105,19 +105,19 @@ poke locator = peek locator >>= respond
 poke_ :: Monad m => Multiglance o l m (Sealed m) -> Pianola o l m () 
 poke_ = poke . narrowK
 
-retryPeek :: Monad m => Delay -> [Glance o l m (Maybe a)] -> Pianola o l m a 
+retryPeek :: Monad m => Delay -> [Glance o l m a] -> Pianola o l m a 
 retryPeek _ [] = oops
 retryPeek d (x:xs) = do
-    a <- peek x
-    maybe (retryPeek d xs) return a
+    a <- peek . fmap (lift . runMaybeT) $ x
+    maybe (sleep d >> retryPeek d xs) return a
 
-retryPeek_ :: Monad m => Delay -> [Multiglance o l m (Maybe a)] -> Pianola o l m a 
+retryPeek_ :: Monad m => Delay -> [Multiglance o l m a] -> Pianola o l m a 
 retryPeek_ d xs = retryPeek d (map narrowK xs)
 
-retryPoke :: Monad m => Delay -> [Glance o l m (Maybe (Sealed m))] -> Pianola o l m () 
+retryPoke :: Monad m => Delay -> [Glance o l m (Sealed m)] -> Pianola o l m () 
 retryPoke d xs = retryPeek d xs >>= respond 
 
-retryPoke_ :: Monad m => Delay -> [Multiglance o l m (Maybe (Sealed m))] -> Pianola o l m () 
+retryPoke_ :: Monad m => Delay -> [Multiglance o l m (Sealed m)] -> Pianola o l m () 
 retryPoke_ d xs = retryPoke d (map narrowK xs)
 
 sleep :: Monad m => Delay -> Pianola o l m ()

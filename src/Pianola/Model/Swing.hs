@@ -16,13 +16,11 @@ module Pianola.Model.Swing (
         Cell (..),
         Tab (..),
         titled,
-        titledEq,
         menuflat,
         popupflat,
         contentsflat,
         contentsflat',
         text,
-        textEq,
         click,
         toggle,
         clickCombo,
@@ -113,9 +111,6 @@ titled p gui = do
     guard . p . _windowTitle $ w
     return w
 
-titledEq :: MonadPlus m => T.Text -> GUI n -> m (WindowInfo n)
-titledEq txt = titled $ (==txt) 
-
 menuflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
 menuflat = forestflat . _menu
  
@@ -137,10 +132,6 @@ text f c = do
     guard $ f t
     return c
  
-textEq:: MonadPlus m => T.Text -> ComponentInfo n -> m (ComponentInfo n)
-textEq t = text $ (==) t
- 
-
 -- image::MonadBase n m => WindowInfo n -> m Image
 -- image = liftBase . _image
 -- 
