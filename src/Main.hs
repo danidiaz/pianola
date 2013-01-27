@@ -44,7 +44,8 @@ type Test = Pianola (GUI Protocol) LogEntry Protocol ()
 
 testCase:: Test
 testCase = do 
-    focus (eq titled "foo frame") $ do
+    -- focus (eq titled "foo frame") $ do
+    eq titled "foo frame" `focus` do
         poke.nk $ contentsflat >=> eq text "foo" >=> click
     focus (eq titled "foo dialog") $ do
         poke.nk $ contentsflat >=> eq text "dialog button" >=> click

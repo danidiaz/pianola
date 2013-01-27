@@ -110,12 +110,16 @@ retryPoke d xs = retryPeek d xs >>= respond
 sleep :: Monad m => Delay -> Pianola o l m ()
 sleep = lift . respond 
 
+
 focusmaybe :: (Functor m, Monad m) => Glance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
 focusmaybe prefix pi  =
     hoist (hoist (mapMaybeT (hoist $ focusO prefix))) $ pi 
 
 focus :: (Functor m, Monad m) => Multiglance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
 focus g = focusmaybe (nk g)
+
+infixl 0 `focusmaybe`
+infixl 0 `focus`
 
 --
 instance Monad m => PianolaLog (Pianola o LogEntry m) where
