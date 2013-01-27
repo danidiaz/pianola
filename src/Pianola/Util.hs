@@ -21,7 +21,7 @@ module Pianola.Util (
         threadKs,
         narrow,
         narrowK,
-        nk,
+        lo,
         PianolaLog(..),
         LogEntry(..),
         Image,
@@ -87,8 +87,8 @@ narrow = MaybeT . liftM replusify . observeManyT 1
 narrowK :: Monad m => (a -> LogicT m b) -> a -> MaybeT m b 
 narrowK = fmap narrow 
 
-nk :: Monad m => (a -> LogicT m b) -> a -> MaybeT m b 
-nk = narrowK
+lo :: Monad m => (a -> LogicT m b) -> a -> MaybeT m b 
+lo = narrowK
 
 treeflat:: MonadPlus m => Tree a -> m a
 treeflat = replusify . flatten 

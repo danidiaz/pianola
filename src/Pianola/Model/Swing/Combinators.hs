@@ -32,10 +32,10 @@ import Pianola.Model.Swing
 withMenuBar:: Monad m => [T.Text -> Bool] -> Maybe Bool -> Pianola (WindowInfo m) l m ()
 withMenuBar ps liatype@(maybe click toggle -> lastItemAction) = 
       let go firstitem middleitems lastitem = do
-             poke.nk $ menuflat >=> text firstitem >=> click
+             poke.lo $ menuflat >=> text firstitem >=> click
              forM_ middleitems $ \f -> 
-                retryPoke 1 $ replicate 7 $ nk $ popupflat >=> text f >=> click
-             retryPoke 1 $ replicate 7 $ nk $ popupflat >=> text lastitem >=> lastItemAction
+                retryPoke 1 $ replicate 7 $ lo $ popupflat >=> text f >=> click
+             retryPoke 1 $ replicate 7 $ lo $ popupflat >=> text lastitem >=> lastItemAction
              when (isJust liatype) $ replicateM_ (succ $ length middleitems) (poke $ return . _escape)
       in case (viewl . fromList $ ps) of 
           firstitem :< ps' ->  case viewr ps' of
