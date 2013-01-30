@@ -16,17 +16,18 @@ module Pianola.Model.Swing (
         Cell (..),
         Tab (..),
         titled,
-        menuflat,
-        popupflat,
-        contentsflat,
-        contentsflat',
+--        menuflat,
+--        popupflat,
+--        contentsflat,
+--        contentsflat',
         text,
         click,
         toggle,
         clickCombo,
         listCell,
         tab,
-        setText
+        setText,
+        withMenuBar
     ) where
 
 import Prelude hiding (catch,(.))
@@ -40,8 +41,11 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.Base
 import Control.Monad.Trans.Class
+import Data.Sequence (ViewL(..),ViewR(..),viewl,viewr,fromList)
+import Data.Foldable (toList)
 
 import Pianola.Util
+import Pianola
 
 type GUI m = Forest (WindowInfo m)
 
@@ -107,24 +111,24 @@ data Tab m = Tab
 
 titled :: MonadPlus m => (T.Text -> Bool) -> GUI n -> m (WindowInfo n)
 titled p gui = do 
-    w <- forestflat gui
+    w <- replusify >=> replusify.flatten $ gui
     guard . p . _windowTitle $ w
     return w
 
-menuflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
-menuflat = forestflat . _menu
- 
-popupflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
-popupflat = forestflat . _popupLayer
- 
-contentsflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
-contentsflat =  treeflat . _topc
- 
-contentsflat':: MonadPlus m => WindowInfo n -> m (Component n)
-contentsflat' =  treeflat' . _topc
-
-wholewindowflat::MonadPlus m => WindowInfo n -> m (ComponentInfo n)
-wholewindowflat w = msum $ map ($w) [menuflat,popupflat,contentsflat]
+--menuflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
+--menuflat = forestflat . _menu
+-- 
+--popupflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
+--popupflat = forestflat . _popupLayer
+-- 
+--contentsflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
+--contentsflat =  treeflat . _topc
+-- 
+--contentsflat':: MonadPlus m => WindowInfo n -> m (Component n)
+--contentsflat' =  treeflat' . _topc
+--
+--wholewindowflat::MonadPlus m => WindowInfo n -> m (ComponentInfo n)
+--wholewindowflat w = msum $ map ($w) [menuflat,popupflat,contentsflat]
 
 text:: MonadPlus m => (T.Text -> Bool) -> ComponentInfo n -> m (ComponentInfo n)
 text f c = do
@@ -172,3 +176,21 @@ setText txt c = case _componentType c of
     _ -> mzero
 
 -- end logic helpers
+--
+
+withMenuBar:: Monad m => [T.Text -> Bool] -> Maybe Bool -> Pianola (WindowInfo m) l m ()
+withMenuBar ps liatype@(maybe click toggle -> lastItemAction) = 
+      let go firstitem middleitems lastitem = do
+             poke.squint $ replusify . _menu >=> replusify.flatten >=> text firstitem >=> click
+             forM_ middleitems $ \f -> 
+                retryPoke 1 $ replicate 7 $ squint $ 
+                    replusify . _popupLayer >=> replusify.flatten >=> text f >=> click
+             retryPoke 1 $ replicate 7 $ squint $ 
+                    replusify . _popupLayer >=> replusify.flatten >=> text lastitem >=> lastItemAction
+             when (isJust liatype) $ replicateM_ (succ $ length middleitems) (poke $ return . _escape)
+      in case (viewl . fromList $ ps) of 
+          firstitem :< ps' ->  case viewr ps' of
+              ps'' :> lastitem -> go firstitem (toList ps'') lastitem
+              _ -> oops
+          _ -> oops
+  

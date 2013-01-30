@@ -14,15 +14,16 @@ module Pianola (
         Delay,
         play,
         oops,
+        squint,
         peek,
-        peekl,
+--        peekl,
         poke,
-        pokel,
+--        pokel,
         retryPeek,
         retryPoke,
         sleep,
-        focus,  
-        focusl
+        focus --,  
+--        focusl
     ) where
 
 import Prelude hiding (catch,(.))
@@ -56,7 +57,10 @@ type Pr t = Producer ProxyFast t
 
 type Glance o l m a = o -> MaybeT (Pr l (Nullipotent m)) a
 
-type Multiglance o l m a = o -> LogicT (Pr l (Nullipotent m)) a
+type Wideglance o l m a = o -> LogicT (Pr l (Nullipotent m)) a
+
+squint :: Monad m => (a -> LogicT m b) -> a -> MaybeT m b 
+squint = fmap tomaybet
 
 --
 --
@@ -91,20 +95,21 @@ play mom pi =
             lift . lift . lift . lift . lift . lift $ unseal s -- this should be private
     in runProxy $ const pianola' >-> injector
 
+
 oops :: Monad m => Pianola o l m a
 oops = lift . lift $ mzero
 
 peek :: Monad m => Glance o l m a -> Pianola o l m a
 peek = lift . lift . lift . lift . liftF . Compose
 
-peekl :: Monad m => Multiglance o l m a -> Pianola o l m a
-peekl = peek.narrowK
+--peekl :: Monad m => Multiglance o l m a -> Pianola o l m a
+--peekl = peek.narrowK
 
 poke :: Monad m => Glance o l m (Sealed m) -> Pianola o l m () 
 poke locator = peek locator >>= respond
 
-pokel :: Monad m => Multiglance o l m (Sealed m) -> Pianola o l m () 
-pokel = poke.narrowK
+--pokel :: Monad m => Multiglance o l m (Sealed m) -> Pianola o l m () 
+--pokel = poke.narrowK
 
 retryPeek :: Monad m => Delay -> [Glance o l m a] -> Pianola o l m a 
 retryPeek _ [] = oops
@@ -122,11 +127,10 @@ focus :: (Functor m, Monad m) => Glance o' l m o ->  Pianola o l m a -> Pianola 
 focus prefix pi  =
     hoist (hoist (mapMaybeT (hoist $ focusO prefix))) $ pi 
 
-focusl :: (Functor m, Monad m) => Multiglance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
-focusl g = focus (narrowK g)
+--focusl :: (Functor m, Monad m) => Multiglance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
+--focusl g = focus (narrowK g)
 
 infixl 0 `focus`
-infixl 0 `focusl`
 
 --
 instance Monad m => PianolaLog (Pianola o LogEntry m) where

@@ -12,15 +12,17 @@ module Pianola.Util (
         eq,
         eqm,
         replusify,
-        treeflat,
-        treeflat',
-        forestflat,
-        composeK,
-        prependK,
-        appendK,
-        threadKs,
-        narrow,
-        narrowK,
+--        treeflat,
+--        treeflat',
+--        forestflat,
+        flattenl,
+--        composeK,
+--        prependK,
+--        appendK,
+--        threadKs,
+        -- narrow,
+        tomaybet,
+        -- narrowK,
         PianolaLog(..),
         LogEntry(..),
         Image,
@@ -58,45 +60,28 @@ eq f a = f (==a)
 eqm :: Eq a => ([a->Bool] -> b) -> [a] -> b
 eqm f a = f $ map (==) a
 
--- Kleisie
-
--- This function was copied from here:
--- http://stackoverflow.com/questions/8716668/folding-flatmap-bind-over-a-list-of-functions-a-k-a-name-that-combinator
-composeK :: Monad m => [a -> m a] -> a -> m a
-composeK  = foldr (>=>) return
-
-prependK:: (Monad m) => (a -> m b) -> [b -> m c] -> [a -> m c]
-prependK prefix = map $ (>=>) prefix
-
-appendK:: (Monad m) => (b -> m c) -> [a -> m b] -> [a -> m c]
-appendK suffix = map $ (<=<) suffix
-
-threadKs :: (Monad m,Monad n) => (a -> m a) -> ((a -> n a) -> a -> m a) -> (a -> n b, c -> n a) -> [b -> n c] -> a -> m a
-threadKs separatork ktransformer (prefix,suffix) =
-    composeK . intersperse separatork . map ktransformer . prependK prefix . appendK suffix 
-
 -- logic helpers
 
 replusify:: MonadPlus m => [a] -> m a
 replusify = msum . map return
 
-narrow:: Monad m => LogicT m a -> MaybeT m a
-narrow = MaybeT . liftM replusify . observeManyT 1
+tomaybet:: Monad m => LogicT m a -> MaybeT m a
+tomaybet = MaybeT . liftM replusify . observeManyT 1
 
-narrowK :: Monad m => (a -> LogicT m b) -> a -> MaybeT m b 
-narrowK = fmap narrow 
+--narrowK :: Monad m => (a -> LogicT m b) -> a -> MaybeT m b 
+--narrowK = fmap narrow 
 
-lo :: Monad m => (a -> LogicT m b) -> a -> MaybeT m b 
-lo = narrowK
+--treeflat:: MonadPlus m => Tree a -> m a
+--treeflat = replusify . flatten 
+--
+--treeflat':: MonadPlus m => Tree a -> m (Tree a)
+--treeflat' = replusify . flatten . duplicate
+--
+--forestflat:: MonadPlus m => Forest a -> m a
+--forestflat forest = replusify forest >>= treeflat 
 
-treeflat:: MonadPlus m => Tree a -> m a
-treeflat = replusify . flatten 
-
-treeflat':: MonadPlus m => Tree a -> m (Tree a)
-treeflat' = replusify . flatten . duplicate
-
-forestflat:: MonadPlus m => Forest a -> m a
-forestflat forest = replusify forest >>= treeflat 
+flattenl :: MonadPlus m => Tree a -> m a
+flattenl = replusify . flatten 
 
 -- useful msgpack instances
 instance (Unpackable a, Unpackable b) => Unpackable (Either a b) where

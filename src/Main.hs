@@ -37,7 +37,6 @@ import Pianola.Util
 import Pianola.Protocol
 import Pianola.Model.Swing
 import Pianola.Model.Swing.Protocol (snapshot)
-import Pianola.Model.Swing.Combinators
 import Pianola.Protocol.IO
 
 type Test = Pianola (GUI Protocol) LogEntry Protocol ()
@@ -45,11 +44,11 @@ type Test = Pianola (GUI Protocol) LogEntry Protocol ()
 testCase:: Test
 testCase = do 
     -- focusl (eq titled "foo frame") $ do
-    eq titled "foo frame" `focusl` do
-        pokel $ contentsflat >=> eq text "foo" >=> click
-    eq titled "foo dialog" `focusl` do
-        pokel $ contentsflat >=> eq text "dialog button" >=> click
-    eq titled "foo frame" `focusl` do
+    focus (squint $ eq titled "foo frame") $ do
+        poke.squint $ replusify.flatten._topc >=> eq text "foo" >=> click
+    focus (squint $ eq titled "foo dialog") $  do
+        poke.squint $ replusify.flatten._topc >=> eq text "dialog button" >=> click
+    focus (squint $ eq titled "foo frame") $ do
         logmsg "foo log message"
         eqm withMenuBar ["Menu1","SubMenu1","submenuitem2"] $ Just True
         logmsg "getting a screenshot"
@@ -57,63 +56,63 @@ testCase = do
         logmsg "now for a second menu"
         eqm withMenuBar ["Menu1","SubMenu1","submenuitem1"] Nothing
         sleep 2
-        pokel $ contentsflat >=> eq text "foo" >=> click
+        poke.squint $ replusify.flatten._topc >=> eq text "foo" >=> click
         logmsg "mmmmmmm"
         sleep 2
-    eq titled "foo dialog" `focusl` do
-        pokel $ contentsflat >=> eq text "dialog button" >=> click
-    eq titled "foo frame" `focusl`  do
+    focus (squint $ eq titled "foo dialog") $ do
+        poke.squint $ replusify.flatten._topc >=> eq text "dialog button" >=> click
+    focus (squint $ eq titled "foo frame") $ do
         logmsg "this should show the combo"
-        pokel $ contentsflat >=> clickCombo
+        poke.squint $ replusify.flatten._topc >=> clickCombo
         sleep 2
-        pokel $ \g -> do 
-            candidateCell <- popupflat >=> listCell $ g
-            c <- treeflat . renderer $ candidateCell 
+        poke.squint $ \g -> do 
+            candidateCell <- replusify._popupLayer >=> replusify.flatten >=> listCell $ g
+            c <- replusify.flatten.renderer $ candidateCell 
             eq text "ccc" c
             return $ clickCell candidateCell  
         sleep 2
         logmsg "Now for a change of tab" 
-        pokel $ \g -> do 
-            tab <- contentsflat >=> tab $ g
+        poke.squint $ \g -> do 
+            tab <- replusify.flatten._topc >=> tab $ g
             logmsg . tabText $ tab -- logging inside LogicT
             guard $ tabText tab == "tab two"  
             return $ selectTab tab   
         sleep 2
-        pokel $ \g -> do
-            Table ll <- contentsflat >=> return . _componentType $ g
+        poke.squint $ \g -> do
+            Table ll <- replusify.flatten._topc >=> return . _componentType $ g
             cell <- replusify . concat $ ll
             c <- replusify . flatten . renderer $ cell
             txt <- justZ . _text $ c
             guard $ txt == "7" 
             return $ clickCell cell
         sleep 2
-        pokel $ \g -> do
-            Table ll <- contentsflat >=> return . _componentType $ g
+        poke.squint $ \g -> do
+            Table ll <- replusify.flatten._topc >=> return . _componentType $ g
             cell <- replusify . concat $ ll
-            c <- treeflat . renderer $ cell
+            c <- replusify.flatten . renderer $ cell
             txt <- justZ . _text $ c
             guard $ txt == "4" 
             return $ doubleClickCell cell
         sleep 2
-        pokel $ \g -> do    
-            ct <- contentsflat' $ g
+        poke.squint $ \g -> do    
+            ct <- replusify.flatten.duplicate._topc $ g
             Table _ <- return . _componentType . rootLabel $ ct -- is it a table?
-            c <- treeflat ct -- the table's children
+            c <- replusify.flatten $ ct -- the table's children
             txt <- justZ._text $ c
             guard $ txt == "4" 
             setText "77" c
         sleep 2
-        pokel $ \g -> do    
-            tab <- contentsflat >=> tab $ g
+        poke.squint $ \g -> do    
+            tab <- replusify.flatten._topc >=> tab $ g
             logmsg . tabText $ tab -- logging inside LogicT
             guard $ tabText tab == "tab JTree a"  
             return $ selectTab tab   
         sleep 2
-        pokel $ \g -> do    
-            Treegui forest <- contentsflat >=> return . _componentType $ g
+        poke.squint $ \g -> do    
+            Treegui forest <- replusify.flatten._topc >=> return . _componentType $ g
             tree <- replusify forest
-            cell <- treeflat tree 
-            c <- treeflat . renderer $ cell
+            cell <- replusify.flatten $ tree 
+            c <- replusify.flatten . renderer $ cell
             txt <- justZ . _text $ c
             guard $ txt == "leaf a" 
             expandf <- justZ . expand $ cell
