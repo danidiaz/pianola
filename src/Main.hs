@@ -43,12 +43,12 @@ type Test = Pianola (GUI Protocol) LogEntry Protocol ()
 
 testCase:: Test
 testCase = do 
-    -- focusl (eq titled "foo frame") $ do
-    focus (squint $ eq titled "foo frame") $ do
+    -- withl (eq titled "foo frame") $ do
+    with (squint $ eq titled "foo frame") $ do
         poke.squint $ replusify.flatten._topc >=> eq text "foo" >=> click
-    focus (squint $ eq titled "foo dialog") $  do
+    with (squint $ eq titled "foo dialog") $  do
         poke.squint $ replusify.flatten._topc >=> eq text "dialog button" >=> click
-    focus (squint $ eq titled "foo frame") $ do
+    with (squint $ eq titled "foo frame") $ do
         logmsg "foo log message"
         eqm withMenuBar ["Menu1","SubMenu1","submenuitem2"] $ Just True
         logmsg "getting a screenshot"
@@ -59,9 +59,9 @@ testCase = do
         poke.squint $ replusify.flatten._topc >=> eq text "foo" >=> click
         logmsg "mmmmmmm"
         sleep 2
-    focus (squint $ eq titled "foo dialog") $ do
+    with (squint $ eq titled "foo dialog") $ do
         poke.squint $ replusify.flatten._topc >=> eq text "dialog button" >=> click
-    focus (squint $ eq titled "foo frame") $ do
+    with (squint $ eq titled "foo frame") $ do
         logmsg "this should show the combo"
         poke.squint $ replusify.flatten._topc >=> clickCombo
         sleep 2

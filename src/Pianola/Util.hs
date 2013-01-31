@@ -12,10 +12,12 @@ module Pianola.Util (
         eq,
         eqm,
         replusify,
+        trees,
+        forest,
 --        treeflat,
 --        treeflat',
 --        forestflat,
-        flattenl,
+--        flattenl,
 --        composeK,
 --        prependK,
 --        appendK,
@@ -82,6 +84,12 @@ tomaybet = MaybeT . liftM replusify . observeManyT 1
 
 flattenl :: MonadPlus m => Tree a -> m a
 flattenl = replusify . flatten 
+
+trees :: MonadPlus m => Tree a -> m (Tree a)
+trees = replusify . flatten . duplicate
+
+forest :: MonadPlus m => Forest a -> m (Tree a)
+forest = replusify >=> trees 
 
 -- useful msgpack instances
 instance (Unpackable a, Unpackable b) => Unpackable (Either a b) where

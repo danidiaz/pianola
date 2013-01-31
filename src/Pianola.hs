@@ -9,7 +9,7 @@ module Pianola (
         ObserverF(..),
         liftNp,
         Observer(..),
-        focusO,
+        withO,
         Pianola(..),
         Delay,
         play,
@@ -22,8 +22,8 @@ module Pianola (
         retryPeek,
         retryPoke,
         sleep,
-        focus --,  
---        focusl
+        with --,  
+--        withl
     ) where
 
 import Prelude hiding (catch,(.))
@@ -72,8 +72,8 @@ type ObserverF o l m = Compose ((->) o) (MaybeT (Pr l (Nullipotent m)))
 
 type Observer o l m = Free (ObserverF o l m)
 
-focusO :: (Functor m, Monad m) => Glance o' l m o -> Observer o l m a -> Observer o' l m a
-focusO prefix v =
+withO :: (Functor m, Monad m) => Glance o' l m o -> Observer o l m a -> Observer o' l m a
+withO prefix v =
    let nattrans (Compose k) = Compose $ prefix >=> k
    in hoistFree nattrans v
 
@@ -123,14 +123,14 @@ retryPoke d xs = retryPeek d xs >>= respond
 sleep :: Monad m => Delay -> Pianola o l m ()
 sleep = lift . respond 
 
-focus :: (Functor m, Monad m) => Glance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
-focus prefix pi  =
-    hoist (hoist (mapMaybeT (hoist $ focusO prefix))) $ pi 
+with :: (Functor m, Monad m) => Glance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
+with prefix pi  =
+    hoist (hoist (mapMaybeT (hoist $ withO prefix))) $ pi 
 
---focusl :: (Functor m, Monad m) => Multiglance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
---focusl g = focus (narrowK g)
+--withl :: (Functor m, Monad m) => Multiglance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
+--withl g = with (narrowK g)
 
-infixl 0 `focus`
+infixl 0 `with`
 
 --
 instance Monad m => PianolaLog (Pianola o LogEntry m) where
