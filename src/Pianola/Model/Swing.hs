@@ -109,10 +109,10 @@ data Tab m = Tab
 
 -- logic helpers
 
-titled :: MonadPlus m => (T.Text -> Bool) -> GUI n -> m (WindowInfo n)
+titled :: MonadPlus m => (T.Text -> Bool) -> GUI n -> m (Window n)
 titled p gui = do 
-    w <- replusify >=> replusify.flatten $ gui
-    guard . p . _windowTitle $ w
+    w <- forest gui
+    guard . p . _windowTitle . rootLabel $ w
     return w
 
 --menuflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
@@ -130,9 +130,9 @@ titled p gui = do
 --wholewindowflat::MonadPlus m => WindowInfo n -> m (ComponentInfo n)
 --wholewindowflat w = msum $ map ($w) [menuflat,popupflat,contentsflat]
 
-text:: MonadPlus m => (T.Text -> Bool) -> ComponentInfo n -> m (ComponentInfo n)
+text:: MonadPlus m => (T.Text -> Bool) -> Component n -> m (Component n)
 text f c = do
-    t <- justZ._text $ c 
+    t <- justZ._text.rootLabel $ c 
     guard $ f t
     return c
  
@@ -146,25 +146,25 @@ text f c = do
 -- escape = liftBase . _escape
 -- 
 -- 
-toggle:: MonadPlus n => Bool -> ComponentInfo m -> n (Sealed m)
-toggle b (_componentType -> Toggleable _ f) = return $ f b
+toggle:: MonadPlus n => Bool -> Component m -> n (Sealed m)
+toggle b (_componentType.rootLabel -> Toggleable _ f) = return $ f b
 toggle _ _ = mzero
 -- 
 -- 
-click:: MonadPlus n => ComponentInfo m -> n (Sealed m)
-click (_componentType -> Button a) = return a
+click:: MonadPlus n => Component m -> n (Sealed m)
+click (_componentType.rootLabel -> Button a) = return a
 click _ = mzero
 
-clickCombo:: MonadPlus n => ComponentInfo m -> n (Sealed m)
-clickCombo (_componentType -> ComboBox _ a) = return a
+clickCombo:: MonadPlus n => Component m -> n (Sealed m)
+clickCombo (_componentType.rootLabel -> ComboBox _ a) = return a
 clickCombo _ = mzero
 
-listCell:: MonadPlus m => ComponentInfo n -> m (Cell n)
-listCell (_componentType -> List l) = replusify l
+listCell:: MonadPlus m => Component n -> m (Cell n)
+listCell (_componentType.rootLabel -> List l) = replusify l
 listCell _ = mzero
 
-tab:: MonadPlus m => ComponentInfo n -> m (Tab n)
-tab (_componentType -> TabbedPane p) = replusify p
+tab:: MonadPlus m => Component n -> m (Tab n)
+tab (_componentType.rootLabel -> TabbedPane p) = replusify p
 tab _ = mzero
 
 --rightClick:: MonadPlus m => ComponentInfo n -> m ()
@@ -178,16 +178,17 @@ setText txt c = case _componentType c of
 -- end logic helpers
 --
 
-withMenuBar:: Monad m => [T.Text -> Bool] -> Maybe Bool -> Pianola (WindowInfo m) l m ()
+withMenuBar:: Monad m => [T.Text -> Bool] -> Maybe Bool -> Pianola (Window m) l m ()
 withMenuBar ps liatype@(maybe click toggle -> lastItemAction) = 
       let go firstitem middleitems lastitem = do
-             poke.squint $ replusify . _menu >=> replusify.flatten >=> text firstitem >=> click
+             poke.squint $ forest._menu.rootLabel >=> text firstitem >=> click
              forM_ middleitems $ \f -> 
                 retryPoke 1 $ replicate 7 $ squint $ 
-                    replusify . _popupLayer >=> replusify.flatten >=> text f >=> click
+                    forest._popupLayer.rootLabel >=> text f >=> click
              retryPoke 1 $ replicate 7 $ squint $ 
-                    replusify . _popupLayer >=> replusify.flatten >=> text lastitem >=> lastItemAction
-             when (isJust liatype) $ replicateM_ (succ $ length middleitems) (poke $ return . _escape)
+                    forest._popupLayer.rootLabel >=> text lastitem >=> lastItemAction
+             when (isJust liatype) $ replicateM_ (succ $ length middleitems) 
+                                                    (poke $ return._escape.rootLabel)
       in case (viewl . fromList $ ps) of 
           firstitem :< ps' ->  case viewr ps' of
               ps'' :> lastitem -> go firstitem (toList ps'') lastitem

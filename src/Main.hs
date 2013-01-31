@@ -45,41 +45,41 @@ testCase:: Test
 testCase = do 
     -- withl (eq titled "foo frame") $ do
     with (squint $ eq titled "foo frame") $ do
-        poke.squint $ replusify.flatten._topc >=> eq text "foo" >=> click
+        poke.squint $ trees._topc.rootLabel >=> eq text "foo" >=> click
     with (squint $ eq titled "foo dialog") $  do
-        poke.squint $ replusify.flatten._topc >=> eq text "dialog button" >=> click
+        poke.squint $ trees._topc.rootLabel >=> eq text "dialog button" >=> click
     with (squint $ eq titled "foo frame") $ do
         logmsg "foo log message"
         eqm withMenuBar ["Menu1","SubMenu1","submenuitem2"] $ Just True
         logmsg "getting a screenshot"
-        logimg =<< peek (liftNp . _image) 
+        logimg =<< peek (liftNp._image.rootLabel) 
         logmsg "now for a second menu"
         eqm withMenuBar ["Menu1","SubMenu1","submenuitem1"] Nothing
         sleep 2
-        poke.squint $ replusify.flatten._topc >=> eq text "foo" >=> click
+        poke.squint $ trees._topc.rootLabel >=> eq text "foo" >=> click
         logmsg "mmmmmmm"
         sleep 2
     with (squint $ eq titled "foo dialog") $ do
-        poke.squint $ replusify.flatten._topc >=> eq text "dialog button" >=> click
+        poke.squint $ trees._topc.rootLabel >=> eq text "dialog button" >=> click
     with (squint $ eq titled "foo frame") $ do
         logmsg "this should show the combo"
-        poke.squint $ replusify.flatten._topc >=> clickCombo
+        poke.squint $ trees._topc.rootLabel >=> clickCombo
         sleep 2
         poke.squint $ \g -> do 
-            candidateCell <- replusify._popupLayer >=> replusify.flatten >=> listCell $ g
-            c <- replusify.flatten.renderer $ candidateCell 
+            candidateCell <- forest._popupLayer.rootLabel >=> listCell $ g
+            c <- trees.renderer $ candidateCell 
             eq text "ccc" c
             return $ clickCell candidateCell  
         sleep 2
         logmsg "Now for a change of tab" 
         poke.squint $ \g -> do 
-            tab <- replusify.flatten._topc >=> tab $ g
+            tab <- trees._topc.rootLabel >=> tab $ g
             logmsg . tabText $ tab -- logging inside LogicT
             guard $ tabText tab == "tab two"  
             return $ selectTab tab   
         sleep 2
         poke.squint $ \g -> do
-            Table ll <- replusify.flatten._topc >=> return . _componentType $ g
+            Table ll <- trees._topc.rootLabel >=> return._componentType.rootLabel $ g
             cell <- replusify . concat $ ll
             c <- replusify . flatten . renderer $ cell
             txt <- justZ . _text $ c
@@ -87,7 +87,7 @@ testCase = do
             return $ clickCell cell
         sleep 2
         poke.squint $ \g -> do
-            Table ll <- replusify.flatten._topc >=> return . _componentType $ g
+            Table ll <- trees._topc.rootLabel >=> return._componentType.rootLabel $ g
             cell <- replusify . concat $ ll
             c <- replusify.flatten . renderer $ cell
             txt <- justZ . _text $ c
@@ -95,7 +95,7 @@ testCase = do
             return $ doubleClickCell cell
         sleep 2
         poke.squint $ \g -> do    
-            ct <- replusify.flatten.duplicate._topc $ g
+            ct <- trees._topc.rootLabel $ g
             Table _ <- return . _componentType . rootLabel $ ct -- is it a table?
             c <- replusify.flatten $ ct -- the table's children
             txt <- justZ._text $ c
@@ -103,13 +103,13 @@ testCase = do
             setText "77" c
         sleep 2
         poke.squint $ \g -> do    
-            tab <- replusify.flatten._topc >=> tab $ g
+            tab <- trees._topc.rootLabel >=> tab $ g
             logmsg . tabText $ tab -- logging inside LogicT
             guard $ tabText tab == "tab JTree a"  
             return $ selectTab tab   
         sleep 2
         poke.squint $ \g -> do    
-            Treegui forest <- replusify.flatten._topc >=> return . _componentType $ g
+            Treegui forest <- trees._topc.rootLabel >=> return._componentType.rootLabel $ g
             tree <- replusify forest
             cell <- replusify.flatten $ tree 
             c <- replusify.flatten . renderer $ cell
@@ -118,7 +118,7 @@ testCase = do
             expandf <- justZ . expand $ cell
             return $ expandf True
         sleep 2
-        poke $ return . _close
+        poke $ return._close.rootLabel
 
 delayer :: MonadIO m => Consumer ProxyFast Delay m a
 delayer = forever $ request () >>= liftIO . threadDelay . (*1000000)
