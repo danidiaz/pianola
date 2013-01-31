@@ -44,11 +44,11 @@ type Test = Pianola (GUI Protocol) LogEntry Protocol ()
 testCase:: Test
 testCase = do 
     -- withl (eq titled "foo frame") $ do
-    with (squint $ eq titled "foo frame") $ do
-        poke.squint $ trees._topc.rootLabel >=> eq text "foo" >=> click
-    with (squint $ eq titled "foo dialog") $  do
-        poke.squint $ trees._topc.rootLabel >=> eq text "dialog button" >=> click
-    with (squint $ eq titled "foo frame") $ do
+    eq withWindowTitled "foo frame" $ do
+        poke.squint $ trees._contentsPane.rootLabel >=> eq text "foo" >=> click
+    eq withWindowTitled "foo dialog" $ do
+        poke.squint $ trees._contentsPane.rootLabel >=> eq text "dialog button" >=> click
+    eq withWindowTitled "foo frame" $ do
         logmsg "foo log message"
         eqm withMenuBar ["Menu1","SubMenu1","submenuitem2"] $ Just True
         logmsg "getting a screenshot"
@@ -56,14 +56,14 @@ testCase = do
         logmsg "now for a second menu"
         eqm withMenuBar ["Menu1","SubMenu1","submenuitem1"] Nothing
         sleep 2
-        poke.squint $ trees._topc.rootLabel >=> eq text "foo" >=> click
+        poke.squint $ trees._contentsPane.rootLabel >=> eq text "foo" >=> click
         logmsg "mmmmmmm"
         sleep 2
-    with (squint $ eq titled "foo dialog") $ do
-        poke.squint $ trees._topc.rootLabel >=> eq text "dialog button" >=> click
-    with (squint $ eq titled "foo frame") $ do
+    eq withWindowTitled "foo dialog" $ do
+        poke.squint $ trees._contentsPane.rootLabel >=> eq text "dialog button" >=> click
+    eq withWindowTitled "foo frame" $ do
         logmsg "this should show the combo"
-        poke.squint $ trees._topc.rootLabel >=> clickCombo
+        poke.squint $ trees._contentsPane.rootLabel >=> clickCombo
         sleep 2
         poke.squint $ \g -> do 
             candidateCell <- forest._popupLayer.rootLabel >=> listCell $ g
@@ -73,13 +73,13 @@ testCase = do
         sleep 2
         logmsg "Now for a change of tab" 
         poke.squint $ \g -> do 
-            tab <- trees._topc.rootLabel >=> tab $ g
+            tab <- trees._contentsPane.rootLabel >=> tab $ g
             logmsg . tabText $ tab -- logging inside LogicT
             guard $ tabText tab == "tab two"  
             return $ selectTab tab   
         sleep 2
         poke.squint $ \g -> do
-            Table ll <- trees._topc.rootLabel >=> return._componentType.rootLabel $ g
+            Table ll <- trees._contentsPane.rootLabel >=> return._componentType.rootLabel $ g
             cell <- replusify . concat $ ll
             c <- replusify . flatten . renderer $ cell
             txt <- justZ . _text $ c
@@ -87,7 +87,7 @@ testCase = do
             return $ clickCell cell
         sleep 2
         poke.squint $ \g -> do
-            Table ll <- trees._topc.rootLabel >=> return._componentType.rootLabel $ g
+            Table ll <- trees._contentsPane.rootLabel >=> return._componentType.rootLabel $ g
             cell <- replusify . concat $ ll
             c <- replusify.flatten . renderer $ cell
             txt <- justZ . _text $ c
@@ -95,7 +95,7 @@ testCase = do
             return $ doubleClickCell cell
         sleep 2
         poke.squint $ \g -> do    
-            ct <- trees._topc.rootLabel $ g
+            ct <- trees._contentsPane.rootLabel $ g
             Table _ <- return . _componentType . rootLabel $ ct -- is it a table?
             c <- replusify.flatten $ ct -- the table's children
             txt <- justZ._text $ c
@@ -103,13 +103,13 @@ testCase = do
             setText "77" c
         sleep 2
         poke.squint $ \g -> do    
-            tab <- trees._topc.rootLabel >=> tab $ g
+            tab <- trees._contentsPane.rootLabel >=> tab $ g
             logmsg . tabText $ tab -- logging inside LogicT
             guard $ tabText tab == "tab JTree a"  
             return $ selectTab tab   
         sleep 2
         poke.squint $ \g -> do    
-            Treegui forest <- trees._topc.rootLabel >=> return._componentType.rootLabel $ g
+            Treegui forest <- trees._contentsPane.rootLabel >=> return._componentType.rootLabel $ g
             tree <- replusify forest
             cell <- replusify.flatten $ tree 
             c <- replusify.flatten . renderer $ cell

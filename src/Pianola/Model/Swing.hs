@@ -15,7 +15,6 @@ module Pianola.Model.Swing (
         ComponentType (..),
         Cell (..),
         Tab (..),
-        titled,
 --        menuflat,
 --        popupflat,
 --        contentsflat,
@@ -27,6 +26,10 @@ module Pianola.Model.Swing (
         listCell,
         tab,
         setText,
+        withMainWindow,
+        withChildWindow,
+        withWindowTitled,
+        withContentsPane,
         withMenuBar
     ) where
 
@@ -36,6 +39,7 @@ import Data.ByteString (ByteString)
 import qualified Data.Text as T
 import Control.Category
 import Control.Error
+import Control.Error.Safe
 import Control.Monad
 import Control.Applicative
 import Control.Monad
@@ -57,7 +61,7 @@ data WindowInfo m = WindowInfo
         _windowDim::(Int,Int),
         _menu::[Component m],
         _popupLayer:: [Component m],
-        _topc::Component m,
+        _contentsPane::Component m,
         _image::Nullipotent m Image,
         _escape::Sealed m,
         _close::Sealed m
@@ -107,13 +111,7 @@ data Tab m = Tab
         selectTab::Sealed m
     }
 
--- logic helpers
 
-titled :: MonadPlus m => (T.Text -> Bool) -> GUI n -> m (Window n)
-titled p gui = do 
-    w <- forest gui
-    guard . p . _windowTitle . rootLabel $ w
-    return w
 
 --menuflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
 --menuflat = forestflat . _menu
@@ -122,10 +120,10 @@ titled p gui = do
 --popupflat = forestflat . _popupLayer
 -- 
 --contentsflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
---contentsflat =  treeflat . _topc
+--contentsflat =  treeflat . _contentsPane
 -- 
 --contentsflat':: MonadPlus m => WindowInfo n -> m (Component n)
---contentsflat' =  treeflat' . _topc
+--contentsflat' =  treeflat' . _contentsPane
 --
 --wholewindowflat::MonadPlus m => WindowInfo n -> m (ComponentInfo n)
 --wholewindowflat w = msum $ map ($w) [menuflat,popupflat,contentsflat]
@@ -177,6 +175,21 @@ setText txt c = case _componentType c of
 
 -- end logic helpers
 --
+
+withMainWindow :: (Functor m, Monad m) => Pianola (Window m) l m a -> Pianola [Window m] l m a 
+withMainWindow = with headZ  
+
+withChildWindow :: (Functor m, Monad m) => Pianola (Window m) l m a -> Pianola (Window m) l m a 
+withChildWindow = with $ replusify . subForest
+
+withWindowTitled :: (Functor m, Monad m) => (T.Text -> Bool) -> Pianola (Window m) l m a -> Pianola [Window m] l m a 
+withWindowTitled p = with . squint $ \ws -> do
+    w <- forest ws
+    guard . p . _windowTitle . rootLabel $ w
+    return w
+
+withContentsPane :: (Functor m, Monad m) => Pianola (Component m) l m a -> Pianola (Window m) l m a 
+withContentsPane = with $ return._contentsPane.rootLabel
 
 withMenuBar:: Monad m => [T.Text -> Bool] -> Maybe Bool -> Pianola (Window m) l m ()
 withMenuBar ps liatype@(maybe click toggle -> lastItemAction) = 
