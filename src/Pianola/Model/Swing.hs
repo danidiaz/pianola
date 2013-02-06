@@ -30,7 +30,7 @@ module Pianola.Model.Swing (
         withChildWindow,
         withWindowTitled,
         withContentsPane,
-        withMenuBar
+        selectInMenuBar
     ) where
 
 import Prelude hiding (catch,(.))
@@ -191,8 +191,8 @@ withWindowTitled p = with . squint $ \ws -> do
 withContentsPane :: (Functor m, Monad m) => Pianola (Component m) l m a -> Pianola (Window m) l m a 
 withContentsPane = with $ return._contentsPane.rootLabel
 
-withMenuBar:: Monad m => [T.Text -> Bool] -> Maybe Bool -> Pianola (Window m) l m ()
-withMenuBar ps liatype@(maybe click toggle -> lastItemAction) = 
+selectInMenuBar:: Monad m => [T.Text -> Bool] -> Maybe Bool -> Pianola (Window m) l m ()
+selectInMenuBar ps liatype@(maybe click toggle -> lastItemAction) = 
       let go firstitem middleitems lastitem = do
              poke.squint $ forest._menu.rootLabel >=> text firstitem >=> click
              forM_ middleitems $ \f -> 

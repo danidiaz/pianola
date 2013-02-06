@@ -50,11 +50,11 @@ testCase = do
         poke.squint $ trees._contentsPane.rootLabel >=> eq text "dialog button" >=> click
     eq withWindowTitled "foo frame" $ do
         logmsg "foo log message"
-        eqm withMenuBar ["Menu1","SubMenu1","submenuitem2"] $ Just True
+        eqm selectInMenuBar ["Menu1","SubMenu1","submenuitem2"] $ Just True
         logmsg "getting a screenshot"
         logimg =<< peek (liftNp._image.rootLabel) 
         logmsg "now for a second menu"
-        eqm withMenuBar ["Menu1","SubMenu1","submenuitem1"] Nothing
+        eqm selectInMenuBar ["Menu1","SubMenu1","submenuitem1"] Nothing
         sleep 2
         poke.squint $ trees._contentsPane.rootLabel >=> eq text "foo" >=> click
         logmsg "mmmmmmm"

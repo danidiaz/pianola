@@ -9,12 +9,11 @@ module Pianola (
         Glance(..),
         notPresent,
         collect,
-        anyOf,
+        members,
         children,
         descendants,
         liftN,
         ObserverF(..),
-        liftN,
         Pianola(..),
         Delay,
         play,
@@ -55,14 +54,11 @@ import Pianola.Util
 
 type Glance m l o a = o -> LogicT (Prod l (Nullipotent m)) a
 
-notPresent :: Monad m => Glance m l o a -> Glance m l o () 
-notPresent = fmap lnot
+members :: Glance m l [o] o 
+members = replusify
 
 collect :: Monad m => Glance m l o a -> Glance m l o [a] 
 collect = fmap $ lift . observeAllT
-
-anyOf :: Glance m l [o] o 
-anyOf = replusify
 
 children :: Glance m l (Tree o) (Tree o)
 children = replusify . subForest 
@@ -72,6 +68,9 @@ descendants = replusify . flatten . duplicate
 
 liftN :: Monad m => Glance m l (Nullipotent m a) a
 liftN = lift . lift
+
+notPresent :: Monad m => Glance m l o a -> Glance m l o () 
+notPresent = fmap lnot
 
 type ObserverF m l o = Compose ((->) o) (LogicT (Prod l (Nullipotent m)))
 
