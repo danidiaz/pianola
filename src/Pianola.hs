@@ -64,8 +64,8 @@ collect = fmap $ lift . observeAllT
 anyOf :: Glance m l [o] o 
 anyOf = replusify
 
-children :: Glance m l (Tree o) (Forest o)
-children = return . subForest 
+children :: Glance m l (Tree o) (Tree o)
+children = replusify . subForest 
 
 descendants :: Glance m l (Tree o) (Tree o)
 descendants = replusify . flatten . duplicate
@@ -97,7 +97,7 @@ play mom pi =
     let pianola' = hoist (hoist (mapMaybeT (hoist $ runObserver mom))) $ pi 
         injector () = forever $ do
             s <- request ()
-            lift . lift . lift . lift . lift . lift $ unseal s -- this should be private
+            lift . lift . lift . lift . lift . lift $ unseal s -- unseal should be private
     in runProxy $ const pianola' >-> injector
 
 pianolaProblem :: Monad m => Pianola m l o a
