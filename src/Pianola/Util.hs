@@ -12,8 +12,8 @@ module Pianola.Util (
         eq,
         eqm,
         replusify,
-        trees,
-        forest,
+--        trees,
+--        forest,
 --        treeflat,
 --        treeflat',
 --        forestflat,
@@ -24,7 +24,9 @@ module Pianola.Util (
 --        threadKs,
         -- narrow,
         tomaybet,
+        maybify,
         -- narrowK,
+        Prod,
         PianolaLog(..),
         LogEntry(..),
         Image,
@@ -64,11 +66,15 @@ eqm f a = f $ map (==) a
 
 -- logic helpers
 
+
 replusify:: MonadPlus m => [a] -> m a
 replusify = msum . map return
 
 tomaybet:: Monad m => LogicT m a -> MaybeT m a
 tomaybet = MaybeT . liftM replusify . observeManyT 1
+
+maybify :: Monad m => LogicT m a -> LogicT m (Maybe a)
+maybify l = lift $ observeManyT 1 l >>= return . replusify
 
 --narrowK :: Monad m => (a -> LogicT m b) -> a -> MaybeT m b 
 --narrowK = fmap narrow 
@@ -82,14 +88,14 @@ tomaybet = MaybeT . liftM replusify . observeManyT 1
 --forestflat:: MonadPlus m => Forest a -> m a
 --forestflat forest = replusify forest >>= treeflat 
 
-flattenl :: MonadPlus m => Tree a -> m a
-flattenl = replusify . flatten 
+--flattenl :: MonadPlus m => Tree a -> m a
+--flattenl = replusify . flatten 
 
-trees :: MonadPlus m => Tree a -> m (Tree a)
-trees = replusify . flatten . duplicate
-
-forest :: MonadPlus m => Forest a -> m (Tree a)
-forest = replusify >=> trees 
+--trees :: MonadPlus m => Tree a -> m (Tree a)
+--trees = replusify . flatten . duplicate
+--
+--forest :: MonadPlus m => Forest a -> m (Tree a)
+--forest = replusify >=> trees 
 
 -- useful msgpack instances
 instance (Unpackable a, Unpackable b) => Unpackable (Either a b) where
@@ -109,6 +115,9 @@ instance MonadBase b m => MonadBase b (ProxyFast x y u v m) where
 
 instance MonadBase b m => MonadBase b (LogicT m) where
     liftBase = lift.liftBase
+
+-- pipes
+type Prod t = Producer ProxyFast t
 
 -- logging
 type Image = B.ByteString

@@ -6,24 +6,25 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 
 module Pianola (
+        Glance(..),
+        notPresent,
+        collect,
+        anyOf,
+        children,
+        descendants,
+        liftN,
         ObserverF(..),
-        liftNp,
-        Observer(..),
-        withO,
+        liftN,
         Pianola(..),
         Delay,
         play,
-        oops,
-        squint,
+        pianolaProblem,
         peek,
---        peekl,
         poke,
---        pokel,
         retryPeek,
         retryPoke,
         sleep,
-        with --,  
---        withl
+        with
     ) where
 
 import Prelude hiding (catch,(.))
@@ -49,89 +50,82 @@ import Control.Monad.Free
 import Control.Monad.Trans.Reader
 import Control.Monad.Logic
 import Control.Monad.Trans.Maybe
---import Control.Monad.Trans.Free  
 
 import Pianola.Util
 
-type Pr t = Producer ProxyFast t
+type Glance m l o a = o -> LogicT (Prod l (Nullipotent m)) a
 
-type Glance o l m a = o -> MaybeT (Pr l (Nullipotent m)) a
+notPresent :: Monad m => Glance m l o a -> Glance m l o () 
+notPresent = fmap lnot
 
-type Wideglance o l m a = o -> LogicT (Pr l (Nullipotent m)) a
+collect :: Monad m => Glance m l o a -> Glance m l o [a] 
+collect = fmap $ lift . observeAllT
 
-squint :: Monad m => (a -> LogicT m b) -> a -> MaybeT m b 
-squint = fmap tomaybet
+anyOf :: Glance m l [o] o 
+anyOf = replusify
 
---
---
+children :: Glance m l (Tree o) (Forest o)
+children = return . subForest 
 
-liftNp :: (Monad m, MonadTrans mt) => Nullipotent m a -> mt (Pr l (Nullipotent m)) a
-liftNp = lift . lift
+descendants :: Glance m l (Tree o) (Tree o)
+descendants = replusify . flatten . duplicate
 
-type ObserverF o l m = Compose ((->) o) (MaybeT (Pr l (Nullipotent m)))
+liftN :: Monad m => Glance m l (Nullipotent m a) a
+liftN = lift . lift
 
-type Observer o l m = Free (ObserverF o l m)
+type ObserverF m l o = Compose ((->) o) (LogicT (Prod l (Nullipotent m)))
 
-withO :: (Functor m, Monad m) => Glance o' l m o -> Observer o l m a -> Observer o' l m a
-withO prefix v =
+type Observer m l o = Free (ObserverF m l o)
+
+focus :: (Functor m, Monad m) => Glance m l o' o -> Observer m l o a -> Observer m l o' a
+focus prefix v =
    let nattrans (Compose k) = Compose $ prefix >=> k
    in hoistFree nattrans v
 
-playO :: Monad m => m o -> Observer o l m a -> MaybeT (Pr l m) a
-playO _ (Pure b) = return b
-playO mom (Free f) =
-   let removeNullipotent = fmap.mapMaybeT $ hoist runNullipotent
-   in join $ (lift . lift $ mom) >>= removeNullipotent (getCompose $ playO mom <$> f)
+runObserver :: Monad m => m o -> Observer m l o a -> MaybeT (Prod l m) a
+runObserver _ (Pure b) = return b
+runObserver mom (Free f) =
+   let squint = fmap $ mapMaybeT (hoist runNullipotent) . tomaybet
+   in join $ (lift . lift $ mom) >>= squint (getCompose $ runObserver mom <$> f)
 
 type Delay = Int
 
-type Pianola o l m = Pr (Sealed m) (Pr Delay (MaybeT (Pr l (Observer o l m))))  
+type Pianola m l o = Prod (Sealed m) (Prod Delay (MaybeT (Prod l (Observer m l o))))  
 
-play :: Monad m => m o -> Pianola o l m a -> Pr Delay (MaybeT (Pr l (MaybeT (Pr l m)))) a
+play :: Monad m => m o -> Pianola m l o a -> Prod Delay (MaybeT (Prod l (MaybeT (Prod l m)))) a
 play mom pi =
-    let pianola' = hoist (hoist (mapMaybeT (hoist $ playO mom))) $ pi 
+    let pianola' = hoist (hoist (mapMaybeT (hoist $ runObserver mom))) $ pi 
         injector () = forever $ do
             s <- request ()
             lift . lift . lift . lift . lift . lift $ unseal s -- this should be private
     in runProxy $ const pianola' >-> injector
 
+pianolaProblem :: Monad m => Pianola m l o a
+pianolaProblem = lift . lift $ mzero
 
-oops :: Monad m => Pianola o l m a
-oops = lift . lift $ mzero
-
-peek :: Monad m => Glance o l m a -> Pianola o l m a
+peek :: Monad m => Glance m l o a -> Pianola m l o a
 peek = lift . lift . lift . lift . liftF . Compose
 
---peekl :: Monad m => Multiglance o l m a -> Pianola o l m a
---peekl = peek.narrowK
-
-poke :: Monad m => Glance o l m (Sealed m) -> Pianola o l m () 
+poke :: Monad m => Glance m l o (Sealed m) -> Pianola m l o () 
 poke locator = peek locator >>= respond
 
---pokel :: Monad m => Multiglance o l m (Sealed m) -> Pianola o l m () 
---pokel = poke.narrowK
-
-retryPeek :: Monad m => Delay -> [Glance o l m a] -> Pianola o l m a 
-retryPeek _ [] = oops
+retryPeek :: Monad m => Delay -> [Glance m l o a] -> Pianola m l o a 
+retryPeek _ [] = pianolaProblem
 retryPeek d (x:xs) = do
-    a <- peek . fmap (lift . runMaybeT) $ x
+    a <- peek . fmap maybify $ x
     maybe (sleep d >> retryPeek d xs) return a
 
-retryPoke :: Monad m => Delay -> [Glance o l m (Sealed m)] -> Pianola o l m () 
+retryPoke :: Monad m => Delay -> [Glance m l o (Sealed m)] -> Pianola m l o () 
 retryPoke d xs = retryPeek d xs >>= respond 
 
-sleep :: Monad m => Delay -> Pianola o l m ()
+sleep :: Monad m => Delay -> Pianola m l o ()
 sleep = lift . respond 
 
-with :: (Functor m, Monad m) => Glance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
+with :: (Functor m, Monad m) => Glance m l o' o ->  Pianola m l o a -> Pianola m l o' a 
 with prefix pi  =
-    hoist (hoist (mapMaybeT (hoist $ withO prefix))) $ pi 
-
---withl :: (Functor m, Monad m) => Multiglance o' l m o ->  Pianola o l m a -> Pianola o' l m a 
---withl g = with (narrowK g)
+    hoist (hoist (mapMaybeT (hoist $ focus prefix))) $ pi 
 
 infixl 0 `with`
 
---
-instance Monad m => PianolaLog (Pianola o LogEntry m) where
+instance Monad m => PianolaLog (Pianola m LogEntry o) where
     xanlog = lift . lift . lift . xanlog
