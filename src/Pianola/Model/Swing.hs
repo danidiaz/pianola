@@ -19,7 +19,10 @@ module Pianola.Model.Swing (
 --        popupflat,
 --        contentsflat,
 --        contentsflat',
-        text,
+        titled,
+        hasText,
+        hasToolTip,
+        hasName,
         click,
         toggle,
         clickCombo,
@@ -27,9 +30,7 @@ module Pianola.Model.Swing (
         tab,
         setText,
         withMainWindow,
-        withChildWindow,
-        withWindowTitled,
-        withContentsPane,
+        contentsPane,
         selectInMenuBar
     ) where
 
@@ -112,6 +113,10 @@ data Tab m = Tab
     }
 
 
+titled:: MonadPlus m => (T.Text -> Bool) -> Window n -> m (Window n)
+titled f w = do
+    guard . f $ _windowTitle . rootLabel $ w  
+    return w
 
 --menuflat:: MonadPlus m => WindowInfo n -> m (ComponentInfo n)
 --menuflat = forestflat . _menu
@@ -128,12 +133,24 @@ data Tab m = Tab
 --wholewindowflat::MonadPlus m => WindowInfo n -> m (ComponentInfo n)
 --wholewindowflat w = msum $ map ($w) [menuflat,popupflat,contentsflat]
 
-text:: MonadPlus m => (T.Text -> Bool) -> Component n -> m (Component n)
-text f c = do
+hasText:: MonadPlus m => (T.Text -> Bool) -> Component n -> m (Component n)
+hasText f c = do
     t <- justZ._text.rootLabel $ c 
     guard $ f t
     return c
  
+hasToolTip:: MonadPlus m => (T.Text -> Bool) -> Component n -> m (Component n)
+hasToolTip f c = do
+    t <- justZ._tooltip.rootLabel $ c 
+    guard $ f t
+    return c
+
+hasName:: MonadPlus m => (T.Text -> Bool) -> Component n -> m (Component n)
+hasName f c = do
+    t <- justZ._name.rootLabel $ c 
+    guard $ f t
+    return c
+
 -- image::MonadBase n m => WindowInfo n -> m Image
 -- image = liftBase . _image
 -- 
@@ -176,35 +193,27 @@ setText txt c = case _componentType c of
 -- end logic helpers
 --
 
-withMainWindow :: (Functor m, Monad m) => Pianola (Window m) l m a -> Pianola [Window m] l m a 
+withMainWindow :: (Functor m, Monad m) => Pianola m l (Window m) a -> Pianola m l [Window m] a 
 withMainWindow = with headZ  
 
-withChildWindow :: (Functor m, Monad m) => Pianola (Window m) l m a -> Pianola (Window m) l m a 
-withChildWindow = with $ replusify . subForest
+contentsPane :: Monad m => Glance m l (Window m) (Component m)
+contentsPane = return._contentsPane.rootLabel 
 
-withWindowTitled :: (Functor m, Monad m) => (T.Text -> Bool) -> Pianola (Window m) l m a -> Pianola [Window m] l m a 
-withWindowTitled p = with . squint $ \ws -> do
-    w <- forest ws
-    guard . p . _windowTitle . rootLabel $ w
-    return w
-
-withContentsPane :: (Functor m, Monad m) => Pianola (Component m) l m a -> Pianola (Window m) l m a 
-withContentsPane = with $ return._contentsPane.rootLabel
-
-selectInMenuBar:: Monad m => [T.Text -> Bool] -> Maybe Bool -> Pianola (Window m) l m ()
+selectInMenuBar:: Monad m => [T.Text -> Bool] -> Maybe Bool -> Pianola m l (Window m) ()
 selectInMenuBar ps liatype@(maybe click toggle -> lastItemAction) = 
-      let go firstitem middleitems lastitem = do
-             poke.squint $ forest._menu.rootLabel >=> text firstitem >=> click
+      let popupLayerElements = anyOf._popupLayer.rootLabel >=> descendants  
+          go firstitem middleitems lastitem = do
+             poke $ anyOf._menu.rootLabel >=> descendants >=> hasText firstitem >=> click
              forM_ middleitems $ \f -> 
-                retryPoke 1 $ replicate 7 $ squint $ 
-                    forest._popupLayer.rootLabel >=> text f >=> click
-             retryPoke 1 $ replicate 7 $ squint $ 
-                    forest._popupLayer.rootLabel >=> text lastitem >=> lastItemAction
+                retryPoke 1 $ replicate 7 $  
+                    popupLayerElements >=> hasText f >=> click
+             retryPoke 1 $ replicate 7 $  
+                    popupLayerElements >=> hasText lastitem >=> lastItemAction
              when (isJust liatype) $ replicateM_ (succ $ length middleitems) 
                                                     (poke $ return._escape.rootLabel)
       in case (viewl . fromList $ ps) of 
           firstitem :< ps' ->  case viewr ps' of
               ps'' :> lastitem -> go firstitem (toList ps'') lastitem
-              _ -> oops
-          _ -> oops
+              _ -> pianofail
+          _ -> pianofail
   

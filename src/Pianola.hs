@@ -9,7 +9,7 @@ module Pianola (
         Glance(..),
         notPresent,
         collect,
-        members,
+        anyOf,
         children,
         descendants,
         liftN,
@@ -17,7 +17,7 @@ module Pianola (
         Pianola(..),
         Delay,
         play,
-        pianolaProblem,
+        pianofail,
         peek,
         poke,
         retryPeek,
@@ -54,8 +54,8 @@ import Pianola.Util
 
 type Glance m l o a = o -> LogicT (Prod l (Nullipotent m)) a
 
-members :: Glance m l [o] o 
-members = replusify
+anyOf :: Glance m l [o] o 
+anyOf = replusify
 
 collect :: Monad m => Glance m l o a -> Glance m l o [a] 
 collect = fmap $ lift . observeAllT
@@ -99,8 +99,8 @@ play mom pi =
             lift . lift . lift . lift . lift . lift $ unseal s -- unseal should be private
     in runProxy $ const pianola' >-> injector
 
-pianolaProblem :: Monad m => Pianola m l o a
-pianolaProblem = lift . lift $ mzero
+pianofail :: Monad m => Pianola m l o a
+pianofail = lift . lift $ mzero
 
 peek :: Monad m => Glance m l o a -> Pianola m l o a
 peek = lift . lift . lift . lift . liftF . Compose
@@ -109,7 +109,7 @@ poke :: Monad m => Glance m l o (Sealed m) -> Pianola m l o ()
 poke locator = peek locator >>= respond
 
 retryPeek :: Monad m => Delay -> [Glance m l o a] -> Pianola m l o a 
-retryPeek _ [] = pianolaProblem
+retryPeek _ [] = pianofail
 retryPeek d (x:xs) = do
     a <- peek . fmap maybify $ x
     maybe (sleep d >> retryPeek d xs) return a
