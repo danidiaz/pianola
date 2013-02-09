@@ -44,6 +44,7 @@ import Data.Tree
 import Data.List
 import Data.MessagePack
 import Data.Attoparsec.ByteString
+import Control.Error.Safe
 import Control.Monad
 import Control.Comonad
 import Control.Applicative

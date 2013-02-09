@@ -29,8 +29,11 @@ module Pianola.Model.Swing (
         listCell,
         tab,
         setText,
-        withMainWindow,
+        mainWindow,
+        childWindow,
         contentsPane,
+        windowComponents,
+        popupLayerComponents,
         selectInMenuBar
     ) where
 
@@ -164,11 +167,15 @@ hasName f c = do
 toggle:: MonadPlus n => Bool -> Component m -> n (Sealed m)
 toggle b (_componentType.rootLabel -> Toggleable _ f) = return $ f b
 toggle _ _ = mzero
+
 -- 
 -- 
 click:: MonadPlus n => Component m -> n (Sealed m)
 click (_componentType.rootLabel -> Button a) = return a
 click _ = mzero
+
+doClickByText :: (Functor m, Monad m) => (T.Text -> Bool) -> Pianola m l (Component m) ()
+doClickByText txt = poke $ hasText txt >=> click
 
 clickCombo:: MonadPlus n => Component m -> n (Sealed m)
 clickCombo (_componentType.rootLabel -> ComboBox _ a) = return a
@@ -182,38 +189,48 @@ tab:: MonadPlus m => Component n -> m (Tab n)
 tab (_componentType.rootLabel -> TabbedPane p) = replusify p
 tab _ = mzero
 
+
+
+
 --rightClick:: MonadPlus m => ComponentInfo n -> m ()
 --rightClick = liftBase . _rightClick
 
-setText:: MonadPlus m => T.Text -> ComponentInfo n -> m (Sealed n)
-setText txt c = case _componentType c of
+setText:: MonadPlus m => T.Text -> Component n -> m (Sealed n)
+setText txt c = case (_componentType.rootLabel $ c) of
     TextField (Just f) -> return $ f txt
     _ -> mzero
 
 -- end logic helpers
 --
 
-withMainWindow :: (Functor m, Monad m) => Pianola m l (Window m) a -> Pianola m l [Window m] a 
-withMainWindow = with headZ  
+mainWindow :: (Functor m, Monad m) => Glance m l (GUI m) (Window m)
+mainWindow = headZ  
+
+childWindow :: (Functor m, Monad m) => Glance m l (Window m) (Window m)
+childWindow = headZ.subForest
 
 contentsPane :: Monad m => Glance m l (Window m) (Component m)
 contentsPane = return._contentsPane.rootLabel 
 
-selectInMenuBar:: Monad m => [T.Text -> Bool] -> Maybe Bool -> Pianola m l (Window m) ()
-selectInMenuBar ps liatype@(maybe click toggle -> lastItemAction) = 
-      let popupLayerElements = anyOf._popupLayer.rootLabel >=> descendants  
-          go firstitem middleitems lastitem = do
-             poke $ anyOf._menu.rootLabel >=> descendants >=> hasText firstitem >=> click
-             forM_ middleitems $ \f -> 
-                retryPoke 1 $ replicate 7 $  
-                    popupLayerElements >=> hasText f >=> click
-             retryPoke 1 $ replicate 7 $  
-                    popupLayerElements >=> hasText lastitem >=> lastItemAction
-             when (isJust liatype) $ replicateM_ (succ $ length middleitems) 
-                                                    (poke $ return._escape.rootLabel)
-      in case (viewl . fromList $ ps) of 
-          firstitem :< ps' ->  case viewr ps' of
-              ps'' :> lastitem -> go firstitem (toList ps'') lastitem
-              _ -> pianofail
-          _ -> pianofail
-  
+windowComponents :: (Functor m, Monad m) => Glance m l (Window m) (Component m)
+windowComponents = contentsPane >=> descendants 
+
+popupLayerComponents :: (Functor m, Monad m) => Glance m l (Window m) (Component m)
+popupLayerComponents = anyOf._popupLayer.rootLabel >=> descendants  
+
+--withWindowTitled = (Functor m, Monad m) => (T.Text -> Bool) -> Pianola m l (Window m) a -> Pianola m l (Component m) a 
+--withWindowTitled 
+
+selectInMenuBar:: (Functor m,Monad m) => [T.Text -> Bool] -> Maybe Bool -> Pianola m l (Window m) ()
+selectInMenuBar ps shouldToggleLast = 
+    let go (firstitem,middleitems,lastitem) = do
+           poke $ anyOf._menu.rootLabel >=> descendants >=> hasText firstitem >=> click
+           let pairs = zip middleitems (click <$ middleitems) ++
+                       [(lastitem, maybe click toggle shouldToggleLast)]
+           forM_ pairs $ \(txt,action) -> 
+               retryPoke 1 $ replicate 7 $  
+                   popupLayerComponents >=> hasText txt >=> action
+           when (isJust shouldToggleLast) $ replicateM_ (length pairs) 
+                                                  (poke $ return._escape.rootLabel)
+        clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
+    in maybe pianofail go (clip ps)

@@ -39,77 +39,75 @@ import Pianola.Model.Swing
 import Pianola.Model.Swing.Protocol (snapshot)
 import Pianola.Protocol.IO
 
-type Test = Pianola (GUI Protocol) LogEntry Protocol ()
+type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 
 testCase:: Test
-testCase = do 
-    -- withl (eq titled "foo frame") $ do
-    eq withWindowTitled "foo frame" $ do
-        poke.squint $ trees._contentsPane.rootLabel >=> eq text "foo" >=> click
-    eq withWindowTitled "foo dialog" $ do
-        poke.squint $ trees._contentsPane.rootLabel >=> eq text "dialog button" >=> click
-    eq withWindowTitled "foo frame" $ do
-        logmsg "foo log message"
-        eqm selectInMenuBar ["Menu1","SubMenu1","submenuitem2"] $ Just True
-        logmsg "getting a screenshot"
-        logimg =<< peek (liftNp._image.rootLabel) 
-        logmsg "now for a second menu"
-        eqm selectInMenuBar ["Menu1","SubMenu1","submenuitem1"] Nothing
-        sleep 2
-        poke.squint $ trees._contentsPane.rootLabel >=> eq text "foo" >=> click
+testCase = with mainWindow $ do
+    with windowComponents $ do 
+        poke $ eq hasText "foo" >=> click
+    with childWindow $ with windowComponents $ do
+        poke $ eq hasText "dialog button" >=> click
+    logmsg "foo log message"
+    eqm selectInMenuBar ["Menu1","SubMenu1","submenuitem2"] $ Just True
+    logmsg "getting a screenshot"
+    (peek $ liftN._image.rootLabel) >>= logimg
+    logmsg "now for a second menu"
+    eqm selectInMenuBar ["Menu1","SubMenu1","submenuitem1"] Nothing
+    sleep 2
+    with windowComponents $ do 
+        poke $ eq hasText "foo" >=> click
         logmsg "mmmmmmm"
         sleep 2
-    eq withWindowTitled "foo dialog" $ do
-        poke.squint $ trees._contentsPane.rootLabel >=> eq text "dialog button" >=> click
-    eq withWindowTitled "foo frame" $ do
+    with childWindow $ with windowComponents $ do
+        poke $ eq hasText "dialog button" >=> click
+    with windowComponents $ do 
         logmsg "this should show the combo"
-        poke.squint $ trees._contentsPane.rootLabel >=> clickCombo
+        poke $ clickCombo
         sleep 2
-        poke.squint $ \g -> do 
-            candidateCell <- forest._popupLayer.rootLabel >=> listCell $ g
-            c <- trees.renderer $ candidateCell 
-            eq text "ccc" c
+    with popupLayerComponents $ do 
+        poke $ \g -> do 
+            candidateCell <- listCell $ g
+            c <- descendants.renderer $ candidateCell 
+            eq hasText "ccc" c
             return $ clickCell candidateCell  
         sleep 2
         logmsg "Now for a change of tab" 
-        poke.squint $ \g -> do 
-            tab <- trees._contentsPane.rootLabel >=> tab $ g
-            logmsg . tabText $ tab -- logging inside LogicT
-            guard $ tabText tab == "tab two"  
-            return $ selectTab tab   
+    with windowComponents $ do 
+        poke $ tab >=> \aTab -> do 
+            logmsg . tabText $ aTab -- logging inside LogicT
+            guard $ tabText aTab == "tab two"  
+            return $ selectTab aTab   
         sleep 2
-        poke.squint $ \g -> do
-            Table ll <- trees._contentsPane.rootLabel >=> return._componentType.rootLabel $ g
+        poke $ \g -> do
+            Table ll <- return._componentType.rootLabel $ g
             cell <- replusify . concat $ ll
-            c <- replusify . flatten . renderer $ cell
-            txt <- justZ . _text $ c
-            guard $ txt == "7" 
+            c <- descendants . renderer $ cell
+            eq hasText "7" c
             return $ clickCell cell
         sleep 2
-        poke.squint $ \g -> do
-            Table ll <- trees._contentsPane.rootLabel >=> return._componentType.rootLabel $ g
+        poke $ \g -> do
+            Table ll <- return._componentType.rootLabel $ g
             cell <- replusify . concat $ ll
             c <- replusify.flatten . renderer $ cell
             txt <- justZ . _text $ c
             guard $ txt == "4" 
             return $ doubleClickCell cell
         sleep 2
-        poke.squint $ \g -> do    
-            ct <- trees._contentsPane.rootLabel $ g
-            Table _ <- return . _componentType . rootLabel $ ct -- is it a table?
-            c <- replusify.flatten $ ct -- the table's children
-            txt <- justZ._text $ c
-            guard $ txt == "4" 
+        poke $ \g -> do    
+            Table _ <- return . _componentType . rootLabel $ g -- is it a table?
+            c <- children g -- the table's children
+            eq hasText "4" c
+            --txt <- justZ._text $ c
+            --guard $ txt == "4" 
             setText "77" c
         sleep 2
-        poke.squint $ \g -> do    
-            tab <- trees._contentsPane.rootLabel >=> tab $ g
-            logmsg . tabText $ tab -- logging inside LogicT
-            guard $ tabText tab == "tab JTree a"  
-            return $ selectTab tab   
+        poke $ tab >=> \aTab -> do    
+            logmsg . tabText $ aTab -- logging inside LogicT
+            guard $ tabText aTab == "tab JTree a"  
+            return $ selectTab aTab   
         sleep 2
-        poke.squint $ \g -> do    
-            Treegui forest <- trees._contentsPane.rootLabel >=> return._componentType.rootLabel $ g
+        poke $ \g -> do    
+            Treegui forest <- return._componentType.rootLabel $ g
             tree <- replusify forest
             cell <- replusify.flatten $ tree 
             c <- replusify.flatten . renderer $ cell
@@ -118,7 +116,7 @@ testCase = do
             expandf <- justZ . expand $ cell
             return $ expandf True
         sleep 2
-        poke $ return._close.rootLabel
+    poke $ return._close.rootLabel
 
 delayer :: MonadIO m => Consumer ProxyFast Delay m a
 delayer = forever $ request () >>= liftIO . threadDelay . (*1000000)
