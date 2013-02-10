@@ -67,8 +67,7 @@ testCase = with mainWindow $ do
     with popupLayerComponents $ do 
         poke $ \g -> do 
             candidateCell <- listCell $ g
-            c <- descendants.renderer $ candidateCell 
-            eq hasText "ccc" c
+            descendants.renderer >=> eq hasText "ccc" $ candidateCell 
             return $ clickCell candidateCell  
         sleep 2
         logmsg "Now for a change of tab" 
@@ -81,8 +80,7 @@ testCase = with mainWindow $ do
         poke $ \g -> do
             Table ll <- cType g
             cell <- replusify . concat $ ll
-            c <- descendants . renderer $ cell
-            eq hasText "7" c
+            descendants . renderer >=> eq hasText "7" $ cell
             return $ clickCell cell
         sleep 2
         poke $ \g -> do
@@ -92,10 +90,8 @@ testCase = with mainWindow $ do
             return $ doubleClickCell cell
         sleep 2
         poke $ \g -> do    
-            Table _ <- cType g -- is it a table?
-            c <- children g -- the table's children
-            eq hasText "4" c
-            setText "77" c
+            Table _ <- cType g 
+            children >=> eq hasText "4" >=> setText "77" $ g
         sleep 2
         poke $ tab >=> \aTab -> do    
             logmsg . tabText $ aTab -- logging inside LogicT
@@ -106,8 +102,7 @@ testCase = with mainWindow $ do
             Treegui forest <- cType g
             cell <- anyOf >=> descendants $ forest
             descendants . renderer . rootLabel >=> eq hasText "leaf a" $ cell
-            expandf <- justZ . expand . rootLabel $ cell
-            return $ expandf True
+            (justZ . expand . rootLabel $ cell) <*> pure True
         sleep 2
     poke $ return._close.rootLabel
 
