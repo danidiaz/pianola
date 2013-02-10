@@ -53,8 +53,9 @@ import Control.Monad.Trans.Class
 import Data.Sequence (ViewL(..),ViewR(..),viewl,viewr,fromList)
 import Data.Foldable (toList)
 
-import Pianola.Util
 import Pianola
+import Pianola.Util
+import Pianola.Geometry
 
 type GUI m = Forest (WindowInfo m)
 
