@@ -19,6 +19,7 @@ module Pianola.Model.Swing (
 --        popupflat,
 --        contentsflat,
 --        contentsflat',
+        cType,
         titled,
         hasText,
         hasToolTip,
@@ -115,6 +116,8 @@ data Tab m = Tab
         selectTab::Sealed m
     }
 
+cType:: Monad m => Glance m l (Component m) (ComponentType m)
+cType = return._componentType.rootLabel
 
 titled:: MonadPlus m => (T.Text -> Bool) -> Window n -> m (Window n)
 titled f w = do

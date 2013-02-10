@@ -79,26 +79,22 @@ testCase = with mainWindow $ do
             return $ selectTab aTab   
         sleep 2
         poke $ \g -> do
-            Table ll <- return._componentType.rootLabel $ g
+            Table ll <- cType g
             cell <- replusify . concat $ ll
             c <- descendants . renderer $ cell
             eq hasText "7" c
             return $ clickCell cell
         sleep 2
         poke $ \g -> do
-            Table ll <- return._componentType.rootLabel $ g
+            Table ll <- cType g
             cell <- replusify . concat $ ll
-            c <- replusify.flatten . renderer $ cell
-            txt <- justZ . _text $ c
-            guard $ txt == "4" 
+            descendants . renderer >=> eq hasText "4" $ cell
             return $ doubleClickCell cell
         sleep 2
         poke $ \g -> do    
-            Table _ <- return . _componentType . rootLabel $ g -- is it a table?
+            Table _ <- cType g -- is it a table?
             c <- children g -- the table's children
             eq hasText "4" c
-            --txt <- justZ._text $ c
-            --guard $ txt == "4" 
             setText "77" c
         sleep 2
         poke $ tab >=> \aTab -> do    
@@ -107,13 +103,10 @@ testCase = with mainWindow $ do
             return $ selectTab aTab   
         sleep 2
         poke $ \g -> do    
-            Treegui forest <- return._componentType.rootLabel $ g
-            tree <- replusify forest
-            cell <- replusify.flatten $ tree 
-            c <- replusify.flatten . renderer $ cell
-            txt <- justZ . _text $ c
-            guard $ txt == "leaf a" 
-            expandf <- justZ . expand $ cell
+            Treegui forest <- cType g
+            cell <- anyOf >=> descendants $ forest
+            descendants . renderer . rootLabel >=> eq hasText "leaf a" $ cell
+            expandf <- justZ . expand . rootLabel $ cell
             return $ expandf True
         sleep 2
     poke $ return._close.rootLabel
