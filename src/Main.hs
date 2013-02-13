@@ -43,10 +43,10 @@ type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 
 testCase:: Test
 testCase = with mainWindow $ do
-    with windowComponents $ do 
-        poke $ eq hasText "foo" >=> click
-    with childWindow $ with windowComponents $ do
-        poke $ eq hasText "dialog button" >=> click
+    with contentsPane $ do 
+        poke $ descendants >=> eq hasText "foo" >=> click
+    with childWindow $ with contentsPane $ do
+        poke $ descendants >=> eq hasText "dialog button" >=> click
     logmsg "foo log message"
     eqm selectInMenuBar ["Menu1","SubMenu1","submenuitem2"] $ Just True
     logmsg "getting a screenshot"
@@ -54,24 +54,24 @@ testCase = with mainWindow $ do
     logmsg "now for a second menu"
     eqm selectInMenuBar ["Menu1","SubMenu1","submenuitem1"] Nothing
     sleep 2
-    with windowComponents $ do 
-        poke $ eq hasText "foo" >=> click
+    with contentsPane $ do 
+        poke $ descendants >=> eq hasText "foo" >=> click
         logmsg "mmmmmmm"
         sleep 2
-    with childWindow $ with windowComponents $ do
-        poke $ eq hasText "dialog button" >=> click
-    with windowComponents $ do 
+    with childWindow $ with contentsPane $ do
+        poke $ descendants >=> eq hasText "dialog button" >=> click
+    with contentsPane $ do 
         logmsg "this should show the combo"
-        poke $ clickCombo
+        poke $ descendants >=> clickCombo
         sleep 2
-    with popupLayerComponents $ do 
+    with popupLayer $ with descendants $ do 
         poke $ \g -> do 
             candidateCell <- listCell $ g
             descendants.renderer >=> eq hasText "ccc" $ candidateCell 
             return $ clickCell candidateCell  
         sleep 2
         logmsg "Now for a change of tab" 
-    with windowComponents $ do 
+    with contentsPane $ with descendants $ do 
         poke $ tab >=> \aTab -> do 
             logmsg . tabText $ aTab -- logging inside LogicT
             guard $ tabText aTab == "tab two"  

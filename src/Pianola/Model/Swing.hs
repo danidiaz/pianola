@@ -33,8 +33,9 @@ module Pianola.Model.Swing (
         mainWindow,
         childWindow,
         contentsPane,
-        windowComponents,
-        popupLayerComponents,
+        popupLayer,
+--        windowComponents,
+--        popupLayerComponents,
         selectInMenuBar
     ) where
 
@@ -216,11 +217,14 @@ childWindow = headZ.subForest
 contentsPane :: Monad m => Glance m l (Window m) (Component m)
 contentsPane = return._contentsPane.rootLabel 
 
-windowComponents :: (Functor m, Monad m) => Glance m l (Window m) (Component m)
-windowComponents = contentsPane >=> descendants 
+popupLayer :: Monad m => Glance m l (Window m) (Component m)
+popupLayer = anyOf._popupLayer.rootLabel 
 
-popupLayerComponents :: (Functor m, Monad m) => Glance m l (Window m) (Component m)
-popupLayerComponents = anyOf._popupLayer.rootLabel >=> descendants  
+--windowComponents :: (Functor m, Monad m) => Glance m l (Window m) (Component m)
+--windowComponents = contentsPane >=> descendants 
+--
+--popupLayerComponents :: (Functor m, Monad m) => Glance m l (Window m) (Component m)
+--popupLayerComponents = anyOf._popupLayer.rootLabel >=> descendants  
 
 --withWindowTitled = (Functor m, Monad m) => (T.Text -> Bool) -> Pianola m l (Window m) a -> Pianola m l (Component m) a 
 --withWindowTitled 
@@ -233,7 +237,7 @@ selectInMenuBar ps shouldToggleLast =
                        [(lastitem, maybe click toggle shouldToggleLast)]
            forM_ pairs $ \(txt,action) -> 
                retryPoke 1 $ replicate 7 $  
-                   popupLayerComponents >=> hasText txt >=> action
+                   popupLayer >=> descendants >=> hasText txt >=> action
            when (isJust shouldToggleLast) $ replicateM_ (length pairs) 
                                                   (poke $ return._escape.rootLabel)
         clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
