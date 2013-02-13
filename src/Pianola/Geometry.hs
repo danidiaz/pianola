@@ -6,7 +6,7 @@
 
 module Pianola.Geometry (
         Interval,
-        liesWithin,
+        inside1d,
         Geometrical (..)
     ) where
 
@@ -30,15 +30,22 @@ import Control.Monad.Free
 
 import Pianola.Util
 
+type Point1d = Int
 type Interval = (Int,Int)
 
-liesWithin :: Interval -> Interval -> Bool
-liesWithin (u1,v1) (u2,v2) = (u1 <= u2) && (v1 >= v2)
+inside1d :: Interval -> Point1d -> Bool
+inside1d (x1,x2) u = x1 <= u && u <= x2
+
+type Point2d = (Int,Int)
+type Dimensions2d = (Int,Int)
+
+--liesWithin :: Interval -> Interval -> Bool
+--liesWithin (u1,v1) (u2,v2) = (u1 <= u2) && (v1 >= v2)
 
 class Geometrical g where
-    nwcorner :: g -> (Int,Int)
+    nwcorner :: g -> Point2d
 
-    dimensions :: g -> (Int,Int)
+    dimensions :: g -> Dimensions2d
 
     width :: g -> Int
     width = fst . dimensions 
@@ -49,6 +56,9 @@ class Geometrical g where
     minx :: g -> Int
     minx = fst . nwcorner
     
+    midx :: g -> Int
+    midx g = minx g + div (width g) 2
+
     maxx :: g -> Int
     maxx g = (fst $ nwcorner g) + (fst $ dimensions g)
 
@@ -57,6 +67,9 @@ class Geometrical g where
     
     miny :: g -> Int
     miny = snd . nwcorner
+
+    midy :: g -> Int
+    midy g = miny g + div (height g) 2
 
     maxy :: g -> Int
     maxy g = (snd $ nwcorner g) + (snd $ dimensions g)
@@ -67,11 +80,5 @@ class Geometrical g where
     area :: g -> Int
     area g = width g * height g
 
-    midx :: g -> Int
-    midx g = minx g + div (width g) 2
-
-    midy :: g -> Int
-    midy g = miny g + div (height g) 2
-
-    midpoint :: g -> (Int,Int)
+    midpoint :: g -> Point2d
     midpoint g = (midx g, midy g)
