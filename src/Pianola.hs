@@ -9,9 +9,9 @@ module Pianola (
         Glance(..),
         notPresent,
         collect,
-        anyOf,
-        children,
-        descendants,
+        --anyOf,
+        --children,
+        --descendants,
         liftN,
         ObserverF(..),
         Pianola(..),
@@ -54,17 +54,17 @@ import Pianola.Util
 
 type Glance m l o a = o -> LogicT (Prod l (Nullipotent m)) a
 
-anyOf :: Glance m l [o] o 
-anyOf = replusify
+--anyOf :: Glance m l [o] o 
+--anyOf = replusify
 
 collect :: Monad m => Glance m l o a -> Glance m l o [a] 
 collect = fmap $ lift . observeAllT
 
-children :: Glance m l (Tree o) (Tree o)
-children = replusify . subForest 
-
-descendants :: Glance m l (Tree o) (Tree o)
-descendants = replusify . flatten . duplicate
+--children :: Glance m l (Tree o) (Tree o)
+--children = replusify . subForest 
+--
+--descendants :: Glance m l (Tree o) (Tree o)
+--descendants = replusify . flatten . duplicate
 
 liftN :: Monad m => Glance m l (Nullipotent m a) a
 liftN = lift . lift
@@ -84,7 +84,7 @@ focus prefix v =
 runObserver :: Monad m => m o -> Observer m l o a -> MaybeT (Prod l m) a
 runObserver _ (Pure b) = return b
 runObserver mom (Free f) =
-   let squint = fmap $ mapMaybeT (hoist runNullipotent) . tomaybet
+   let squint = fmap $ hoist (hoist runNullipotent) . tomaybet
    in join $ (lift . lift $ mom) >>= squint (getCompose $ runObserver mom <$> f)
 
 type Delay = Int
@@ -93,10 +93,10 @@ type Pianola m l o = Prod (Sealed m) (Prod Delay (MaybeT (Prod l (Observer m l o
 
 play :: Monad m => m o -> Pianola m l o a -> Prod Delay (MaybeT (Prod l (MaybeT (Prod l m)))) a
 play mom pi =
-    let pianola' = hoist (hoist (mapMaybeT (hoist $ runObserver mom))) $ pi 
+    let pianola' = hoist (hoist (hoist (hoist $ runObserver mom))) $ pi 
         injector () = forever $ do
             s <- request ()
-            lift . lift . lift . lift . lift . lift $ unseal s -- unseal should be private
+            lift . lift . lift . lift . lift . lift $ unseal s
     in runProxy $ const pianola' >-> injector
 
 pianofail :: Monad m => Pianola m l o a
@@ -122,9 +122,7 @@ sleep = lift . respond
 
 with :: (Functor m, Monad m) => Glance m l o' o ->  Pianola m l o a -> Pianola m l o' a 
 with prefix pi  =
-    hoist (hoist (mapMaybeT (hoist $ focus prefix))) $ pi 
-
-infixl 0 `with`
+    hoist (hoist (hoist (hoist $ focus prefix))) $ pi 
 
 instance Monad m => PianolaLog (Pianola m LogEntry o) where
     xanlog = lift . lift . lift . xanlog

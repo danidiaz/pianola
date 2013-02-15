@@ -218,21 +218,21 @@ contentsPane :: Monad m => Glance m l (Window m) (Component m)
 contentsPane = return._contentsPane.rootLabel 
 
 popupLayer :: Monad m => Glance m l (Window m) (Component m)
-popupLayer = anyOf._popupLayer.rootLabel 
+popupLayer = replusify._popupLayer.rootLabel 
 
 --windowComponents :: (Functor m, Monad m) => Glance m l (Window m) (Component m)
 --windowComponents = contentsPane >=> descendants 
 --
 --popupLayerComponents :: (Functor m, Monad m) => Glance m l (Window m) (Component m)
---popupLayerComponents = anyOf._popupLayer.rootLabel >=> descendants  
+--popupLayerComponents = replusify._popupLayer.rootLabel >=> descendants  
 
 --withWindowTitled = (Functor m, Monad m) => (T.Text -> Bool) -> Pianola m l (Window m) a -> Pianola m l (Component m) a 
 --withWindowTitled 
 
-selectInMenuBar:: (Functor m,Monad m) => [T.Text -> Bool] -> Maybe Bool -> Pianola m l (Window m) ()
-selectInMenuBar ps shouldToggleLast = 
+selectInMenuBar:: (Functor m,Monad m) => Maybe Bool -> [T.Text -> Bool] -> Pianola m l (Window m) ()
+selectInMenuBar shouldToggleLast ps = 
     let go (firstitem,middleitems,lastitem) = do
-           poke $ anyOf._menu.rootLabel >=> descendants >=> hasText firstitem >=> click
+           poke $ replusify._menu.rootLabel >=> descendants >=> hasText firstitem >=> click
            let pairs = zip middleitems (click <$ middleitems) ++
                        [(lastitem, maybe click toggle shouldToggleLast)]
            forM_ pairs $ \(txt,action) -> 

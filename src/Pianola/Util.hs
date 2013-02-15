@@ -9,8 +9,8 @@
 {-# LANGUAGE DeriveTraversable #-}
 
 module Pianola.Util (
-        eq,
-        eqm,
+--        eq,
+--        eqm,
         replusify,
 --        trees,
 --        forest,
@@ -25,6 +25,7 @@ module Pianola.Util (
         -- narrow,
         tomaybet,
         maybify,
+        Treeish(..),
         -- narrowK,
         Prod,
         PianolaLog(..),
@@ -47,6 +48,8 @@ import Data.Attoparsec.ByteString
 import Control.Error.Safe
 import Control.Monad
 import Control.Comonad
+import Control.Comonad.Trans.Class
+import Control.Comonad.Trans.Env    
 import Control.Applicative
 import Control.Monad.Base
 import Control.Monad.Trans.Writer
@@ -57,13 +60,12 @@ import Control.MFunctor
 import Control.Proxy -- (Producer,Consumer,ProxyFast, respond, fromListS,>->)
 import qualified Data.Text as T
 import qualified Data.ByteString as B
-
 --
-eq :: Eq a => ((a->Bool) -> b) -> a -> b
-eq f a = f (==a)
-
-eqm :: Eq a => ([a->Bool] -> b) -> [a] -> b
-eqm f a = f $ map (==) a
+--eq :: Eq a => ((a->Bool) -> b) -> a -> b
+--eq f a = f (==a)
+--
+--eqm :: Eq a => ([a->Bool] -> b) -> [a] -> b
+--eqm f a = f $ map (==) a
 
 -- logic helpers
 
@@ -76,6 +78,18 @@ tomaybet = MaybeT . liftM replusify . observeManyT 1
 
 maybify :: Monad m => LogicT m a -> LogicT m (Maybe a)
 maybify l = lift $ observeManyT 1 l >>= return . replusify
+
+class Treeish l where
+    children :: MonadPlus m => l -> m l
+    descendants :: MonadPlus m => l -> m l
+
+instance Treeish (Tree a) where
+    children = replusify . subForest
+    descendants = replusify . flatten . duplicate
+
+instance Treeish (EnvT e Tree a) where
+    children  = replusify . map rootLabel . subForest . lower . duplicate
+    descendants = replusify . flatten . lower . duplicate
 
 --narrowK :: Monad m => (a -> LogicT m b) -> a -> MaybeT m b 
 --narrowK = fmap narrow 
@@ -166,3 +180,6 @@ data Sealed m = Sealed {
        unseal:: m ()
    }
    
+--
+
+

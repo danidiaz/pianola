@@ -44,22 +44,22 @@ type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 testCase:: Test
 testCase = with mainWindow $ do
     with contentsPane $ do 
-        poke $ descendants >=> eq hasText "foo" >=> click
+        poke $ descendants >=> hasText (=="foo") >=> click
     with childWindow $ with contentsPane $ do
-        poke $ descendants >=> eq hasText "dialog button" >=> click
+        poke $ descendants >=> hasText (=="dialog button") >=> click
     logmsg "foo log message"
-    eqm selectInMenuBar ["Menu1","SubMenu1","submenuitem2"] $ Just True
+    selectInMenuBar (Just True) $ map (==) ["Menu1","SubMenu1","submenuitem2"]
     logmsg "getting a screenshot"
     (peek $ liftN._image.rootLabel) >>= logimg
     logmsg "now for a second menu"
-    eqm selectInMenuBar ["Menu1","SubMenu1","submenuitem1"] Nothing
+    selectInMenuBar Nothing $ map (==) ["Menu1","SubMenu1","submenuitem1"]
     sleep 2
     with contentsPane $ do 
-        poke $ descendants >=> eq hasText "foo" >=> click
+        poke $ descendants >=> hasText (=="foo") >=> click
         logmsg "mmmmmmm"
         sleep 2
     with childWindow $ with contentsPane $ do
-        poke $ descendants >=> eq hasText "dialog button" >=> click
+        poke $ descendants >=> hasText (=="dialog button") >=> click
     with contentsPane $ do 
         logmsg "this should show the combo"
         poke $ descendants >=> clickCombo
@@ -67,7 +67,7 @@ testCase = with mainWindow $ do
     with popupLayer $ with descendants $ do 
         poke $ \g -> do 
             candidateCell <- listCell $ g
-            descendants.renderer >=> eq hasText "ccc" $ candidateCell 
+            descendants.renderer >=> hasText (=="ccc") $ candidateCell 
             return $ clickCell candidateCell  
         sleep 2
         logmsg "Now for a change of tab" 
@@ -80,18 +80,18 @@ testCase = with mainWindow $ do
         poke $ \g -> do
             Table ll <- cType g
             cell <- replusify . concat $ ll
-            descendants . renderer >=> eq hasText "7" $ cell
+            descendants . renderer >=> hasText (=="7") $ cell
             return $ clickCell cell
         sleep 2
         poke $ \g -> do
             Table ll <- cType g
             cell <- replusify . concat $ ll
-            descendants . renderer >=> eq hasText "4" $ cell
+            descendants . renderer >=> hasText (=="4") $ cell
             return $ doubleClickCell cell
         sleep 2
         poke $ \g -> do    
             Table _ <- cType g 
-            children >=> eq hasText "4" >=> setText "77" $ g
+            children >=> hasText (=="4") >=> setText "77" $ g
         sleep 2
         poke $ tab >=> \aTab -> do    
             logmsg . tabText $ aTab -- logging inside LogicT
@@ -100,8 +100,8 @@ testCase = with mainWindow $ do
         sleep 2
         poke $ \g -> do    
             Treegui forest <- cType g
-            cell <- anyOf >=> descendants $ forest
-            descendants . renderer . rootLabel >=> eq hasText "leaf a" $ cell
+            cell <- replusify >=> descendants $ forest
+            descendants . renderer . rootLabel >=> hasText (=="leaf a") $ cell
             (justZ . expand . rootLabel $ cell) <*> pure True
         sleep 2
     poke $ return._close.rootLabel
