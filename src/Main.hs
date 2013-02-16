@@ -50,7 +50,7 @@ testCase = with mainWindow $ do
     logmsg "foo log message"
     selectInMenuBar (Just True) $ map (==) ["Menu1","SubMenu1","submenuitem2"]
     logmsg "getting a screenshot"
-    (peek $ liftN._image.rootLabel) >>= logimg
+    (peek $ liftN._image.wInfo) >>= logimg
     logmsg "now for a second menu"
     selectInMenuBar Nothing $ map (==) ["Menu1","SubMenu1","submenuitem1"]
     sleep 2
@@ -60,37 +60,39 @@ testCase = with mainWindow $ do
         sleep 2
     with childWindow $ with contentsPane $ do
         poke $ descendants >=> hasText (=="dialog button") >=> click
-    with contentsPane $ do 
-        logmsg "this should show the combo"
-        poke $ descendants >=> clickCombo
-        sleep 2
-    with popupLayer $ with descendants $ do 
-        poke $ \g -> do 
-            candidateCell <- listCell $ g
-            descendants.renderer >=> hasText (=="ccc") $ candidateCell 
-            return $ clickCell candidateCell  
-        sleep 2
-        logmsg "Now for a change of tab" 
     with contentsPane $ with descendants $ do 
+        logmsg "this should show the combo"
+        selectInComboBox (=="ccc")
+        sleep 2
+--        poke $ descendants >=> clickCombo
+--        sleep 2
+--    with popupLayer $ with descendants $ do 
+--        poke $ \g -> do 
+--            candidateCell <- listCell $ g
+--            descendants.renderer >=> hasText (=="ccc") $ candidateCell 
+--            return $ clickCell candidateCell  
+--        sleep 2
+--        logmsg "Now for a change of tab" 
+--    with contentsPane $ with descendants $ do 
         poke $ tab >=> \aTab -> do 
             logmsg . tabText $ aTab -- logging inside LogicT
             guard $ tabText aTab == "tab two"  
             return $ selectTab aTab   
         sleep 2
         poke $ \g -> do
-            Table ll <- cType g
+            Table ll <- return . cType $ g
             cell <- replusify . concat $ ll
             descendants . renderer >=> hasText (=="7") $ cell
             return $ clickCell cell
         sleep 2
         poke $ \g -> do
-            Table ll <- cType g
+            Table ll <- return . cType $ g
             cell <- replusify . concat $ ll
             descendants . renderer >=> hasText (=="4") $ cell
             return $ doubleClickCell cell
         sleep 2
         poke $ \g -> do    
-            Table _ <- cType g 
+            Table _ <- return . cType $ g 
             children >=> hasText (=="4") >=> setText "77" $ g
         sleep 2
         poke $ tab >=> \aTab -> do    
@@ -99,12 +101,12 @@ testCase = with mainWindow $ do
             return $ selectTab aTab   
         sleep 2
         poke $ \g -> do    
-            Treegui forest <- cType g
+            Treegui forest <- return . cType $ g
             cell <- replusify >=> descendants $ forest
             descendants . renderer . rootLabel >=> hasText (=="leaf a") $ cell
             (justZ . expand . rootLabel $ cell) <*> pure True
         sleep 2
-    poke $ return._close.rootLabel
+    poke $ return . _close . wInfo
 
 delayer :: MonadIO m => Consumer ProxyFast Delay m a
 delayer = forever $ request () >>= liftIO . threadDelay . (*1000000)

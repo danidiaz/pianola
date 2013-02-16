@@ -120,7 +120,7 @@ retryPoke d xs = retryPeek d xs >>= respond
 sleep :: Monad m => Delay -> Pianola m l o ()
 sleep = lift . respond 
 
-with :: (Functor m, Monad m) => Glance m l o' o ->  Pianola m l o a -> Pianola m l o' a 
+with :: (Functor m, Monad m) => Glance m l o' o -> Pianola m l o a -> Pianola m l o' a 
 with prefix pi  =
     hoist (hoist (hoist (hoist $ focus prefix))) $ pi 
 

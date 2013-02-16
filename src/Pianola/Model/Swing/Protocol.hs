@@ -35,6 +35,9 @@ snapshot = do
             gui_or_fail <- call [pack "snapshot"] (AI.parserToIteratee get)
             hoistEither gui_or_fail
 
+instance Unpackable (Window Protocol) where
+    get = Window <$> get
+
 instance Unpackable (WindowInfo Protocol) where
     get = do
         snapid <- get::Parser Int
@@ -70,6 +73,9 @@ instance Unpackable (ComponentInfo Protocol) where
                 click_or_fail <- call [pack "rightClick", pack snapid, pack cid] (AI.parserToIteratee get)
                 hoistEither click_or_fail::Protocol ()
         return (ComponentInfo v1 v2 v3 v4 v5 v6 v7 rightClick)
+
+instance Unpackable (Component Protocol) where
+    get = Component <$> get
 
 instance Unpackable (ComponentType Protocol) where
     get = do
