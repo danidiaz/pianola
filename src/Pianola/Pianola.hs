@@ -5,7 +5,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
-module Pianola (
+module Pianola.Pianola (
         Glance(..),
         notPresent,
         collect,

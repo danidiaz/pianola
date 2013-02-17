@@ -64,8 +64,8 @@ import Control.Comonad.Trans.Class
 import Control.Comonad.Trans.Env    
 import Data.Sequence (ViewL(..),ViewR(..),viewl,viewr,fromList)
 import Data.Foldable (toList)
-import Pianola
 import Pianola.Util
+import Pianola.Pianola
 import Pianola.Geometry
 
 type GUI m = [Window m]

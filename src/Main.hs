@@ -32,7 +32,7 @@ import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Free  
 import Control.Concurrent (threadDelay)
 
-import Pianola
+import Pianola.Pianola
 import Pianola.Util
 import Pianola.Protocol
 import Pianola.Model.Swing
