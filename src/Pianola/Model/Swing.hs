@@ -12,38 +12,24 @@ module Pianola.Model.Swing (
         Window (..),
         WindowInfo (..),
         WindowLike (..),
+        Windowed (..),
         contentsPane,
         ComponentW (..),
-        window,
         Component (..),
         ComponentInfo (..),
         ComponentType (..),
         ComponentLike (..),
         Cell (..),
         Tab (..),
---        menuflat,
---        popupflat,
---        contentsflat,
---        contentsflat',
---        cType,
---        titled,
---        hasText,
---        hasToolTip,
---        hasName,
---        click,
---        toggle,
---        clickCombo,
---        listCell,
---        tab,
---        setText,
         mainWindow,
         childWindow,
---        contentsPane,
---        popupLayer,
---        windowComponents,
---        popupLayerComponents,
+        clickButtonByText,
+        clickButtonByToolTip,
         selectInMenuBar,
-        selectInComboBox
+        selectInComboBox,
+        selectTabByText, 
+        selectTabByToolTip,
+        labeledBy   
     ) where
 
 import Prelude hiding (catch)
@@ -52,7 +38,6 @@ import Data.Foldable hiding (forM_)
 import Data.Traversable
 import Data.ByteString (ByteString)
 import qualified Data.Text as T
---import Control.Category
 import Control.Error
 import Control.Error.Safe
 import Control.Monad
@@ -62,15 +47,19 @@ import Control.Monad.Base
 import Control.Monad.Trans.Class
 import Control.Comonad.Trans.Class
 import Control.Comonad.Trans.Env    
-import Data.Sequence (ViewL(..),ViewR(..),viewl,viewr,fromList)
 import Data.Foldable (toList)
+import Data.List
 import Pianola.Util
 import Pianola.Pianola
 import Pianola.Geometry
+import Control.Monad.Logic
 
 type GUI m = [Window m]
 
 newtype Window m = Window { unWindow :: Tree (WindowInfo m) }
+
+class Windowed w where
+    window :: Monad n => w m -> n (Window m)
 
 class WindowLike w where
     wInfo :: w m -> WindowInfo m 
@@ -82,6 +71,7 @@ class WindowLike w where
 
     popupLayer :: Monad m => Glance m l (w m) (Component m)
     popupLayer = replusify . _popupLayer . wInfo
+
 
 contentsPane :: Monad m => Glance m l (Window m) (ComponentW m)
 contentsPane win = return . ComponentW 
@@ -95,6 +85,9 @@ instance Treeish (Window m) where
 
 instance WindowLike Window where
     wInfo = rootLabel . unWindow
+
+instance Windowed Window where
+    window = return . id
 
 data WindowInfo m = WindowInfo 
     {
@@ -120,8 +113,8 @@ instance Treeish (ComponentW m) where
 instance ComponentLike ComponentW where
     cInfo = rootLabel . lower . unComponentW
 
-window :: Monad n => ComponentW m -> n (Window m)
-window = return . ask . unComponentW 
+instance Windowed ComponentW where
+    window = return . ask . unComponentW 
 
 newtype Component m = Component { unComponent :: Tree (ComponentInfo m) }
 
@@ -143,6 +136,10 @@ data ComponentInfo m = ComponentInfo
         _componentType::ComponentType m,
         _rightClick::Sealed m
     } 
+
+instance ComponentLike c => Geometrical (c m) where
+    nwcorner = _pos . cInfo
+    dimensions = _dim . cInfo     
 
 class ComponentLike c where
     cInfo :: c m -> ComponentInfo m 
@@ -196,10 +193,6 @@ class ComponentLike c where
 instance ComponentLike ComponentInfo where
     cInfo = id
 
---
---instance ComponentLike ComponentW m where
---    cInfo = cInfo . lower
-
 data ComponentType m =
      Panel
     |Toggleable Bool (Bool -> Sealed m)
@@ -225,71 +218,10 @@ data Cell m = Cell
 data Tab m = Tab
     {
         tabText::T.Text,
-        tabTooltip::Maybe T.Text,
+        tabToolTip::Maybe T.Text,
         isTabSelected:: Bool,
         selectTab::Sealed m
     }
-
---titled:: MonadPlus m => (T.Text -> Bool) -> Window n -> m (Window n)
---titled f w = do
---    guard . f $ _windowTitle . rootLabel $ w  
---    return w
-
---hasText:: MonadPlus m => (T.Text -> Bool) -> Component n -> m (Component n)
---hasText f c = do
---    t <- justZ._text.rootLabel $ c 
---    guard $ f t
---    return c
- 
---hasToolTip:: MonadPlus m => (T.Text -> Bool) -> Component n -> m (Component n)
---hasToolTip f c = do
---    t <- justZ._tooltip.rootLabel $ c 
---    guard $ f t
---    return c
-
---hasName:: MonadPlus m => (T.Text -> Bool) -> Component n -> m (Component n)
---hasName f c = do
---    t <- justZ._name.rootLabel $ c 
---    guard $ f t
---    return c
-
--- 
--- 
---toggle:: MonadPlus n => Bool -> Component m -> n (Sealed m)
---toggle b (_componentType.rootLabel -> Toggleable _ f) = return $ f b
---toggle _ _ = mzero
---
----- 
----- 
---click:: MonadPlus n => Component m -> n (Sealed m)
---click (_componentType.rootLabel -> Button a) = return a
---click _ = mzero
---
---doClickByText :: (Functor m, Monad m) => (T.Text -> Bool) -> Pianola m l (Component m) ()
---doClickByText txt = poke $ hasText txt >=> click
-
---clickCombo:: MonadPlus n => Component m -> n (Sealed m)
---clickCombo (_componentType.rootLabel -> ComboBox _ a) = return a
---clickCombo _ = mzero
---
---listCell:: MonadPlus m => Component n -> m (Cell n)
---listCell (_componentType.rootLabel -> List l) = replusify l
---listCell _ = mzero
---
---tab:: MonadPlus m => Component n -> m (Tab n)
---tab (_componentType.rootLabel -> TabbedPane p) = replusify p
---tab _ = mzero
-
---rightClick:: MonadPlus m => ComponentInfo n -> m ()
---rightClick = liftBase . _rightClick
-
---setText:: MonadPlus m => T.Text -> Component n -> m (Sealed n)
---setText txt c = case (_componentType.rootLabel $ c) of
---    TextField (Just f) -> return $ f txt
---    _ -> mzero
-
--- end logic helpers
---
 
 mainWindow :: Glance m l (GUI m) (Window m)
 mainWindow = replusify
@@ -297,22 +229,13 @@ mainWindow = replusify
 childWindow :: Glance m l (Window m) (Window m)
 childWindow = children
 
---contentsPane :: Monad m => Glance m l (Window m) (Component m)
---contentsPane = return._contentsPane.rootLabel 
---
---popupLayer :: Monad m => Glance m l (Window m) (Component m)
---popupLayer = replusify._popupLayer.rootLabel 
+clickButtonByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Pianola m l (c m) () 
+clickButtonByText f = poke $ descendants >=> hasText f >=> click
 
---windowComponents :: (Functor m, Monad m) => Glance m l (Window m) (Component m)
---windowComponents = contentsPane >=> descendants 
---
---popupLayerComponents :: (Functor m, Monad m) => Glance m l (Window m) (Component m)
---popupLayerComponents = replusify._popupLayer.rootLabel >=> descendants  
+clickButtonByToolTip :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Pianola m l (c m) () 
+clickButtonByToolTip f = poke $ descendants >=> hasToolTip f >=> click
 
---withWindowTitled = (Functor m, Monad m) => (T.Text -> Bool) -> Pianola m l (Window m) a -> Pianola m l (Component m) a 
---withWindowTitled 
-
-selectInMenuBar :: (Functor m,Monad m) => Maybe Bool -> [T.Text -> Bool] -> Pianola m l (Window m) ()
+selectInMenuBar :: Monad m => Maybe Bool -> [T.Text -> Bool] -> Pianola m l (Window m) ()
 selectInMenuBar shouldToggleLast ps = 
     let go (firstitem,middleitems,lastitem) = do
            poke $ replusify._menu.wInfo >=> descendants >=> hasText firstitem >=> click
@@ -326,7 +249,7 @@ selectInMenuBar shouldToggleLast ps =
         clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
     in maybe pianofail go (clip ps)
 
-selectInComboBox :: (Functor m,Monad m) => (T.Text -> Bool) -> Pianola m l (ComponentW m) ()
+selectInComboBox :: (Monad m, ComponentLike c, Windowed c) => (T.Text -> Bool) -> Pianola m l (c m) ()
 selectInComboBox f = do
         poke $ clickCombo
         with window $ with popupLayer $ with descendants $ do 
@@ -334,4 +257,40 @@ selectInComboBox f = do
                 candidateCell <- listCell $ g
                 descendants.renderer >=> hasText f $ candidateCell 
                 return $ clickCell candidateCell  
+
+selectTabByText :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Pianola m l (c m) ()
+selectTabByText f =  
+    poke $ tab >=> \aTab -> do    
+        guard $ f . tabText $ aTab
+        return $ selectTab aTab   
+
+selectTabByToolTip :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Pianola m l (c m) ()
+selectTabByToolTip f =  
+    poke $ tab >=> \aTab -> do    
+        tooltip <- justZ . tabToolTip $ aTab
+        guard $ f tooltip
+        return $ selectTab aTab   
+
+labeledBy :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Glance m l (c m) (c m)
+labeledBy f o = do
+    ref <- descendants o 
+    Label {} <- return . cType $ ref
+    hasText f ref  
+    let labellable c = case cType c of
+            Toggleable {} -> True
+            Button {} -> True
+            TextField {} -> True
+            ComboBox {} -> True
+            List {} -> True
+            Table {} -> True
+            Treegui {} -> True
+            _ -> False
+        positioned = sameLevelRightOf ref  
+    candidates <- lift . observeAllT $ do
+        c <- descendants o 
+        guard $ labellable c && positioned c
+        return c
+    headZ $ sortBy minXcmp candidates 
+
+
 

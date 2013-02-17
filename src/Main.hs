@@ -33,6 +33,7 @@ import Control.Monad.Trans.Free
 import Control.Concurrent (threadDelay)
 
 import Pianola.Pianola
+import Pianola.Geometry
 import Pianola.Util
 import Pianola.Protocol
 import Pianola.Model.Swing
@@ -64,20 +65,7 @@ testCase = with mainWindow $ do
         logmsg "this should show the combo"
         selectInComboBox (=="ccc")
         sleep 2
---        poke $ descendants >=> clickCombo
---        sleep 2
---    with popupLayer $ with descendants $ do 
---        poke $ \g -> do 
---            candidateCell <- listCell $ g
---            descendants.renderer >=> hasText (=="ccc") $ candidateCell 
---            return $ clickCell candidateCell  
---        sleep 2
---        logmsg "Now for a change of tab" 
---    with contentsPane $ with descendants $ do 
-        poke $ tab >=> \aTab -> do 
-            logmsg . tabText $ aTab -- logging inside LogicT
-            guard $ tabText aTab == "tab two"  
-            return $ selectTab aTab   
+        selectTabByText (=="tab two")  
         sleep 2
         poke $ \g -> do
             Table ll <- return . cType $ g
@@ -95,10 +83,8 @@ testCase = with mainWindow $ do
             Table _ <- return . cType $ g 
             children >=> hasText (=="4") >=> setText "77" $ g
         sleep 2
-        poke $ tab >=> \aTab -> do    
-            logmsg . tabText $ aTab -- logging inside LogicT
-            guard $ tabText aTab == "tab JTree a"  
-            return $ selectTab aTab   
+        selectTabByText (=="tab JTree a")  
+        logmsg "tab change"
         sleep 2
         poke $ \g -> do    
             Treegui forest <- return . cType $ g
@@ -106,6 +92,11 @@ testCase = with mainWindow $ do
             descendants . renderer . rootLabel >=> hasText (=="leaf a") $ cell
             (justZ . expand . rootLabel $ cell) <*> pure True
         sleep 2
+        selectTabByText (=="labels")
+    with contentsPane $ do
+        sleep 1
+        poke $ labeledBy (=="label2") >=> setText "hope this works!"
+        sleep 2 
     poke $ return . _close . wInfo
 
 delayer :: MonadIO m => Consumer ProxyFast Delay m a

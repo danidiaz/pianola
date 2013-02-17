@@ -6,8 +6,15 @@
 
 module Pianola.Geometry (
         Interval,
+        Point1d,
         inside1d,
-        Geometrical (..)
+        before1d,
+        after1d,
+        Point2d,
+        Dimensions2d,
+        mid,        
+        Geometrical (..),
+        sameLevelRightOf 
     ) where
 
 import Prelude hiding (catch,(.),id)
@@ -27,20 +34,29 @@ import Control.Applicative
 import Control.Monad.Base
 import Control.Monad.Trans.Class
 import Control.Monad.Free
+import Data.List
 
 import Pianola.Util
 
-type Point1d = Int
 type Interval = (Int,Int)
+
+type Point1d = Int
 
 inside1d :: Interval -> Point1d -> Bool
 inside1d (x1,x2) u = x1 <= u && u <= x2
 
+before1d :: Interval -> Point1d -> Bool
+before1d (x1,_) x = x <= x1
+
+after1d :: Interval -> Point1d -> Bool
+after1d (_,x2) x = x2 <= x
+
 type Point2d = (Int,Int)
+
 type Dimensions2d = (Int,Int)
 
---liesWithin :: Interval -> Interval -> Bool
---liesWithin (u1,v1) (u2,v2) = (u1 <= u2) && (v1 >= v2)
+mid :: Interval -> Point1d
+mid (x1,x2) = div (x1+x2) 2
 
 class Geometrical g where
     nwcorner :: g -> Point2d
@@ -48,37 +64,48 @@ class Geometrical g where
     dimensions :: g -> Dimensions2d
 
     width :: g -> Int
-    width = fst . dimensions 
+    width = fst . dimensions
 
     height :: g -> Int
-    height = snd . dimensions 
+    height = snd . dimensions
 
-    minx :: g -> Int
-    minx = fst . nwcorner
-    
-    midx :: g -> Int
-    midx g = minx g + div (width g) 2
+    minX :: g -> Int
+    minX = fst . nwcorner
 
-    maxx :: g -> Int
-    maxx g = (fst $ nwcorner g) + (fst $ dimensions g)
+    minXcmp :: g -> g -> Ordering 
+    minXcmp g1 g2 = compare (minX g1) (minX g2)
+
+    midX :: g -> Int
+    midX = mid . yband
+
+    minY :: g -> Int
+    minY = snd . nwcorner
+
+    minYcmp :: g -> g -> Ordering 
+    minYcmp g1 g2 = compare (minY g1) (minY g2)
+
+    midY :: g -> Int
+    midY = mid . yband
 
     xband :: g -> Interval
-    xband g = (minx g,maxx g)
+    xband g = 
+        let gminX = minX g
+        in (gminX, gminX + (fst . dimensions) g)
     
-    miny :: g -> Int
-    miny = snd . nwcorner
-
-    midy :: g -> Int
-    midy g = miny g + div (height g) 2
-
-    maxy :: g -> Int
-    maxy g = (snd $ nwcorner g) + (snd $ dimensions g)
-
     yband :: g -> Interval
-    yband g = (miny g,maxy g)
+    yband g = 
+        let gminY = minY g
+        in (gminY, gminY + (snd . dimensions) g)
 
     area :: g -> Int
     area g = width g * height g
 
+    areacmp :: g -> g -> Ordering
+    areacmp g1 g2 = compare (area g1) (area g2)
+
     midpoint :: g -> Point2d
-    midpoint g = (midx g, midy g)
+    midpoint g = (midX g, midY g)
+
+sameLevelRightOf :: (Geometrical g1, Geometrical g2) => g1 -> g2 -> Bool
+sameLevelRightOf ref c =
+    inside1d (yband c) (midY ref) && after1d (xband ref) (minX c)

@@ -76,7 +76,7 @@ type ObserverF m l o = Compose ((->) o) (LogicT (Prod l (Nullipotent m)))
 
 type Observer m l o = Free (ObserverF m l o)
 
-focus :: (Functor m, Monad m) => Glance m l o' o -> Observer m l o a -> Observer m l o' a
+focus :: Monad m => Glance m l o' o -> Observer m l o a -> Observer m l o' a
 focus prefix v =
    let nattrans (Compose k) = Compose $ prefix >=> k
    in hoistFree nattrans v
@@ -120,7 +120,7 @@ retryPoke d xs = retryPeek d xs >>= respond
 sleep :: Monad m => Delay -> Pianola m l o ()
 sleep = lift . respond 
 
-with :: (Functor m, Monad m) => Glance m l o' o -> Pianola m l o a -> Pianola m l o' a 
+with :: Monad m => Glance m l o' o -> Pianola m l o a -> Pianola m l o' a 
 with prefix pi  =
     hoist (hoist (hoist (hoist $ focus prefix))) $ pi 
 
