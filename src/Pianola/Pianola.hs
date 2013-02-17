@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Pianola.Pianola (
         Glance(..),
@@ -54,17 +55,8 @@ import Pianola.Util
 
 type Glance m l o a = o -> LogicT (Prod l (Nullipotent m)) a
 
---anyOf :: Glance m l [o] o 
---anyOf = replusify
-
 collect :: Monad m => Glance m l o a -> Glance m l o [a] 
 collect = fmap $ lift . observeAllT
-
---children :: Glance m l (Tree o) (Tree o)
---children = replusify . subForest 
---
---descendants :: Glance m l (Tree o) (Tree o)
---descendants = replusify . flatten . duplicate
 
 liftN :: Monad m => Glance m l (Nullipotent m a) a
 liftN = lift . lift
@@ -89,24 +81,24 @@ runObserver mom (Free f) =
 
 type Delay = Int
 
-type Pianola m l o = Prod (Sealed m) (Prod Delay (MaybeT (Prod l (Observer m l o))))  
+newtype Pianola m l o a = Pianola { unPianola :: Prod (Sealed m) (Prod Delay (MaybeT (Prod l (Observer m l o)))) a } deriving (Functor,Monad)
 
 play :: Monad m => m o -> Pianola m l o a -> Prod Delay (MaybeT (Prod l (MaybeT (Prod l m)))) a
 play mom pi =
-    let pianola' = hoist (hoist (hoist (hoist $ runObserver mom))) $ pi 
+    let pianola' = hoist (hoist (hoist (hoist $ runObserver mom))) $ unPianola pi 
         injector () = forever $ do
             s <- request ()
             lift . lift . lift . lift . lift . lift $ unseal s
     in runProxy $ const pianola' >-> injector
 
 pianofail :: Monad m => Pianola m l o a
-pianofail = lift . lift $ mzero
+pianofail = Pianola . lift . lift $ mzero
 
 peek :: Monad m => Glance m l o a -> Pianola m l o a
-peek = lift . lift . lift . lift . liftF . Compose
+peek = Pianola . lift . lift . lift . lift . liftF . Compose
 
 poke :: Monad m => Glance m l o (Sealed m) -> Pianola m l o () 
-poke locator = peek locator >>= respond
+poke locator = Pianola $ (unPianola $ peek locator) >>= respond
 
 retryPeek :: Monad m => Delay -> [Glance m l o a] -> Pianola m l o a 
 retryPeek _ [] = pianofail
@@ -115,14 +107,14 @@ retryPeek d (x:xs) = do
     maybe (sleep d >> retryPeek d xs) return a
 
 retryPoke :: Monad m => Delay -> [Glance m l o (Sealed m)] -> Pianola m l o () 
-retryPoke d xs = retryPeek d xs >>= respond 
+retryPoke d xs = Pianola $ (unPianola $ retryPeek d xs) >>= respond 
 
 sleep :: Monad m => Delay -> Pianola m l o ()
-sleep = lift . respond 
+sleep = Pianola . lift . respond 
 
 with :: Monad m => Glance m l o' o -> Pianola m l o a -> Pianola m l o' a 
 with prefix pi  =
-    hoist (hoist (hoist (hoist $ focus prefix))) $ pi 
+    Pianola $ hoist (hoist (hoist (hoist $ focus prefix))) $ unPianola pi 
 
 instance Monad m => PianolaLog (Pianola m LogEntry o) where
-    xanlog = lift . lift . lift . xanlog
+    xanlog = Pianola . lift . lift . lift . xanlog

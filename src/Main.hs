@@ -46,8 +46,8 @@ testCase:: Test
 testCase = with mainWindow $ do
     with contentsPane $ do 
         poke $ descendants >=> hasText (=="foo") >=> click
-    with childWindow $ with contentsPane $ do
-        poke $ descendants >=> hasText (=="dialog button") >=> click
+        with window $ with childWindow $ with contentsPane $ do
+            clickButtonByText (=="dialog button")
     logmsg "foo log message"
     selectInMenuBar (Just True) $ map (==) ["Menu1","SubMenu1","submenuitem2"]
     logmsg "getting a screenshot"
@@ -59,8 +59,8 @@ testCase = with mainWindow $ do
         poke $ descendants >=> hasText (=="foo") >=> click
         logmsg "mmmmmmm"
         sleep 2
-    with childWindow $ with contentsPane $ do
-        poke $ descendants >=> hasText (=="dialog button") >=> click
+        with window $ with childWindow $ with contentsPane $ do
+            poke $ descendants >=> hasText (=="dialog button") >=> click
     with contentsPane $ with descendants $ do 
         logmsg "this should show the combo"
         selectInComboBox (=="ccc")
