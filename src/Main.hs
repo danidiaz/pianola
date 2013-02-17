@@ -79,7 +79,7 @@ testCase = with mainWindow $ do
             return $ doubleClickCell cell
         sleep 2
         poke $ \g -> do    
-            Table _ <- return . cType $ g 
+            Table {} <- return . cType $ g 
             children >=> hasText (=="4") >=> setText "77" $ g
         sleep 2
         selectTabByText (=="tab JTree a")  
@@ -117,7 +117,7 @@ main = do
 
       -- A long peeling process until we reach IO!!!
       played = play snapshot testCase
-      rebased = hoist (mapMaybeT (hoist (mapMaybeT (hoist runProtocol)))) $ played
+      rebased = hoist (hoist (hoist (hoist (hoist runProtocol)))) $ played
       delayed = runProxy $ const rebased >-> const delayer
       logged1 = runProxy $ (const $ runMaybeT delayed) >-> const logger
       logged2 = runProxy $ (const $ runMaybeT logged1) >-> const logger
