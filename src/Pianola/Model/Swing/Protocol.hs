@@ -27,6 +27,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.Free
 
 import Pianola.Util
+import Pianola.Internal
 import Pianola.Protocol
 import Pianola.Model.Swing
 

@@ -9,32 +9,20 @@
 {-# LANGUAGE DeriveTraversable #-}
 
 module Pianola.Util (
---        eq,
---        eqm,
         replusify,
---        trees,
---        forest,
---        treeflat,
---        treeflat',
---        forestflat,
---        flattenl,
---        composeK,
---        prependK,
---        appendK,
---        threadKs,
-        -- narrow,
         tomaybet,
         maybify,
         Treeish(..),
-        -- narrowK,
         Prod,
         PianolaLog(..),
         LogEntry(..),
         Image,
         LogConsumer,
         LogProducer,
-        Nullipotent(..),
-        Sealed(..)
+        Nullipotent(runNullipotent),
+        Tag,
+        Sealed(tags,unseal),
+        addTag
     ) where
 
 import Prelude hiding (catch,(.),id)
@@ -60,15 +48,8 @@ import Control.MFunctor
 import Control.Proxy -- (Producer,Consumer,ProxyFast, respond, fromListS,>->)
 import qualified Data.Text as T
 import qualified Data.ByteString as B
---
---eq :: Eq a => ((a->Bool) -> b) -> a -> b
---eq f a = f (==a)
---
---eqm :: Eq a => ([a->Bool] -> b) -> [a] -> b
---eqm f a = f $ map (==) a
 
--- logic helpers
-
+import Pianola.Internal
 
 replusify:: MonadPlus m => [a] -> m a
 replusify = msum . map return
@@ -91,27 +72,6 @@ instance Treeish (EnvT e Tree a) where
     children  = replusify . map rootLabel . subForest . lower . duplicate
     descendants = replusify . flatten . lower . duplicate
 
---narrowK :: Monad m => (a -> LogicT m b) -> a -> MaybeT m b 
---narrowK = fmap narrow 
-
---treeflat:: MonadPlus m => Tree a -> m a
---treeflat = replusify . flatten 
---
---treeflat':: MonadPlus m => Tree a -> m (Tree a)
---treeflat' = replusify . flatten . duplicate
---
---forestflat:: MonadPlus m => Forest a -> m a
---forestflat forest = replusify forest >>= treeflat 
-
---flattenl :: MonadPlus m => Tree a -> m a
---flattenl = replusify . flatten 
-
---trees :: MonadPlus m => Tree a -> m (Tree a)
---trees = replusify . flatten . duplicate
---
---forest :: MonadPlus m => Forest a -> m (Tree a)
---forest = replusify >=> trees 
-
 -- useful msgpack instances
 instance (Unpackable a, Unpackable b) => Unpackable (Either a b) where
     get = do
@@ -124,12 +84,11 @@ instance Unpackable a => Unpackable (Tree a) where
     get = Node <$> get <*> get
 
 -- useful MonadBase instances
-
-instance MonadBase b m => MonadBase b (ProxyFast x y u v m) where
-    liftBase = lift.liftBase
-
-instance MonadBase b m => MonadBase b (LogicT m) where
-    liftBase = lift.liftBase
+--instance MonadBase b m => MonadBase b (ProxyFast x y u v m) where
+--    liftBase = lift.liftBase
+--
+--instance MonadBase b m => MonadBase b (LogicT m) where
+--    liftBase = lift.liftBase
 
 -- pipes
 type Prod t = Producer ProxyFast t
@@ -168,18 +127,5 @@ instance (Monad l, PianolaLog l) => PianolaLog (MaybeT l) where
     xanlog = lift . xanlog
 
 -- 
-newtype Nullipotent m a = Nullipotent { runNullipotent:: m a }
-   deriving (Eq, Ord, Read, Show, Functor, Foldable, Traversable)
-   
-instance (Monad m) => Monad (Nullipotent m) where
-   (Nullipotent m) >>= k = Nullipotent $ m >>= (runNullipotent . k)
-   return = Nullipotent . return
-   
-data Sealed m = Sealed {
-       tags:: [T.Text],
-       unseal:: m ()
-   }
-   
 --
-
 
