@@ -11,7 +11,6 @@ module Pianola.Pianola (
         notPresent,
         collect,
         liftN,
-        ObserverF(..),
         Pianola(..),
         Delay,
         play,
@@ -21,7 +20,10 @@ module Pianola.Pianola (
         retryPeek,
         retryPoke,
         sleep,
-        with
+        with,
+        ralentizeByTag,
+        ralentize,
+        logActions
     ) where
 
 import Prelude hiding (catch,(.))
@@ -30,6 +32,7 @@ import System.Environment
 import System.Console.GetOpt
 import Data.Tree
 import Data.Functor.Compose
+import Data.Monoid
 import qualified Data.ByteString as B
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -80,6 +83,9 @@ type Delay = Int
 
 newtype Pianola m l o a = Pianola { unPianola :: Prod (Sealed m) (Prod Delay (MaybeT (Prod l (Observer m l o)))) a } deriving (Functor,Monad)
 
+instance Monad m => Loggy (Pianola m LogEntry o) where
+    xanlog = Pianola . lift . lift . lift . xanlog
+
 play :: Monad m => m o -> Pianola m l o a -> Prod Delay (MaybeT (Prod l (MaybeT (Prod l m)))) a
 play mom pi =
     let pianola' = hoist (hoist (hoist (hoist $ runObserver mom))) $ unPianola pi 
@@ -113,5 +119,24 @@ with :: Monad m => Glance m l o' o -> Pianola m l o a -> Pianola m l o' a
 with prefix pi  =
     Pianola $ hoist (hoist (hoist (hoist $ focus prefix))) $ unPianola pi 
 
-instance Monad m => PianolaLog (Pianola m LogEntry o) where
-    xanlog = Pianola . lift . lift . lift . xanlog
+ralentizeByTag :: ([Tag] -> Bool) -> Delay -> Pianola m l o a -> Pianola m l o a
+ralentizeByTag f delay (Pianola p) = 
+    let delayer () = forever $ do  
+            s <- request ()
+            respond s
+            when (f . tags $ s) (lift $ respond delay) 
+    in Pianola $ const p >-> delayer $ ()
+    
+ralentize :: Delay -> Pianola m l o a -> Pianola m l o a
+ralentize = ralentizeByTag $ const True
+    
+logActions :: Pianola m LogEntry o a -> Pianola m LogEntry o a 
+logActions (Pianola p) =
+    let logger () = forever $ do
+            s <- request ()
+            respond s
+            lift . lift . lift . logmsg $ fmtAction s
+        fmtAction s = 
+            "### Executed action with tags:" <> mconcat ( map (" "<>) . tags $ s ) 
+    in Pianola $ const p >-> logger $ ()
+

@@ -14,7 +14,7 @@ module Pianola.Util (
         maybify,
         Treeish(..),
         Prod,
-        PianolaLog(..),
+        Loggy(..),
         LogEntry(..),
         Image,
         LogConsumer,
@@ -83,20 +83,13 @@ instance (Unpackable a, Unpackable b) => Unpackable (Either a b) where
 instance Unpackable a => Unpackable (Tree a) where
     get = Node <$> get <*> get
 
--- useful MonadBase instances
---instance MonadBase b m => MonadBase b (ProxyFast x y u v m) where
---    liftBase = lift.liftBase
---
---instance MonadBase b m => MonadBase b (LogicT m) where
---    liftBase = lift.liftBase
-
 -- pipes
 type Prod t = Producer ProxyFast t
 
 -- logging
 type Image = B.ByteString
 
-class Functor l => PianolaLog l where
+class Functor l => Loggy l where
     xanlog::LogEntry -> l ()
 
     logmsg::T.Text -> l ()
@@ -114,16 +107,13 @@ data LogEntry = TextEntry T.Text
 type LogProducer m = Producer ProxyFast LogEntry m
 type LogConsumer m = Consumer ProxyFast LogEntry m
 
-instance Monad m => PianolaLog (LogProducer m) where
+instance Monad m => Loggy (LogProducer m) where
     xanlog = respond 
 
---instance (Monad l, PianolaLog l) => PianolaLog (Producer ProxyFast r l) where
---    xanlog = lift . xanlog
-
-instance (Monad l, PianolaLog l) => PianolaLog (LogicT l) where
+instance (Monad l, Loggy l) => Loggy (LogicT l) where
     xanlog = lift . xanlog
 
-instance (Monad l, PianolaLog l) => PianolaLog (MaybeT l) where
+instance (Monad l, Loggy l) => Loggy (MaybeT l) where
     xanlog = lift . xanlog
 
 -- 

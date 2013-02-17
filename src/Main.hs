@@ -53,12 +53,11 @@ testCase = with mainWindow $ do
     logmsg "getting a screenshot"
     (peek $ liftN._image.wInfo) >>= logimg
     logmsg "now for a second menu"
-    selectInMenuBar Nothing $ map (==) ["Menu1","SubMenu1","submenuitem1"]
+    logActions $ selectInMenuBar Nothing $ map (==) ["Menu1","SubMenu1","submenuitem1"]
     sleep 2
-    with contentsPane $ do 
+    ralentize 3 $ with contentsPane $ do 
         poke $ descendants >=> hasText (=="foo") >=> click
-        logmsg "mmmmmmm"
-        sleep 2
+        logmsg "3 seconds before, 3 after"
         with window $ with childWindow $ with contentsPane $ do
             poke $ descendants >=> hasText (=="dialog button") >=> click
     with contentsPane $ with descendants $ do 
