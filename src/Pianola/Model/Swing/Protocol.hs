@@ -32,12 +32,15 @@ import Pianola.Internal
 import Pianola.Protocol
 import Pianola.Model.Swing
 
+iterget :: (Monad m, Unpackable a) => I.Iteratee B.ByteString m a 
+iterget = AI.parserToIteratee get
+
 snapshot :: Protocol (GUI Protocol)
-snapshot = call [pack "snapshot"] (AI.parserToIteratee get) >>= hoistEither
+snapshot = call [pack "snapshot"] iterget >>= hoistEither
 
 makeAction :: T.Text -> [BL.ByteString] -> Sealed Protocol
 makeAction method args = Sealed [T.pack "@" <> method] $
-    call (pack method:args) (AI.parserToIteratee get) >>= hoistEither
+    call (pack method:args) iterget >>= hoistEither
 
 instance Unpackable (Window Protocol) where
     get = Window <$> get
@@ -52,9 +55,8 @@ instance Unpackable (WindowInfo Protocol) where
         v4 <- get
         v5 <- get
         let packedargs = map pack [snapid,wid] 
-            getWindowImage = Nullipotent $ do
-                image_or_fail <- call (pack "getWindowImage":packedargs) (AI.parserToIteratee get)
-                hoistEither image_or_fail::Protocol Image
+            getWindowImage = Nullipotent $
+                call (pack "getWindowImage":packedargs) iterget >>= hoistEither
             escape = makeAction (T.pack "escape") packedargs 
             closeWindow = makeAction (T.pack "closeWindow") packedargs 
         return (WindowInfo v1 v2 v3 v4 v5 getWindowImage escape closeWindow)
@@ -86,7 +88,7 @@ instance Unpackable (ComponentType Protocol) where
                 v2 <- get::Parser Int
                 v3 <- get
                 let toggle b = makeAction (T.pack "toggle") $
-                        [pack snapid, pack v2, pack (b::Bool)]
+                        [pack snapid, pack v2, pack b]
                 return $ Toggleable v3 toggle
             3 -> do 
                 v2 <- get::Parser Int
@@ -123,12 +125,12 @@ instance Unpackable (Cell Protocol) where
         columnid <- get::Parser Int
         renderer <- get
         isTreeCell <- get
-        let clickCell = makeAction (T.pack "clickCell") $ 
-                map pack [snapid, componentid, rowid, columnid] 
-            doubleClickCell = makeAction (T.pack "doubleClickCell") $
-                map pack [snapid, componentid, rowid, columnid] 
+        let packed3 = map pack [snapid, componentid, rowid]
+            packed4 = packed3 ++ [pack columnid]
+            clickCell = makeAction (T.pack "clickCell") packed4
+            doubleClickCell = makeAction (T.pack "doubleClickCell") packed4
             expandCollapse b = makeAction (T.pack "expandCollapseCell") $
-                [pack snapid, pack componentid, pack rowid, pack b] 
+                packed3 ++ [pack b] 
         return $ Cell renderer clickCell doubleClickCell (guard isTreeCell *> pure expandCollapse)
 
 instance Unpackable (Tab Protocol) where
