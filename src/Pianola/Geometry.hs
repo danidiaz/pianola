@@ -72,17 +72,11 @@ class Geometrical g where
     minX :: g -> Int
     minX = fst . nwcorner
 
-    minXcmp :: g -> g -> Ordering 
-    minXcmp g1 g2 = compare (minX g1) (minX g2)
-
     midX :: g -> Int
     midX = mid . yband
 
     minY :: g -> Int
     minY = snd . nwcorner
-
-    minYcmp :: g -> g -> Ordering 
-    minYcmp g1 g2 = compare (minY g1) (minY g2)
 
     midY :: g -> Int
     midY = mid . yband

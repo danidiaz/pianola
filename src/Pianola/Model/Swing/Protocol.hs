@@ -9,6 +9,7 @@ module Pianola.Model.Swing.Protocol (
     ) where
 
 import Prelude hiding (catch,(.),id)
+import Data.Monoid
 import Data.MessagePack
 import Data.Attoparsec.ByteString
 import qualified Data.Text as T
@@ -32,9 +33,11 @@ import Pianola.Protocol
 import Pianola.Model.Swing
 
 snapshot :: Protocol (GUI Protocol)
-snapshot = do 
-            gui_or_fail <- call [pack "snapshot"] (AI.parserToIteratee get)
-            hoistEither gui_or_fail
+snapshot = call [pack "snapshot"] (AI.parserToIteratee get) >>= hoistEither
+
+makeAction :: T.Text -> [BL.ByteString] -> Sealed Protocol
+makeAction method args = Sealed [T.pack "@" <> method] $
+    call (pack method:args) (AI.parserToIteratee get) >>= hoistEither
 
 instance Unpackable (Window Protocol) where
     get = Window <$> get
@@ -48,15 +51,12 @@ instance Unpackable (WindowInfo Protocol) where
         v3 <- get
         v4 <- get
         v5 <- get
-        let getWindowImage = Nullipotent $ do
-                image_or_fail <- call [pack "getWindowImage", pack snapid, pack wid] (AI.parserToIteratee get)
+        let packedargs = map pack [snapid,wid] 
+            getWindowImage = Nullipotent $ do
+                image_or_fail <- call (pack "getWindowImage":packedargs) (AI.parserToIteratee get)
                 hoistEither image_or_fail::Protocol Image
-        let escape = Sealed [] $ do
-                escape_or_fail <- call [pack "escape", pack snapid, pack wid] (AI.parserToIteratee get)
-                hoistEither escape_or_fail::Protocol ()
-        let closeWindow = Sealed [] $ do
-                close_or_fail <- call [pack "closeWindow", pack snapid, pack wid] (AI.parserToIteratee get)
-                hoistEither close_or_fail::Protocol ()
+            escape = makeAction (T.pack "escape") packedargs 
+            closeWindow = makeAction (T.pack "closeWindow") packedargs 
         return (WindowInfo v1 v2 v3 v4 v5 getWindowImage escape closeWindow)
 
 instance Unpackable (ComponentInfo Protocol) where
@@ -70,9 +70,7 @@ instance Unpackable (ComponentInfo Protocol) where
         v5 <- get
         v6 <- get
         v7 <- get
-        let rightClick = Sealed [] $ do
-                click_or_fail <- call [pack "rightClick", pack snapid, pack cid] (AI.parserToIteratee get)
-                hoistEither click_or_fail::Protocol ()
+        let rightClick = makeAction (T.pack  "rightClick") [pack snapid, pack cid]
         return (ComponentInfo v1 v2 v3 v4 v5 v6 v7 rightClick)
 
 instance Unpackable (Component Protocol) where
@@ -87,28 +85,24 @@ instance Unpackable (ComponentType Protocol) where
             2 -> do 
                 v2 <- get::Parser Int
                 v3 <- get
-                let toggle b = Sealed [] $ do
-                        toggle_or_fail <- call [pack "toggle", pack snapid, pack v2, pack (b::Bool)] (AI.parserToIteratee get)
-                        hoistEither toggle_or_fail::Protocol ()
+                let toggle b = makeAction (T.pack "toggle") $
+                        [pack snapid, pack v2, pack (b::Bool)]
                 return $ Toggleable v3 toggle
             3 -> do 
                 v2 <- get::Parser Int
-                let click = Sealed [] $ do
-                        click_or_fail <- call [pack "click", pack snapid, pack v2] (AI.parserToIteratee get)
-                        hoistEither click_or_fail::Protocol ()
+                let click = makeAction (T.pack "click") $
+                        [pack snapid, pack v2]
                 return $ Button click
             4 -> do
                 v2 <- get::Parser (Maybe Int) 
-                let setText cid txt = Sealed [] $ do
-                        text_or_fail <- call [pack "setTextField", pack snapid, pack cid, pack txt] (AI.parserToIteratee get)
-                        hoistEither text_or_fail::Protocol ()
+                let setText cid txt = makeAction (T.pack "setTextField") $ 
+                        [pack snapid, pack cid, pack txt] 
                 return . TextField $ fmap setText v2
             5 -> return Label
             6 -> do
                 cid <- get::Parser (Maybe Int) 
-                let clickCombo = Sealed [] $ do
-                        click_or_fail <- call [pack "clickCombo", pack snapid, pack cid] (AI.parserToIteratee get)
-                        hoistEither click_or_fail::Protocol ()
+                let clickCombo = makeAction (T.pack "clickCombo") $
+                        [pack snapid, pack cid] 
                 renderer <- get 
                 return $ ComboBox renderer clickCombo
             7 -> List <$> get
@@ -120,6 +114,7 @@ instance Unpackable (ComponentType Protocol) where
                 v2 <- get
                 return (Other v2)
 
+
 instance Unpackable (Cell Protocol) where
     get = do
         snapid <- get::Parser Int
@@ -128,16 +123,12 @@ instance Unpackable (Cell Protocol) where
         columnid <- get::Parser Int
         renderer <- get
         isTreeCell <- get
-        let clickCell = Sealed [] $ do
-                click_or_fail <- call [pack "clickCell", pack snapid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
-                hoistEither click_or_fail::Protocol ()
-            doubleClickCell = Sealed [] $ do
-                click_or_fail <- call [pack "doubleClickCell", pack snapid, pack componentid, pack rowid, pack columnid] (AI.parserToIteratee get)
-                hoistEither click_or_fail::Protocol ()
-            expandCollapse b = Sealed [] $ do
-                expand_or_fail <- call [pack "expandCollapseCell", pack snapid, pack componentid, pack rowid, pack b] (AI.parserToIteratee get)
-                hoistEither expand_or_fail::Protocol ()
-            
+        let clickCell = makeAction (T.pack "clickCell") $ 
+                map pack [snapid, componentid, rowid, columnid] 
+            doubleClickCell = makeAction (T.pack "doubleClickCell") $
+                map pack [snapid, componentid, rowid, columnid] 
+            expandCollapse b = makeAction (T.pack "expandCollapseCell") $
+                [pack snapid, pack componentid, pack rowid, pack b] 
         return $ Cell renderer clickCell doubleClickCell (guard isTreeCell *> pure expandCollapse)
 
 instance Unpackable (Tab Protocol) where
@@ -148,8 +139,7 @@ instance Unpackable (Tab Protocol) where
         text <- get
         tooltipMaybe <- get
         selected <- get
-        let selecttab = Sealed [] $ do
-                selecttab_or_fail <- call [pack "selectTab", pack snapid, pack componentid, pack tabid] (AI.parserToIteratee get)
-                hoistEither selecttab_or_fail::Protocol ()
+        let selecttab = makeAction (T.pack "selectTab" ) $
+                map pack [snapid, componentid, tabid] 
         return $ Tab text tooltipMaybe selected selecttab
     

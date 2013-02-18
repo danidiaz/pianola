@@ -34,6 +34,7 @@ module Pianola.Model.Swing (
 
 import Prelude hiding (catch)
 import Data.Tree
+import Data.Function
 import Data.Foldable hiding (forM_)
 import Data.Traversable
 import Data.ByteString (ByteString)
@@ -276,7 +277,9 @@ labeledBy f o = do
     ref <- descendants o 
     Label {} <- return . cType $ ref
     hasText f ref  
-    let labellable c = case cType c of
+    let 
+        positioned = sameLevelRightOf ref  
+        labellable c = case cType c of
             Toggleable {} -> True
             Button {} -> True
             TextField {} -> True
@@ -285,12 +288,11 @@ labeledBy f o = do
             Table {} -> True
             Treegui {} -> True
             _ -> False
-        positioned = sameLevelRightOf ref  
     candidates <- lift . observeAllT $ do
         c <- descendants o 
         guard $ labellable c && positioned c
         return c
-    headZ $ sortBy minXcmp candidates 
+    headZ $ sortBy (compare `on` minX) candidates 
 
 
 
