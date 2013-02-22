@@ -31,7 +31,6 @@ import Control.MFunctor
 import Control.Monad
 import Control.Comonad
 import Control.Exception
-import Control.Monad.Base
 import Control.Monad.State.Class
 import Control.Monad.Free
 import Control.Monad.Trans.Reader

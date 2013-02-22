@@ -39,10 +39,9 @@ import Control.Comonad
 import Control.Comonad.Trans.Class
 import Control.Comonad.Trans.Env    
 import Control.Applicative
-import Control.Monad.Base
 import Control.Monad.Trans.Writer
 import Control.Monad.Trans.Maybe
-import Control.Monad.Logic hiding (observe)
+import Control.Monad.Logic
 import Control.Monad.Free
 import Control.MFunctor
 import Control.Proxy -- (Producer,Consumer,ProxyFast, respond, fromListS,>->)

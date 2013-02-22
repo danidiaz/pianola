@@ -31,7 +31,6 @@ import Control.Category
 import Control.Error
 import Control.Monad
 import Control.Applicative
-import Control.Monad.Base
 import Control.Monad.Trans.Class
 import Control.Monad.Free
 import Data.List

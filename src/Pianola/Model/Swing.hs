@@ -44,7 +44,6 @@ import Control.Error.Safe
 import Control.Monad
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Base
 import Control.Monad.Trans.Class
 import Control.Comonad.Trans.Class
 import Control.Comonad.Trans.Env    
