@@ -37,9 +37,10 @@ import Pianola.Pianola.Driver
 import Pianola.Geometry
 import Pianola.Util
 import Pianola.Protocol
+import Pianola.Protocol.IO
 import Pianola.Model.Swing
 import Pianola.Model.Swing.Protocol (snapshot)
-import Pianola.Protocol.IO
+import Pianola.Model.Swing.Driver
 
 type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 
@@ -99,16 +100,6 @@ testCase = with mainWindow $ do
         sleep 2 
     poke $ return . _close . wInfo
 
-delayer :: MonadIO m => Consumer ProxyFast Delay m a
-delayer = forever $ request () >>= liftIO . threadDelay . (*1000000)
-
-logger:: MonadIO mio => LogConsumer mio a
-logger = forever $ do 
-      entry <- request ()
-      case entry of
-          TextEntry txt -> liftIO $ TIO.putStrLn txt
-          ImageEntry image -> liftIO $ B.writeFile "/tmp/loggedxanelaimage.png" image
-
 main :: IO ()
 main = do
   args <- getArgs 
@@ -116,18 +107,6 @@ main = do
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
 
-      -- A long peeling process until we reach IO!!!
-      played = play snapshot testCase
-      rebased = hoist (hoist (hoist $ runProtocol id)) $ played
-      logprod = runMaybeT $ runProxy $ const rebased >-> const delayer
-      base = runProxy $ const logprod >-> const logger
-  r <- flip runReaderT endpoint . runEitherT . runEitherT $ base
-  let msg = case r of
-        Left _ -> "io error"
-        Right r2 -> case r2 of 
-            Left _ -> "protocol error"
-            Right r3 -> case r3 of
-                Nothing -> "pianola error"   
-                Just () -> "all ok"
-  putStrLn msg
+  r <- runEitherT $ simpleSwingDriver endpoint testCase $ screenshotStream "/tmp"
+  putStrLn $ either (\_->"some error") (\_->"all ok") $ r   
 

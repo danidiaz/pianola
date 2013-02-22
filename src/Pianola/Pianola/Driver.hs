@@ -6,10 +6,13 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 
 module Pianola.Pianola.Driver (
-    simpleDriver
+    simpleDriver,
+    DriverError,
+    filePathStream,
+    screenshotStream
 ) where 
 
-import Prelude hiding (catch,(.),id,head,repeat,tail)
+import Prelude hiding (catch,(.),id,head,repeat,tail,map,iterate)
 import System.IO
 import System.Environment
 import System.Console.GetOpt
@@ -60,14 +63,26 @@ logger errHandler filegen () = forever $ do
                file <- lift filegen
                liftIO $ B.writeFile file image
 
+filePathStream :: String -> Int -> String -> FilePath -> Stream FilePath
+filePathStream extension padding prefix folder = 
+     let pad i c str = replicate (max 0 (i - length str)) c ++ str
+         pathFromNumber =  combine folder 
+                         . (\s -> prefix ++ s ++ extSeparator:extension) 
+                         . pad padding '0' 
+                         . show 
+     in map pathFromNumber $ iterate succ 1 
+
+screenshotStream :: FilePath -> Stream FilePath
+screenshotStream = filePathStream  "png" 3 "pianola-capture-" 
+
 data DriverError =
      DriverIOError
     |PianolaIOError
     |ProtocolError
     |PianolaFailure
 
-simpleDriver :: Protocol o -> Endpoint -> Stream FilePath -> Pianola Protocol LogEntry o a -> EitherT DriverError IO a
-simpleDriver snapshot endpoint namestream pianola = do
+simpleDriver :: Protocol o -> Endpoint -> Pianola Protocol LogEntry o a -> Stream FilePath -> EitherT DriverError IO a
+simpleDriver snapshot endpoint pianola namestream = do
     let played = play snapshot pianola
         -- the lift makes a hole for an (EitherT DriverIOError...)
         rebased = hoist (hoist (hoist $ lift . runProtocol id)) $ played
