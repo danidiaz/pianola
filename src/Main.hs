@@ -7,7 +7,7 @@
 
 module Main where
 
-import Prelude hiding (catch,(.))
+import Prelude hiding (catch,(.),id)
 import System.IO
 import System.Environment
 import System.Console.GetOpt
@@ -33,6 +33,7 @@ import Control.Monad.Trans.Free
 import Control.Concurrent (threadDelay)
 
 import Pianola.Pianola
+import Pianola.Pianola.Driver
 import Pianola.Geometry
 import Pianola.Util
 import Pianola.Protocol
@@ -117,19 +118,16 @@ main = do
 
       -- A long peeling process until we reach IO!!!
       played = play snapshot testCase
-      rebased = hoist (hoist (hoist (hoist (hoist runProtocol)))) $ played
-      delayed = runProxy $ const rebased >-> const delayer
-      logged1 = runProxy $ (const $ runMaybeT delayed) >-> const logger
-      logged2 = runProxy $ (const $ runMaybeT logged1) >-> const logger
-  r <- flip runReaderT endpoint . runEitherT . runEitherT $ logged2
+      rebased = hoist (hoist (hoist $ runProtocol id)) $ played
+      logprod = runMaybeT $ runProxy $ const rebased >-> const delayer
+      base = runProxy $ const logprod >-> const logger
+  r <- flip runReaderT endpoint . runEitherT . runEitherT $ base
   let msg = case r of
         Left _ -> "io error"
         Right r2 -> case r2 of 
             Left _ -> "protocol error"
             Right r3 -> case r3 of
-                Nothing -> "arrow error"
-                Just r4 -> case r4 of
-                    Nothing -> "pianola error"   
-                    Just () -> "all ok"
+                Nothing -> "pianola error"   
+                Just () -> "all ok"
   putStrLn msg
 

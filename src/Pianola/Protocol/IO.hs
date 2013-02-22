@@ -20,14 +20,14 @@ import Control.Applicative
 import Control.Exception
 import Control.Concurrent
 import Control.Monad
-import Control.Monad.Trans.Reader
+--import Control.Monad.Trans.Reader
 import Control.Monad.Logic
 import Control.Monad.Free
 import Data.Functor.Identity
 import Control.Monad.Trans.Class   
 import qualified Data.ByteString as B 
 import qualified Data.ByteString.Lazy as BL
-
+import Control.Monad.Reader
 import Pianola.Protocol
 
 data RunInIOError = CommError T.Text | ParseError T.Text
@@ -37,8 +37,8 @@ data Endpoint = Endpoint {
         portID::PortID
     }
 
-runFree:: Free ProtocolF a -> EitherT RunInIOError (ReaderT Endpoint IO) a  
-runFree ( Free (Compose (b,i)) ) = do
+runFree:: (MonadIO m, MonadReader r m) => (r -> Endpoint) -> Free ProtocolF a -> EitherT RunInIOError m a  
+runFree lens ( Free (Compose (b,i)) ) = do
     let iterIO = I.ilift (return . runIdentity) i
 
         rpcCall :: Endpoint -> (Handle -> IO b) -> IO b
@@ -51,10 +51,10 @@ runFree ( Free (Compose (b,i)) ) = do
             mapM_ (BL.hPutStr h) b
             hFlush h
             I.run =<< IH.enumHandle 1024 h ii   
-    endp <- lift ask
+    endp <- lift $ asks lens
     nextFree <- liftIO $ rpcCall endp $ doStuff iterIO    
-    runFree nextFree 
-runFree ( Pure a ) = return a 
+    runFree lens nextFree 
+runFree _ ( Pure a ) = return a 
 
-runProtocol :: Protocol a -> EitherT ServerError (EitherT RunInIOError (ReaderT Endpoint IO)) a  
-runProtocol = EitherT . runFree . runEitherT
+runProtocol :: (MonadIO m, MonadReader r m) => (r -> Endpoint) -> Protocol a -> EitherT ServerError (EitherT RunInIOError m) a  
+runProtocol lens = EitherT . runFree lens . runEitherT

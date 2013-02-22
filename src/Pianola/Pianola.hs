@@ -86,13 +86,20 @@ newtype Pianola m l o a = Pianola { unPianola :: Prod (Sealed m) (Prod Delay (Ma
 instance Monad m => Loggy (Pianola m LogEntry o) where
     xanlog = Pianola . lift . lift . lift . xanlog
 
-play :: Monad m => m o -> Pianola m l o a -> Prod Delay (MaybeT (Prod l (MaybeT (Prod l m)))) a
+
+--play :: Monad m => m o -> Pianola m l o a -> Prod Delay (MaybeT (Prod l (MaybeT (Prod l m)))) a
+play :: Monad m => m o -> Pianola m l o a -> Prod Delay (MaybeT (Prod l m)) a
 play mom pi =
-    let pianola' = hoist (hoist (hoist (hoist $ runObserver mom))) $ unPianola pi 
+    let smashMaybe m () = runMaybeT m >>= lift . hoistMaybe
+        smashProducer () = forever $
+                request () >>= lift . lift . respond
+        smash :: Monad m => MaybeT (Prod l (MaybeT (Prod l m))) a -> MaybeT (Prod l m) a
+        smash mp = runProxy $ smashMaybe mp >-> smashProducer
+        pi' = hoist (hoist (smash . hoist (hoist $ runObserver mom))) $ unPianola pi 
         injector () = forever $ do
             s <- request ()
-            lift . lift . lift . lift . lift . lift $ unseal s
-    in runProxy $ const pianola' >-> injector
+            lift . lift . lift . lift $ unseal s
+    in runProxy $ const pi' >-> injector
 
 pianofail :: Monad m => Pianola m l o a
 pianofail = Pianola . lift . lift $ mzero
