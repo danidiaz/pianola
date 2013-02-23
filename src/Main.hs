@@ -48,7 +48,7 @@ testCase = with mainWindow $ do
     logmsg "getting a screenshot"
     (peek $ liftN._image.wInfo) >>= logimg
     logmsg "now for a second menu"
-    logActions $ selectInMenuBar Nothing $ map (==) ["Menu1","SubMenu1","submenuitem1"]
+    autolog $ selectInMenuBar Nothing $ map (==) ["Menu1","SubMenu1","submenuitem1"]
     sleep 2
     ralentize 3 $ with contentsPane $ do 
         poke $ descendants >=> hasText (=="foo") >=> click

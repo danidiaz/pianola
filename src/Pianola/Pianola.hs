@@ -8,22 +8,29 @@
 
 module Pianola.Pianola (
         Glance(..),
-        notPresent,
+        missing,
         collect,
         liftN,
         Pianola(..),
         Delay,
         play,
-        pianofail,
+        pfail,
+        pfailMaybe,
         peek,
-        poke,
+        peekMaybe,
         retryPeek,
+        retryPeek1s,
+        withRetry,
+        withRetry1s,
+        poke,
+        pokeMaybe,
         retryPoke,
+        retryPoke1s,
         sleep,
         with,
         ralentizeByTag,
         ralentize,
-        logActions
+        autolog
     ) where
 
 import Prelude hiding (catch,(.))
@@ -54,14 +61,14 @@ import Pianola.Util
 
 type Glance m l o a = o -> LogicT (Prod l (Nullipotent m)) a
 
-collect :: Monad m => Glance m l o a -> Glance m l o [a] 
-collect = fmap $ lift . observeAllT
+collect :: (Monad m, MonadPlus n) => Glance m l o a -> Glance m l o (n a)
+collect = fmap $ \x -> lift $ observeAllT x >>= return . replusify
 
 liftN :: Monad m => Glance m l (Nullipotent m a) a
 liftN = lift . lift
 
-notPresent :: Monad m => Glance m l o a -> Glance m l o () 
-notPresent = fmap lnot
+missing :: Monad m => Glance m l o a -> Glance m l o () 
+missing = fmap lnot
 
 type ObserverF m l o = Compose ((->) o) (LogicT (Prod l (Nullipotent m)))
 
@@ -85,8 +92,6 @@ newtype Pianola m l o a = Pianola { unPianola :: Prod (Sealed m) (Prod Delay (Ma
 instance Monad m => Loggy (Pianola m LogEntry o) where
     xanlog = Pianola . lift . lift . lift . xanlog
 
-
---play :: Monad m => m o -> Pianola m l o a -> Prod Delay (MaybeT (Prod l (MaybeT (Prod l m)))) a
 play :: Monad m => m o -> Pianola m l o a -> Prod Delay (MaybeT (Prod l m)) a
 play mom pi =
     let smashMaybe m () = runMaybeT m >>= lift . hoistMaybe
@@ -100,23 +105,61 @@ play mom pi =
             lift . lift . lift . lift $ unseal s
     in runProxy $ const pi' >-> injector
 
-pianofail :: Monad m => Pianola m l o a
-pianofail = Pianola . lift . lift $ mzero
+pfail :: Monad m => Pianola m l o a
+pfail = Pianola . lift . lift $ mzero
+
+pfailMaybe :: Monad m => Pianola m l o (Maybe a) -> Pianola m l o a  
+pfailMaybe p = p >>= maybe pfail return 
 
 peek :: Monad m => Glance m l o a -> Pianola m l o a
 peek = Pianola . lift . lift . lift . lift . liftF . Compose
 
+peekMaybe :: Monad m => Glance m l o a -> Pianola m l o (Maybe a)
+peekMaybe = peek . collect
+
+retryPeek :: Monad m => Pianola m l o u -> Int -> Glance m l o a -> Pianola m l o (Maybe a)
+retryPeek delay times glance =
+    let retryPeek' [] = return Nothing
+        retryPeek' (x:xs) = do
+            z <- peekMaybe x
+            maybe (delay >> retryPeek' xs) (return.return) z 
+    in retryPeek' $ replicate times glance
+
+retryPeek1s :: Monad m => Int -> Glance m l o a -> Pianola m l o (Maybe a)
+retryPeek1s = retryPeek $ sleep 1
+
+withRetry :: Monad m => Pianola m l o' u -> Int -> Glance m l o' o -> Pianola m l o a -> Pianola m l o' (Maybe a)
+withRetry delay times glance pi = do
+    r <- retryPeek delay times glance 
+    case r of 
+        Nothing -> return Nothing
+        Just _ -> with glance pi >>= return . Just
+
+withRetry1s :: Monad m => Int -> Glance m l o' o -> Pianola m l o a -> Pianola m l o' (Maybe a)
+withRetry1s = withRetry $ sleep 1
+
+inject :: Monad m => Sealed m -> Pianola m l o ()
+inject = Pianola . respond 
+
 poke :: Monad m => Glance m l o (Sealed m) -> Pianola m l o () 
-poke locator = Pianola $ (unPianola $ peek locator) >>= respond
+poke locator = peek locator >>= inject
 
-retryPeek :: Monad m => Delay -> [Glance m l o a] -> Pianola m l o a 
-retryPeek _ [] = pianofail
-retryPeek d (x:xs) = do
-    a <- peek . fmap maybify $ x
-    maybe (sleep d >> retryPeek d xs) return a
+pokeMaybe :: Monad m => Glance m l o (Sealed m) -> Pianola m l o (Maybe ())
+pokeMaybe locator = do 
+    actionMaybe <- peekMaybe locator 
+    case actionMaybe of
+        Nothing -> return Nothing
+        Just action -> inject action >> return (Just ())
 
-retryPoke :: Monad m => Delay -> [Glance m l o (Sealed m)] -> Pianola m l o () 
-retryPoke d xs = Pianola $ (unPianola $ retryPeek d xs) >>= respond 
+retryPoke :: Monad m => Pianola m l o u -> Int -> Glance m l o (Sealed m)  -> Pianola m l o (Maybe ())
+retryPoke delay times glance = do
+    actionMaybe <- retryPeek delay times glance
+    case actionMaybe of
+       Nothing -> return Nothing
+       Just action -> inject action >> return (Just ())
+
+retryPoke1s :: Monad m => Int -> Glance m l o (Sealed m)  -> Pianola m l o (Maybe ())
+retryPoke1s = retryPoke $ sleep 1
 
 sleep :: Monad m => Delay -> Pianola m l o ()
 sleep = Pianola . lift . respond 
@@ -136,8 +179,8 @@ ralentizeByTag f delay (Pianola p) =
 ralentize :: Delay -> Pianola m l o a -> Pianola m l o a
 ralentize = ralentizeByTag $ const True
     
-logActions :: Pianola m LogEntry o a -> Pianola m LogEntry o a 
-logActions (Pianola p) =
+autolog :: Pianola m LogEntry o a -> Pianola m LogEntry o a 
+autolog (Pianola p) =
     let logger () = forever $ do
             s <- request ()
             respond s

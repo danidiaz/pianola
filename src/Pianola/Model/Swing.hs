@@ -242,12 +242,12 @@ selectInMenuBar shouldToggleLast ps =
            let pairs = zip middleitems (click <$ middleitems) ++
                        [(lastitem, maybe click toggle shouldToggleLast)]
            forM_ pairs $ \(txt,action) -> 
-               retryPoke 1 $ replicate 7 $  
+               pfailMaybe $ retryPoke1s 7 $ 
                    popupLayer >=> descendants >=> hasText txt >=> action
            when (isJust shouldToggleLast) $ replicateM_ (length pairs) 
                                                   (poke $ return._escape.wInfo)
         clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
-    in maybe pianofail go (clip ps)
+    in maybe pfail go (clip ps)
 
 selectInComboBox :: (Monad m, ComponentLike c, Windowed c) => (T.Text -> Bool) -> Pianola m l (c m) ()
 selectInComboBox f = do
