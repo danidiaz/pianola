@@ -55,6 +55,14 @@ testCase = with mainWindow $ do
         logmsg "3 seconds before, 3 after"
         with window $ with childWindow $ with contentsPane $ do
             poke $ descendants >=> hasText (=="dialog button") >=> click
+    logmsg "opening a file chooser"
+    with (contentsPane >=> descendants >=> hasText (=="Open file chooser")) $ do
+        poke click
+        with window $ with childWindow $ with contentsPane $ do
+            poke $ descendants >=> hasText (=="") >=> setText "/tmp/foofile.txt"   
+            clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]
+        sleep 1
+    logmsg "working with a combo box"
     with contentsPane $ with descendants $ do 
         logmsg "this should show the combo"
         selectInComboBox (=="ccc")
