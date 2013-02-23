@@ -9,12 +9,14 @@ import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -113,6 +115,22 @@ public class Main
       
         westPanel.add(label);  
   
+        final JFileChooser fc = new JFileChooser();
+        final JButton fileChooserButton = new JButton("Open file chooser");
+        fileChooserButton.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                int returnVal = fc.showOpenDialog(fileChooserButton);
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    File file = fc.getSelectedFile();
+                    System.out.println("file is: " + file);                    
+                } 
+            }
+        });
+        westPanel.add(fileChooserButton);
+       
+        
         mainPanel.add(westPanel,BorderLayout.EAST);
         mainPanel.add(tf,BorderLayout.NORTH); 
         
