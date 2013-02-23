@@ -1,4 +1,4 @@
-package info.danidiaz.xanela.testapp;
+package info.danidiaz.pianola.testapp;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;

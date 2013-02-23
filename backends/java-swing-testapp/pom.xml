@@ -2,17 +2,17 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>info.danidiaz.xanela</groupId>
-  <artifactId>xanela-testapp</artifactId>
+  <groupId>info.danidiaz.pianola</groupId>
+  <artifactId>pianola-testapp</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>xanela-testapp</name>
+  <name>pianola-testapp</name>
   <url>http://maven.apache.org</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <myprops.xanela-driver.version>1.0-SNAPSHOT</myprops.xanela-driver.version>
+    <myprops.pianola-driver.version>1.0-SNAPSHOT</myprops.pianola-driver.version>
   </properties>
 
   <build>
@@ -25,7 +25,7 @@
           <archive>
             <manifest>
               <addClasspath>true</addClasspath>
-              <mainClass>info.danidiaz.xanela.testapp.Main</mainClass>
+              <mainClass>info.danidiaz.pianola.testapp.Main</mainClass>
             </manifest>
           </archive>
         </configuration>
@@ -40,12 +40,12 @@
         <executable>java</executable>
         <arguments>
           <!-- <argument>-Dmyproperty=myvalue</argument> -->
-          <argument>-javaagent:${settings.localRepository}/info/danidiaz/xanela/xanela-driver/${myprops.xanela-driver.version}/xanela-driver-${myprops.xanela-driver.version}.jar=</argument>
+          <argument>-javaagent:${settings.localRepository}/info/danidiaz/pianola/pianola-driver/${myprops.pianola-driver.version}/pianola-driver-${myprops.pianola-driver.version}.jar=</argument>
           <!-- automatically creates the classpath using all project dependencies,
                also adding the project build directory -->
           <argument>-classpath</argument>
           <classpath/>
-          <argument>info.danidiaz.xanela.testapp.Main</argument>
+          <argument>info.danidiaz.pianola.testapp.Main</argument>
         </arguments>
         </configuration>
       </plugin>      
@@ -55,9 +55,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>info.danidiaz.xanela</groupId>
-      <artifactId>xanela-driver</artifactId>
-      <version>${myprops.xanela-driver.version}</version>
+      <groupId>info.danidiaz.pianola</groupId>
+      <artifactId>pianola-driver</artifactId>
+      <version>${myprops.pianola-driver.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

@@ -1,4 +1,4 @@
-package info.danidiaz.xanela.driver;
+package info.danidiaz.pianola.driver;
 
 import java.awt.Component;
 import java.awt.Point;
@@ -67,8 +67,8 @@ public class Snapshot {
     
     boolean dirty = false;
     
-    public Snapshot(Snapshot xanela) {
-        this.imageBin = xanela==null?new ImageBin():xanela.obtainImageBin();
+    public Snapshot(Snapshot pianola) {
+        this.imageBin = pianola==null?new ImageBin():pianola.obtainImageBin();
     }
     public void buildAndWrite(final int snapid, final Packer packer) throws IOException {
         

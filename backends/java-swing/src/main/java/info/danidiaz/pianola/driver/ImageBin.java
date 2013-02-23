@@ -1,4 +1,4 @@
-package info.danidiaz.xanela.driver;
+package info.danidiaz.pianola.driver;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;

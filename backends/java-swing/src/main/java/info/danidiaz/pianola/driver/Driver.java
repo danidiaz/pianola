@@ -1,4 +1,4 @@
-package info.danidiaz.xanela.driver;
+package info.danidiaz.pianola.driver;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
@@ -85,10 +85,10 @@ public class Driver implements Runnable
                     String methodName = unpacker.readString();                
                     if (methodName.equals("snapshot")) {
                         lastSnapshotId++;
-                        Snapshot xanela = new Snapshot(lastSnapshot);
+                        Snapshot pianola = new Snapshot(lastSnapshot);
                         packer.write((int)0);
-                        xanela.buildAndWrite(lastSnapshotId,packer);
-                        lastSnapshot = xanela;     
+                        pianola.buildAndWrite(lastSnapshotId,packer);
+                        lastSnapshot = pianola;     
                     } else if (methodName.equals("toggle")) {
                         int snapshotId = unpacker.readInt();
                         int buttonId = unpacker.readInt();
