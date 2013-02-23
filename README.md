@@ -1,1 +1,2 @@
-Haskell client library for Xanela.
+Pianola is a library that lets you control Java Swing applications from Haskell.
+
