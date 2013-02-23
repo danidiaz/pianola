@@ -20,6 +20,7 @@ module Pianola.Pianola (
         peekMaybe,
         retryPeek,
         retryPeek1s,
+        withMaybe,
         withRetry,
         withRetry1s,
         poke,
@@ -127,6 +128,13 @@ retryPeek delay times glance =
 
 retryPeek1s :: Monad m => Int -> Glance m l o a -> Pianola m l o (Maybe a)
 retryPeek1s = retryPeek $ sleep 1
+
+withMaybe :: Monad m => Glance m l o' o -> Pianola m l o a -> Pianola m l o' (Maybe a) 
+withMaybe glance pi = do
+    r <- peekMaybe glance 
+    case r of 
+        Nothing -> return Nothing
+        Just _ -> with glance pi >>= return . Just
 
 withRetry :: Monad m => Pianola m l o' u -> Int -> Glance m l o' o -> Pianola m l o a -> Pianola m l o' (Maybe a)
 withRetry delay times glance pi = do
