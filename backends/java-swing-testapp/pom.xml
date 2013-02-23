@@ -1,0 +1,70 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>info.danidiaz.xanela</groupId>
+  <artifactId>xanela-testapp</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>xanela-testapp</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <myprops.xanela-driver.version>1.0-SNAPSHOT</myprops.xanela-driver.version>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <mainClass>info.danidiaz.xanela.testapp.Main</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+ 
+      </plugin>
+
+      <plugin>  
+        <groupId>org.codehaus.mojo</groupId>  
+        <artifactId>exec-maven-plugin</artifactId>  
+        <version>1.2.1</version>
+        <configuration>
+        <executable>java</executable>
+        <arguments>
+          <!-- <argument>-Dmyproperty=myvalue</argument> -->
+          <argument>-javaagent:${settings.localRepository}/info/danidiaz/xanela/xanela-driver/${myprops.xanela-driver.version}/xanela-driver-${myprops.xanela-driver.version}.jar=</argument>
+          <!-- automatically creates the classpath using all project dependencies,
+               also adding the project build directory -->
+          <argument>-classpath</argument>
+          <classpath/>
+          <argument>info.danidiaz.xanela.testapp.Main</argument>
+        </arguments>
+        </configuration>
+      </plugin>      
+
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>info.danidiaz.xanela</groupId>
+      <artifactId>xanela-driver</artifactId>
+      <version>${myprops.xanela-driver.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.10</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+</project>
