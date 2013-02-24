@@ -11,12 +11,6 @@ import Control.Category
 import Control.Error
 import Control.Applicative
 import Control.Proxy
---import Pianola.Util
---import Pianola.Pianola
---import Pianola.Pianola.Driver
---import Pianola.Protocol
---import Pianola.Protocol.IO
---import Pianola.Model.Swing
 import Pianola.Model.Swing.Driver
 
 type Test = Pianola Protocol LogEntry (GUI Protocol) ()
@@ -24,9 +18,9 @@ type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 testCase:: Test
 testCase = with mainWindow $ do
     with contentsPane $ do 
-        poke $ descendants >=> hasText (=="foo") >=> click
+        poke $ descendants >=> hasText (=="open dialog") >=> click
         with window $ with childWindow $ with contentsPane $ do
-            clickButtonByText (=="dialog button")
+            clickButtonByText (=="close dialog")
     logmsg "foo log message"
     selectInMenuBar (Just True) $ map (==) ["Menu1","SubMenu1","submenuitem2"]
     logmsg "getting a screenshot"
@@ -35,10 +29,10 @@ testCase = with mainWindow $ do
     autolog $ selectInMenuBar Nothing $ map (==) ["Menu1","SubMenu1","submenuitem1"]
     sleep 2
     ralentize 3 $ with contentsPane $ do 
-        poke $ descendants >=> hasText (=="foo") >=> click
+        poke $ descendants >=> hasText (=="open dialog") >=> click
         logmsg "3 seconds before, 3 after"
         with window $ with childWindow $ with contentsPane $ do
-            poke $ descendants >=> hasText (=="dialog button") >=> click
+            poke $ descendants >=> hasText (=="close dialog") >=> click
     logmsg "opening a file chooser"
     with (contentsPane >=> descendants >=> hasText (=="Open file chooser")) $ do
         poke click
