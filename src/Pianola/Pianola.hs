@@ -60,7 +60,7 @@ import Control.Monad.Trans.Maybe
 
 import Pianola.Util
 
-type Glance m l o a = o -> LogicT (Prod l (Nullipotent m)) a
+type Glance m l o a = o -> LogicT (Produ l (Nullipotent m)) a
 
 collect :: (Monad m, MonadPlus n) => Glance m l o a -> Glance m l o (n a)
 collect = fmap $ \x -> lift $ observeAllT x >>= return . replusify
@@ -71,7 +71,7 @@ liftN = lift . lift
 missing :: Monad m => Glance m l o a -> Glance m l o () 
 missing = fmap lnot
 
-type ObserverF m l o = Compose ((->) o) (LogicT (Prod l (Nullipotent m)))
+type ObserverF m l o = Compose ((->) o) (LogicT (Produ l (Nullipotent m)))
 
 type Observer m l o = Free (ObserverF m l o)
 
@@ -80,7 +80,7 @@ focus prefix v =
    let nattrans (Compose k) = Compose $ prefix >=> k
    in hoistFree nattrans v
 
-runObserver :: Monad m => m o -> Observer m l o a -> MaybeT (Prod l m) a
+runObserver :: Monad m => m o -> Observer m l o a -> MaybeT (Produ l m) a
 runObserver _ (Pure b) = return b
 runObserver mom (Free f) =
    let squint = fmap $ hoist (hoist runNullipotent) . tomaybet
@@ -88,17 +88,17 @@ runObserver mom (Free f) =
 
 type Delay = Int
 
-newtype Pianola m l o a = Pianola { unPianola :: Prod (Sealed m) (Prod Delay (MaybeT (Prod l (Observer m l o)))) a } deriving (Functor,Monad)
+newtype Pianola m l o a = Pianola { unPianola :: Produ (Sealed m) (Produ Delay (MaybeT (Produ l (Observer m l o)))) a } deriving (Functor,Monad)
 
 instance Monad m => Loggy (Pianola m LogEntry o) where
     xanlog = Pianola . lift . lift . lift . xanlog
 
-play :: Monad m => m o -> Pianola m l o a -> Prod Delay (MaybeT (Prod l m)) a
+play :: Monad m => m o -> Pianola m l o a -> Produ Delay (MaybeT (Produ l m)) a
 play mom pi =
     let smashMaybe m () = runMaybeT m >>= lift . hoistMaybe
         smashProducer () = forever $
                 request () >>= lift . lift . respond
-        smash :: Monad m => MaybeT (Prod l (MaybeT (Prod l m))) a -> MaybeT (Prod l m) a
+        smash :: Monad m => MaybeT (Produ l (MaybeT (Produ l m))) a -> MaybeT (Produ l m) a
         smash mp = runProxy $ smashMaybe mp >-> smashProducer
         pi' = hoist (hoist (smash . hoist (hoist $ runObserver mom))) $ unPianola pi 
         injector () = forever $ do

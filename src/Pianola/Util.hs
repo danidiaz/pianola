@@ -11,14 +11,12 @@
 module Pianola.Util (
         replusify,
         tomaybet,
-        maybify,
         Treeish(..),
-        Prod,
+        Produ,
+        Consu,
         Loggy(..),
         LogEntry(..),
         Image,
-        LogConsumer,
-        LogProducer,
         Nullipotent(runNullipotent),
         Tag,
         Sealed(tags,unseal),
@@ -56,8 +54,8 @@ replusify = msum . map return
 tomaybet:: Monad m => LogicT m a -> MaybeT m a
 tomaybet = MaybeT . liftM replusify . observeManyT 1
 
-maybify :: Monad m => LogicT m a -> LogicT m (Maybe a)
-maybify l = lift $ observeManyT 1 l >>= return . replusify
+--maybify :: Monad m => LogicT m a -> LogicT m (Maybe a)
+--maybify l = lift $ observeManyT 1 l >>= return . replusify
 
 class Treeish l where
     children :: MonadPlus m => l -> m l
@@ -82,8 +80,6 @@ instance (Unpackable a, Unpackable b) => Unpackable (Either a b) where
 instance Unpackable a => Unpackable (Tree a) where
     get = Node <$> get <*> get
 
--- pipes
-type Prod t = Producer ProxyFast t
 
 -- logging
 type Image = B.ByteString
@@ -103,10 +99,11 @@ class Functor l => Loggy l where
 data LogEntry = TextEntry T.Text 
                 |ImageEntry Image
 
-type LogProducer m = Producer ProxyFast LogEntry m
-type LogConsumer m = Consumer ProxyFast LogEntry m
+-- pipes
+type Produ t = Producer ProxyFast t
+type Consu t = Consumer ProxyFast t
 
-instance Monad m => Loggy (LogProducer m) where
+instance Monad m => Loggy (Produ LogEntry m) where
     xanlog = respond 
 
 instance (Monad l, Loggy l) => Loggy (LogicT l) where
@@ -114,7 +111,4 @@ instance (Monad l, Loggy l) => Loggy (LogicT l) where
 
 instance (Monad l, Loggy l) => Loggy (MaybeT l) where
     xanlog = lift . xanlog
-
--- 
---
 

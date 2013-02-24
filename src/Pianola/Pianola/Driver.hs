@@ -53,7 +53,7 @@ import System.FilePath
 delayer :: MonadIO m => () -> Consumer ProxyFast Delay m a
 delayer () = forever $ request () >>= liftIO . threadDelay . (*1000000)
 
-logger:: MonadIO m => (IOException -> m a) -> m FilePath -> () -> LogConsumer m a
+logger:: MonadIO m => (IOException -> m a) -> m FilePath -> () -> Consu LogEntry m a
 logger errHandler filegen () = forever $ do 
       entry <- request ()
       case entry of  
