@@ -1,38 +1,22 @@
 {-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 
 module Main where
 
 import Prelude hiding (catch,(.),id)
-import System.IO
 import System.Environment
-import System.Console.GetOpt
 import Data.Tree
-import qualified Data.Text as T
 import Network 
 import Control.Category
 import Control.Error
 import Control.Applicative
 import Control.Proxy
-import Control.Monad
-import Control.Comonad
-import Control.Exception
-import Control.Monad.Free
---import Control.Monad.Trans.Reader
-import Control.Monad.Logic
---import Control.Monad.Trans.Maybe
---import Control.Monad.Trans.Free  
-
-import Pianola.Util
-import Pianola.Pianola
-import Pianola.Pianola.Driver
-import Pianola.Protocol
-import Pianola.Protocol.IO
-import Pianola.Model.Swing
+--import Pianola.Util
+--import Pianola.Pianola
+--import Pianola.Pianola.Driver
+--import Pianola.Protocol
+--import Pianola.Protocol.IO
+--import Pianola.Model.Swing
 import Pianola.Model.Swing.Driver
 
 type Test = Pianola Protocol LogEntry (GUI Protocol) ()

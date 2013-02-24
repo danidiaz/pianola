@@ -1,10 +1,5 @@
-{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Pianola.Model.Swing (
@@ -35,19 +30,13 @@ module Pianola.Model.Swing (
 import Prelude hiding (catch)
 import Data.Tree
 import Data.Function
-import Data.Foldable hiding (forM_)
-import Data.Traversable
-import Data.ByteString (ByteString)
 import qualified Data.Text as T
 import Control.Error
-import Control.Error.Safe
 import Control.Monad
 import Control.Applicative
-import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Comonad.Trans.Class
 import Control.Comonad.Trans.Env    
-import Data.Foldable (toList)
 import Data.List
 import Pianola.Util
 import Pianola.Pianola

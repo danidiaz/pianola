@@ -1,12 +1,4 @@
-{-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE PackageImports #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveFoldable #-}
-{-# LANGUAGE DeriveTraversable #-}
 
 module Pianola.Util (
         replusify,
@@ -25,24 +17,17 @@ module Pianola.Util (
 
 import Prelude hiding (catch,(.),id)
 import Control.Category
-import Data.Foldable (Foldable)
-import Data.Traversable
 import Data.Tree
-import Data.List
 import Data.MessagePack
 import Data.Attoparsec.ByteString
-import Control.Error.Safe
 import Control.Monad
 import Control.Comonad
 import Control.Comonad.Trans.Class
 import Control.Comonad.Trans.Env    
 import Control.Applicative
-import Control.Monad.Trans.Writer
 import Control.Monad.Trans.Maybe
 import Control.Monad.Logic
-import Control.Monad.Free
-import Control.MFunctor
-import Control.Proxy -- (Producer,Consumer,ProxyFast, respond, fromListS,>->)
+import Control.Proxy
 import qualified Data.Text as T
 import qualified Data.ByteString as B
 

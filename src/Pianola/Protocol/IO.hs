@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
-
 module Pianola.Protocol.IO (
         RunInIOError(..),
         Endpoint(..),
@@ -16,16 +14,10 @@ import Network
 import Data.Functor.Compose
 import Control.Category
 import Control.Error
-import Control.Applicative
 import Control.Exception
-import Control.Concurrent
-import Control.Monad
---import Control.Monad.Trans.Reader
 import Control.Monad.Logic
 import Control.Monad.Free
 import Data.Functor.Identity
-import Control.Monad.Trans.Class   
-import qualified Data.ByteString as B 
 import qualified Data.ByteString.Lazy as BL
 import Control.Monad.Reader
 import Pianola.Protocol
