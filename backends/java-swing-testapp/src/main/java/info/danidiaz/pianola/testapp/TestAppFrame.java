@@ -108,7 +108,7 @@ public class TestAppFrame extends JFrame {
         dialog.setTitle("foo dialog");
         dialog.getContentPane().setLayout(new BorderLayout());
         dialog.getContentPane().add(new JTextArea(18, 10),BorderLayout.CENTER);
-        JButton dialogButton = new JButton("dialog button");
+        JButton dialogButton = new JButton("close dialog");
         dialogButton.addActionListener(new ActionListener() {
             
             @Override
@@ -126,10 +126,13 @@ public class TestAppFrame extends JFrame {
    
     private JPanel createTabOne() {
         JPanel mainPanel = new JPanel(new BorderLayout());
+        JPanel textPanel = new JPanel(new BorderLayout());
         
-        mainPanel.add(new JTextArea(18, 28),BorderLayout.CENTER);
-        JButton fooButton = new JButton("foo");
-        fooButton.setToolTipText("foo tooltip");
+        textPanel.add(textField,BorderLayout.NORTH); 
+        
+        textPanel.add(new JTextArea(18, 28),BorderLayout.CENTER);
+        JButton fooButton = new JButton("open dialog");
+        fooButton.setToolTipText("open dialog tooltip");
         fooButton.addActionListener(new ActionListener() {
             
             @Override
@@ -138,7 +141,7 @@ public class TestAppFrame extends JFrame {
                 createAndShowDialog(TestAppFrame.this);
             }
         });
-        mainPanel.add(fooButton,BorderLayout.SOUTH);
+        textPanel.add(fooButton,BorderLayout.SOUTH);
         
         JPanel westPanel = new JPanel(new GridLayout(6,1));
         westPanel.add(new JComboBox(new Object [] { "aaa","bbb","ccc",
@@ -198,9 +201,8 @@ public class TestAppFrame extends JFrame {
         });
         westPanel.add(fileChooserButton);
        
-        
+        mainPanel.add(textPanel,BorderLayout.CENTER);        
         mainPanel.add(westPanel,BorderLayout.EAST);
-        mainPanel.add(textField,BorderLayout.NORTH); 
         
         return mainPanel;
     }
