@@ -11,9 +11,6 @@ import qualified Data.Text as T
 import Network 
 import Control.Category
 import Control.Monad
-import Control.Comonad
-import Control.Comonad.Trans.Class
-import Control.Comonad.Trans.Env
 import Control.Error
 import Control.Applicative
 import Control.Proxy
@@ -28,15 +25,6 @@ checkStatusBar textf = do
         logmsg $ "Unexpected text in status bar: " <> statusText
         pfail
 
-popupItem :: Monad m => Glance m LogEntry (Window m) (Component m)
-popupItem w = 
-    let insidepop = children >=> contentsPane >=> descendants >=> \c -> 
-            case cType c of
-                PopupMenu -> descendants c
-                _ -> mzero
-    in (popupLayer >=> descendants $ w) `mplus` 
-       (insidepop >=> return . Component . lower . unComponentW $ w)
-
 type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 
 testCase:: Test
@@ -50,7 +38,7 @@ testCase = with mainWindow $ do
         sleep 4
         logmsg "finding popup-before"
         -- findPopup
-        pfailMaybe $ retryPoke1s 4 $ window >=> popupItem >=> hasText (=="popupitem2") >=> click  
+        pmaybe pfail $ retryPoke1s 4 $ window >=> popupItem >=> hasText (=="popupitem2") >=> click  
         logmsg "finding popup-after"
         sleep 1
     logmsg "foo log message"

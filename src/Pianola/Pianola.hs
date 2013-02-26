@@ -11,7 +11,7 @@ module Pianola.Pianola (
         Delay,
         play,
         pfail,
-        pfailMaybe,
+        pmaybe,
         peek,
         peekMaybe,
         retryPeek,
@@ -91,6 +91,9 @@ play mom pi =
 
 pfail :: Monad m => Pianola m l o a
 pfail = Pianola . lift . lift $ mzero
+
+pmaybe :: Monad m => Pianola m l o a -> Pianola m l o (Maybe a) -> Pianola m l o a  
+pmaybe f p = p >>= maybe f return 
 
 pfailMaybe :: Monad m => Pianola m l o (Maybe a) -> Pianola m l o a  
 pfailMaybe p = p >>= maybe pfail return 

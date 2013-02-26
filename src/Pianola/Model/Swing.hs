@@ -20,6 +20,7 @@ module Pianola.Model.Swing (
         childWindow,
         clickButtonByText,
         clickButtonByToolTip,
+        popupItem,
         selectInMenuBar,
         selectInComboBox,
         selectTabByText, 
@@ -224,6 +225,15 @@ clickButtonByText f = poke $ descendants >=> hasText f >=> click
 clickButtonByToolTip :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Pianola m l (c m) () 
 clickButtonByToolTip f = poke $ descendants >=> hasToolTip f >=> click
 
+popupItem :: Monad m => Glance m l (Window m) (Component m)
+popupItem w = 
+    let insidepop = children >=> contentsPane >=> descendants >=> \c -> 
+            case cType c of
+                PopupMenu -> descendants c
+                _ -> mzero
+    in (popupLayer >=> descendants $ w) `mplus` 
+       (insidepop >=> return . Component . lower . unComponentW $ w)
+
 selectInMenuBar :: Monad m => Maybe Bool -> [T.Text -> Bool] -> Pianola m l (Window m) ()
 selectInMenuBar shouldToggleLast ps = 
     let go (firstitem,middleitems,lastitem) = do
@@ -231,8 +241,8 @@ selectInMenuBar shouldToggleLast ps =
            let pairs = zip middleitems (click <$ middleitems) ++
                        [(lastitem, maybe click toggle shouldToggleLast)]
            forM_ pairs $ \(txt,action) -> 
-               pfailMaybe $ retryPoke1s 7 $ 
-                   popupLayer >=> descendants >=> hasText txt >=> action
+               pmaybe pfail $ retryPoke1s 7 $ 
+                   popupItem >=> hasText txt >=> action
            when (isJust shouldToggleLast) $ replicateM_ (length pairs) 
                                                   (poke $ return._escape.wInfo)
         clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
