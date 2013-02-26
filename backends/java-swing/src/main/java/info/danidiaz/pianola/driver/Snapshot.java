@@ -10,15 +10,12 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.swing.AbstractButton;
-import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -27,19 +24,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JList;
-import javax.swing.JMenu;
 import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
-import javax.swing.JRootPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.JTree;
-import javax.swing.KeyStroke;
 import javax.swing.ListCellRenderer;
 import javax.swing.RootPaneContainer;
 import javax.swing.SwingUtilities;
@@ -50,11 +43,7 @@ import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
-import org.msgpack.MessagePackable;
 import org.msgpack.packer.Packer;
-
-import com.sun.org.apache.bcel.internal.generic.GETSTATIC;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 
 public class Snapshot {
     
@@ -229,9 +218,10 @@ public class Snapshot {
         writeComponentType(snapid, packer, componentId, c, coordBase);
         
         Component children[] = c.getComponents();
+                              
         packer.writeArrayBegin(countShowing(children));
         for (int i=0;i<children.length;i++) {
-            if (children[i].isShowing()) {
+            if (children[i].isShowing()) {                                
                 writeComponent(snapid, packer, (JComponent)children[i],coordBase);
             }
         }
@@ -396,7 +386,7 @@ public class Snapshot {
             
         } else if (c instanceof JPopupMenu) {                    
             packer.write((int)50);
-            
+        
         } else if (c instanceof JTabbedPane) {
             packer.write((int)70);
             JTabbedPane tpane = (JTabbedPane)c;
@@ -587,8 +577,8 @@ public class Snapshot {
 
         postMouseEvent(button, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
         postMouseEvent(button, MouseEvent.MOUSE_PRESSED, MouseEvent.BUTTON3_MASK, point, 1, false);
-        postMouseEvent(button, MouseEvent.MOUSE_RELEASED, MouseEvent.BUTTON3_MASK, point, 1, false);
-        postMouseEvent(button, MouseEvent.MOUSE_CLICKED, MouseEvent.BUTTON3_MASK, point, 1, true); 
+        postMouseEvent(button, MouseEvent.MOUSE_RELEASED, MouseEvent.BUTTON3_MASK, point, 1, true);
+        postMouseEvent(button, MouseEvent.MOUSE_CLICKED, MouseEvent.BUTTON3_MASK, point, 1, false); 
     }
            
     public BufferedImage getWindowImage(final int windowId) {

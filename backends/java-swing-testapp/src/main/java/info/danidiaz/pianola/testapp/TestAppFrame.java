@@ -2,7 +2,6 @@ package info.danidiaz.pianola.testapp;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.GraphicsConfiguration;
 import java.awt.GridLayout;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
@@ -64,11 +63,11 @@ public class TestAppFrame extends JFrame {
         
         JPanel statusPanel = new JPanel();
         statusPanel.setBorder(new BevelBorder(BevelBorder.LOWERED));
-        statusPanel.setPreferredSize(new Dimension(this.getWidth(), 16));
+        statusPanel.setPreferredSize(new Dimension(this.getWidth(), 36));
         statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.X_AXIS));
                 
         statusLabel = new JLabel("status");
-        statusLabel.setName("status label");
+        statusLabel.setName("status bar");
         statusLabel.setHorizontalAlignment(SwingConstants.LEFT);
         statusPanel.add(statusLabel);
 
@@ -163,6 +162,13 @@ public class TestAppFrame extends JFrame {
         final JPopupMenu popup = new JPopupMenu();
         JMenuItem popupitem1 = new JMenuItem("popupitem1"); 
         JMenuItem popupitem2 = new JMenuItem("popupitem2");
+        popupitem2.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                statusLabel.setText("clicked on popupitem2");                
+            }
+        });
         popup.add(popupitem1);
         popup.add(popupitem2);
         label.addMouseListener(new  MouseAdapter() {
