@@ -251,7 +251,7 @@ selectInMenuBar shouldToggleLast ps =
 selectInComboBox :: (Monad m, ComponentLike c, Windowed c) => (T.Text -> Bool) -> Pianola m l (c m) ()
 selectInComboBox f = do
         poke $ clickCombo
-        with window $ with popupLayer $ with descendants $ do 
+        with window $ with popupItem $ do 
             poke $ \g -> do 
                 candidateCell <- listCell $ g
                 descendants.renderer >=> hasText f $ candidateCell 
