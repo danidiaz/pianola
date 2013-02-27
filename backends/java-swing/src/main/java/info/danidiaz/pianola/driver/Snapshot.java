@@ -594,6 +594,20 @@ public class Snapshot {
                 );
     }
     
+    public void toFront(final int windowId) {
+        final Window window = windowArray.get(windowId);
+        
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                window.setAlwaysOnTop(true);
+                window.toFront();
+                window.requestFocus();
+                window.setAlwaysOnTop(false);
+            }            
+        });
+    }
+        
     public void escape(final int windowid) {
         Window window = windowArray.get(windowid);
         
