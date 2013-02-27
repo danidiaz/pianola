@@ -8,7 +8,6 @@ module Pianola.Model.Swing (
         WindowInfo (..),
         WindowLike (..),
         Windowed (..),
-        contentsPane,
         ComponentW (..),
         Component (..),
         ComponentInfo (..),
@@ -53,6 +52,8 @@ class Windowed w where
     window :: Monad n => w m -> n (Window m)
 
 class WindowLike w where
+    concretew :: w m -> Window m
+
     wInfo :: w m -> WindowInfo m 
 
     titled :: MonadPlus n => (T.Text -> Bool) -> w m -> n (w m)
@@ -68,19 +69,22 @@ class WindowLike w where
 
 -- This function can't be in the typeclass because
 -- it must supply a concrete Window value to the EnvT constructor.
-contentsPane :: Monad m => Glance m l (Window m) (ComponentW m)
-contentsPane win = return . ComponentW 
-                          . EnvT win 
-                          . unComponent 
-                          . _contentsPane   
-                          . wInfo 
-                          $ win
+    contentsPane :: Monad m => Glance m l (w m) (ComponentW m)
+    contentsPane win = 
+        let concrete = concretew win
+        in return . ComponentW 
+                  . EnvT concrete
+                  . unComponent 
+                  . _contentsPane   
+                  . wInfo 
+                  $ win
 
 instance Treeish (Window m) where
     children (Window c) = children c >>= return . Window
     descendants (Window c) = descendants c >>= return . Window
 
 instance WindowLike Window where
+    concretew = id
     wInfo = rootLabel . unWindow
 
 instance Windowed Window where
@@ -98,8 +102,8 @@ data WindowInfo m = WindowInfo
     ,  _toFront::Sealed m
     } 
 
-instance WindowLike WindowInfo where
-    wInfo = id
+--instance WindowLike WindowInfo where
+--    wInfo = id
 
 newtype ComponentW m = ComponentW { unComponentW :: EnvT (Window m) Tree (ComponentInfo m) }
 
@@ -189,8 +193,8 @@ class ComponentLike c where
         TextField (Just f) -> return $ f txt
         _ -> mzero
 
-instance ComponentLike ComponentInfo where
-    cInfo = id
+--instance ComponentLike ComponentInfo where
+--    cInfo = id
 
 data ComponentType m =
      Panel
