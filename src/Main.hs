@@ -45,7 +45,7 @@ testCase = with mainWindow $ do
     logmsg "foo log message"
     selectInMenuBar (Just True) $ map (==) ["Menu1","SubMenu1","submenuitem2"]
     logmsg "getting a screenshot"
-    logWindowImage
+    logwin
     logmsg "now for a second menu"
     autolog $ selectInMenuBar Nothing $ map (==) ["Menu1","SubMenu1","submenuitem1"]
     sleep 2
