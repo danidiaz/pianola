@@ -70,13 +70,13 @@ instance Unpackable a => Unpackable (Tree a) where
 type Image = B.ByteString
 
 class Functor l => Loggy l where
-    loggy::LogEntry -> l ()
+    logentry::LogEntry -> l ()
 
     logmsg::T.Text -> l ()
-    logmsg = loggy . TextEntry
+    logmsg = logentry . TextEntry
 
     logimg::Image -> l ()
-    logimg = loggy . ImageEntry
+    logimg = logentry . ImageEntry
 
     logmsgK::T.Text -> a -> l a
     logmsgK msg = (<$ logmsg msg) 
@@ -89,11 +89,11 @@ type Produ t = Producer ProxyFast t
 type Consu t = Consumer ProxyFast t
 
 instance Monad m => Loggy (Produ LogEntry m) where
-    loggy = respond 
+    logentry = respond 
 
 instance (Monad l, Loggy l) => Loggy (LogicT l) where
-    loggy = lift . loggy
+    logentry = lift . logentry
 
 instance (Monad l, Loggy l) => Loggy (MaybeT l) where
-    loggy = lift . loggy
+    logentry = lift . logentry
 

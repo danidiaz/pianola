@@ -66,6 +66,8 @@ class WindowLike w where
     logWindowImage :: Monad m => Pianola m LogEntry (w m) ()
     logWindowImage = (peek $ liftN._image.wInfo) >>= logimg
 
+-- This function can't be in the typeclass because
+-- it must supply a concrete Window value to the EnvT constructor.
 contentsPane :: Monad m => Glance m l (Window m) (ComponentW m)
 contentsPane win = return . ComponentW 
                           . EnvT win 
@@ -85,15 +87,15 @@ instance Windowed Window where
     window = return . id
 
 data WindowInfo m = WindowInfo 
-    {
-        _windowTitle::T.Text,
-        _windowDim::(Int,Int),
-        _menu::[Component m],
-        _popupLayer:: [Component m],
-        _contentsPane::Component m,
-        _image::Nullipotent m Image,
-        _escape::Sealed m,
-        _close::Sealed m
+    {  _windowTitle::T.Text
+    ,  _windowDim::(Int,Int)
+    ,  _menu::[Component m]
+    ,  _popupLayer:: [Component m]
+    ,  _contentsPane::Component m
+    ,  _image::Nullipotent m Image
+    ,  _escape::Sealed m
+    ,  _close::Sealed m
+    ,  _toFront::Sealed m
     } 
 
 instance WindowLike WindowInfo where
@@ -121,15 +123,14 @@ instance ComponentLike Component where
     cInfo = rootLabel . unComponent
 
 data ComponentInfo m = ComponentInfo 
-    {
-        _pos::(Int,Int),
-        _dim::(Int,Int),
-        _name::Maybe T.Text,
-        _tooltip::Maybe T.Text,
-        _text::Maybe T.Text,
-        _enabled::Bool,
-        _componentType::ComponentType m,
-        _rightClick::Sealed m
+    {  _pos::(Int,Int)
+    ,  _dim::(Int,Int)
+    ,  _name::Maybe T.Text
+    ,  _tooltip::Maybe T.Text
+    ,  _text::Maybe T.Text
+    ,  _enabled::Bool
+    ,  _componentType::ComponentType m
+    ,  _rightClick::Sealed m
     } 
 
 instance ComponentLike c => Geometrical (c m) where

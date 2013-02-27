@@ -76,7 +76,7 @@ newtype Pianola m l o a = Pianola
     } deriving (Functor,Monad)
 
 instance Monad m => Loggy (Pianola m LogEntry o) where
-    loggy = Pianola . lift . lift . lift . loggy
+    logentry = Pianola . lift . lift . lift . logentry
 
 play :: Monad m => m o -> Pianola m l o a -> Produ Delay (MaybeT (Produ l m)) a
 play mom pi =
@@ -96,9 +96,6 @@ pfail = Pianola . lift . lift $ mzero
 
 pmaybe :: Monad m => Pianola m l o a -> Pianola m l o (Maybe a) -> Pianola m l o a  
 pmaybe f p = p >>= maybe f return 
-
-pfailMaybe :: Monad m => Pianola m l o (Maybe a) -> Pianola m l o a  
-pfailMaybe p = p >>= maybe pfail return 
 
 peek :: Monad m => Glance m l o a -> Pianola m l o a
 peek = Pianola . lift . lift . lift . lift . liftF . Compose

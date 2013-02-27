@@ -50,7 +50,8 @@ instance Unpackable (WindowInfo Protocol) where
                 call (pack "getWindowImage":packedargs) iterget >>= hoistEither
             escape = makeAction (T.pack "escape") packedargs 
             closeWindow = makeAction (T.pack "closeWindow") packedargs 
-        return (WindowInfo v1 v2 v3 v4 v5 getWindowImage escape closeWindow)
+            toFront = makeAction (T.pack "toFront") packedargs 
+        return (WindowInfo v1 v2 v3 v4 v5 getWindowImage escape closeWindow toFront)
 
 instance Unpackable (ComponentInfo Protocol) where
     get = do

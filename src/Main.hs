@@ -29,6 +29,7 @@ type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 
 testCase:: Test
 testCase = with mainWindow $ do
+    poke $ return . _toFront . wInfo
     with contentsPane $ do 
         poke $ descendants >=> hasText (=="open dialog") >=> click
         with window $ with childWindow $ with contentsPane $ do
