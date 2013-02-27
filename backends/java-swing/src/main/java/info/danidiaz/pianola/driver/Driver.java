@@ -165,7 +165,13 @@ public class Driver implements Runnable
                         lastSnapshot.closeWindow(windowId);
                         packer.write((int)0);
                         packer.writeNil();
-                    } else if (methodName.equals("escape")) {
+                    } else if (methodName.equals("toFront")) {
+                        int snapshotId = unpacker.readInt();
+                        int windowId = unpacker.readInt();
+                        lastSnapshot.toFront(windowId);
+                        packer.write((int)0);
+                        packer.writeNil();
+                    }  else if (methodName.equals("escape")) {
                         int snapshotId = unpacker.readInt();
                         int windowId = unpacker.readInt();
                         lastSnapshot.escape(windowId);
