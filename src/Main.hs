@@ -34,7 +34,7 @@ testCase = with mainWindow $ do
         with window $ with childWindow $ with contentsPane $ do
             clickButtonByText (=="close dialog")
         logmsg "testing right click"
-        poke $ descendants >=> hasText (=="This is a label") >=> return._rightClick.cInfo
+        rightClickByText (=="This is a label")
         sleep 4
         logmsg "finding popup-before"
         -- findPopup
@@ -44,7 +44,7 @@ testCase = with mainWindow $ do
     logmsg "foo log message"
     selectInMenuBar (Just True) $ map (==) ["Menu1","SubMenu1","submenuitem2"]
     logmsg "getting a screenshot"
-    (peek $ liftN._image.wInfo) >>= logimg
+    logWindowImage
     logmsg "now for a second menu"
     autolog $ selectInMenuBar Nothing $ map (==) ["Menu1","SubMenu1","submenuitem1"]
     sleep 2

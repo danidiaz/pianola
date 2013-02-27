@@ -71,10 +71,12 @@ runObserver mom (Free f) =
 
 type Delay = Int
 
-newtype Pianola m l o a = Pianola { unPianola :: Produ (Sealed m) (Produ Delay (MaybeT (Produ l (Observer m l o)))) a } deriving (Functor,Monad)
+newtype Pianola m l o a = Pianola 
+    { unPianola :: Produ (Sealed m) (Produ Delay (MaybeT (Produ l (Observer m l o)))) a 
+    } deriving (Functor,Monad)
 
 instance Monad m => Loggy (Pianola m LogEntry o) where
-    xanlog = Pianola . lift . lift . lift . xanlog
+    loggy = Pianola . lift . lift . lift . loggy
 
 play :: Monad m => m o -> Pianola m l o a -> Produ Delay (MaybeT (Produ l m)) a
 play mom pi =

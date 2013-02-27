@@ -20,6 +20,7 @@ module Pianola.Model.Swing (
         childWindow,
         clickButtonByText,
         clickButtonByToolTip,
+        rightClickByText,
         popupItem,
         selectInMenuBar,
         selectInComboBox,
@@ -62,12 +63,16 @@ class WindowLike w where
     popupLayer :: Monad m => Glance m l (w m) (Component m)
     popupLayer = replusify . _popupLayer . wInfo
 
+    logWindowImage :: Monad m => Pianola m LogEntry (w m) ()
+    logWindowImage = (peek $ liftN._image.wInfo) >>= logimg
 
 contentsPane :: Monad m => Glance m l (Window m) (ComponentW m)
 contentsPane win = return . ComponentW 
                           . EnvT win 
                           . unComponent 
-                          . _contentsPane . wInfo $ win
+                          . _contentsPane   
+                          . wInfo 
+                          $ win
 
 instance Treeish (Window m) where
     children (Window c) = children c >>= return . Window
@@ -159,6 +164,9 @@ class ComponentLike c where
     toggle b (cType -> Toggleable _ f) = return $ f b
     toggle _ _ = mzero
 
+    rightClick:: Monad n => c m -> n (Sealed m)
+    rightClick = return._rightClick.cInfo
+
     click:: MonadPlus n => c m -> n (Sealed m)
     click (cType -> Button a) = return a
     click _ = mzero
@@ -224,6 +232,9 @@ clickButtonByText f = poke $ descendants >=> hasText f >=> click
 
 clickButtonByToolTip :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Pianola m l (c m) () 
 clickButtonByToolTip f = poke $ descendants >=> hasToolTip f >=> click
+
+rightClickByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Pianola m l (c m) () 
+rightClickByText f = poke $ descendants >=> hasText f >=> rightClick
 
 popupItem :: Monad m => Glance m l (Window m) (Component m)
 popupItem w = 
