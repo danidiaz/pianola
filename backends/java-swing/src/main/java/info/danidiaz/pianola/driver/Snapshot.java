@@ -570,7 +570,7 @@ public class Snapshot {
     }
     
     public void rightClick(final int componentid) {
-                
+        // http://stackoverflow.com/questions/5736872/java-popup-trigger-in-linux
         final JComponent button = (JComponent)componentArray.get(componentid);
         
         Point point = new Point(button.getWidth()/2,button.getHeight()/2);
