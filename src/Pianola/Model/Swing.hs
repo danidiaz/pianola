@@ -8,7 +8,6 @@ module Pianola.Model.Swing (
         WindowInfo (..),
         WindowLike (..),
         Windowed (..),
-        contentsPane,
         ComponentW (..),
         Component (..),
         ComponentInfo (..),
@@ -32,6 +31,7 @@ module Pianola.Model.Swing (
 import Prelude hiding (catch)
 import Data.Tree
 import Data.Function
+import Data.Functor.Identity
 import qualified Data.Text as T
 import Control.Error
 import Control.Monad
@@ -52,7 +52,7 @@ newtype Window m = Window { unWindow :: Tree (WindowInfo m) }
 class Windowed w where
     window :: Monad n => w m -> n (Window m)
 
-class WindowLike w where
+class Windowed w => WindowLike w where
     wInfo :: w m -> WindowInfo m 
 
     titled :: MonadPlus n => (T.Text -> Bool) -> w m -> n (w m)
@@ -63,18 +63,18 @@ class WindowLike w where
     popupLayer :: Monad m => Glance m l (w m) (Component m)
     popupLayer = replusify . _popupLayer . wInfo
 
-    logWindowImage :: Monad m => Pianola m LogEntry (w m) ()
-    logWindowImage = (peek $ liftN._image.wInfo) >>= logimg
+    logwin :: Monad m => Pianola m LogEntry (w m) ()
+    logwin = (peek $ liftN._image.wInfo) >>= logimg
 
--- This function can't be in the typeclass because
--- it must supply a concrete Window value to the EnvT constructor.
-contentsPane :: Monad m => Glance m l (Window m) (ComponentW m)
-contentsPane win = return . ComponentW 
-                          . EnvT win 
-                          . unComponent 
-                          . _contentsPane   
-                          . wInfo 
-                          $ win
+    contentsPane :: Monad m => Glance m l (w m) (ComponentW m)
+    contentsPane win = 
+        let concrete = runIdentity $ window win
+        in return . ComponentW 
+                  . EnvT concrete
+                  . unComponent 
+                  . _contentsPane   
+                  . wInfo 
+                  $ win
 
 instance Treeish (Window m) where
     children (Window c) = children c >>= return . Window
@@ -98,10 +98,8 @@ data WindowInfo m = WindowInfo
     ,  _toFront::Sealed m
     } 
 
-instance WindowLike WindowInfo where
-    wInfo = id
-
-newtype ComponentW m = ComponentW { unComponentW :: EnvT (Window m) Tree (ComponentInfo m) }
+newtype ComponentW m = ComponentW 
+    { unComponentW :: EnvT (Window m) Tree (ComponentInfo m) }
 
 instance Treeish (ComponentW m) where
     children (ComponentW c) = children c >>= return . ComponentW
@@ -113,7 +111,8 @@ instance ComponentLike ComponentW where
 instance Windowed ComponentW where
     window = return . ask . unComponentW 
 
-newtype Component m = Component { unComponent :: Tree (ComponentInfo m) }
+newtype Component m = Component 
+    { unComponent :: Tree (ComponentInfo m) }
 
 instance Treeish (Component m) where
     children (Component c) = children c >>= return . Component 
@@ -188,9 +187,6 @@ class ComponentLike c where
     setText txt c = case (cType c) of
         TextField (Just f) -> return $ f txt
         _ -> mzero
-
-instance ComponentLike ComponentInfo where
-    cInfo = id
 
 data ComponentType m =
      Panel
