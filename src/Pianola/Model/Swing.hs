@@ -55,16 +55,19 @@ class Windowed w where
 class Windowed w => WindowLike w where
     wInfo :: w m -> WindowInfo m 
 
-    titled :: MonadPlus n => (T.Text -> Bool) -> w m -> n (w m)
-    titled f w = do
+    title :: Monad m => Glance m l (w m) T.Text
+    title = return . _windowTitle . wInfo
+
+    hasTitle :: MonadPlus n => (T.Text -> Bool) -> w m -> n (w m)
+    hasTitle f w = do
         guard . f $ _windowTitle . wInfo $ w  
         return w
 
     popupLayer :: Monad m => Glance m l (w m) (Component m)
     popupLayer = replusify . _popupLayer . wInfo
 
-    logwin :: Monad m => Pianola m LogEntry (w m) ()
-    logwin = (peek $ liftN._image.wInfo) >>= logimg
+    logcapture :: Monad m => Pianola m LogEntry (w m) ()
+    logcapture = (peek $ liftN._capture.wInfo) >>= logimg
 
     contentsPane :: Monad m => Glance m l (w m) (ComponentW m)
     contentsPane win = 
@@ -75,6 +78,15 @@ class Windowed w => WindowLike w where
                   . _contentsPane   
                   . wInfo 
                   $ win
+    
+    toFront :: Monad m => Pianola m l (w m) ()
+    toFront = poke $ return . _toFront . wInfo
+
+    escape :: Monad m => Pianola m l (w m) ()
+    escape = poke $ return . _escape . wInfo
+
+    close :: Monad m => Pianola m l (w m) ()
+    close = poke $ return . _close . wInfo
 
 instance Treeish (Window m) where
     children (Window c) = children c >>= return . Window
@@ -92,7 +104,7 @@ data WindowInfo m = WindowInfo
     ,  _menu::[Component m]
     ,  _popupLayer:: [Component m]
     ,  _contentsPane::Component m
-    ,  _image::Nullipotent m Image
+    ,  _capture::Nullipotent m Image
     ,  _escape::Sealed m
     ,  _close::Sealed m
     ,  _toFront::Sealed m
@@ -142,11 +154,17 @@ class ComponentLike c where
     cType :: c m -> ComponentType m 
     cType = _componentType . cInfo 
 
+    text :: MonadPlus n => c m -> n T.Text
+    text = justZ . _text . cInfo
+
     hasText:: MonadPlus n => (T.Text -> Bool) -> c m -> n (c m)
     hasText f c = do
         t <- justZ._text.cInfo $ c 
         guard $ f t
         return c
+
+    tooltip :: MonadPlus n => c m -> n T.Text
+    tooltip = justZ . _tooltip . cInfo
 
     hasToolTip:: MonadPlus n => (T.Text -> Bool) -> c m -> n (c m)
     hasToolTip f c = do
@@ -203,19 +221,17 @@ data ComponentType m =
     |Other T.Text
 
 data Cell m = Cell 
-    {
-        renderer::Component m,
-        clickCell::Sealed m,
-        doubleClickCell::Sealed m,
-        expand:: Maybe (Bool -> Sealed m)
+    { renderer::Component m
+    , clickCell::Sealed m
+    , doubleClickCell::Sealed m
+    , expand:: Maybe (Bool -> Sealed m)
     }
 
 data Tab m = Tab
-    {
-        tabText::T.Text,
-        tabToolTip::Maybe T.Text,
-        isTabSelected:: Bool,
-        selectTab::Sealed m
+    { tabText::T.Text
+    , tabToolTip::Maybe T.Text
+    , isTabSelected:: Bool
+    , selectTab::Sealed m
     }
 
 mainWindow :: Glance m l (GUI m) (Window m)
@@ -251,8 +267,7 @@ selectInMenuBar shouldToggleLast ps =
            forM_ pairs $ \(txt,action) -> 
                pmaybe pfail $ retryPoke1s 7 $ 
                    popupItem >=> hasText txt >=> action
-           when (isJust shouldToggleLast) $ replicateM_ (length pairs) 
-                                                  (poke $ return._escape.wInfo)
+           when (isJust shouldToggleLast) $ replicateM_ (length pairs) escape
         clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
     in maybe pfail go (clip ps)
 

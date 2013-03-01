@@ -20,7 +20,7 @@ import Pianola.Model.Swing.Driver
 checkStatusBar :: (Monad m, ComponentLike c, Treeish (c m)) => (T.Text -> Bool) -> Pianola m LogEntry (c m) ()
 checkStatusBar textf = do
     statusText <- peek $ 
-        descendants >=> hasName (=="status bar") >=> justZ._text.cInfo
+        descendants >=> hasName (=="status bar") >=> text
     when (textf statusText) $ do
         logmsg $ "Unexpected text in status bar: " <> statusText
         pfail
@@ -29,7 +29,7 @@ type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 
 testCase:: Test
 testCase = with mainWindow $ do
-    poke $ return . _toFront . wInfo
+    toFront
     with contentsPane $ do 
         poke $ descendants >=> hasText (=="open dialog") >=> click
         with window $ with childWindow $ with contentsPane $ do
@@ -45,7 +45,7 @@ testCase = with mainWindow $ do
     logmsg "foo log message"
     selectInMenuBar (Just True) $ map (==) ["Menu1","SubMenu1","submenuitem2"]
     logmsg "getting a screenshot"
-    logwin
+    logcapture
     logmsg "now for a second menu"
     autolog $ selectInMenuBar Nothing $ map (==) ["Menu1","SubMenu1","submenuitem1"]
     sleep 2
