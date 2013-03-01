@@ -55,6 +55,7 @@ data DriverError =
     |PianolaIOError
     |ProtocolError
     |PianolaFailure
+    deriving Show
 
 simpleDriver :: Protocol o -> Endpoint -> Pianola Protocol LogEntry o a -> Stream FilePath -> EitherT DriverError IO a
 simpleDriver snapshot endpoint pianola namestream = do

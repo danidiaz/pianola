@@ -159,7 +159,7 @@ class ComponentLike c where
 
     hasText:: MonadPlus n => (T.Text -> Bool) -> c m -> n (c m)
     hasText f c = do
-        t <- justZ._text.cInfo $ c 
+        t <- text $ c 
         guard $ f t
         return c
 
@@ -168,7 +168,7 @@ class ComponentLike c where
 
     hasToolTip:: MonadPlus n => (T.Text -> Bool) -> c m -> n (c m)
     hasToolTip f c = do
-        t <- justZ._tooltip.cInfo $ c 
+        t <- tooltip $ c 
         guard $ f t
         return c
 

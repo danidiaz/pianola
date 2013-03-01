@@ -18,10 +18,10 @@ import Control.Proxy
 import Pianola.Model.Swing.Driver
 
 checkStatusBar :: (Monad m, ComponentLike c, Treeish (c m)) => (T.Text -> Bool) -> Pianola m LogEntry (c m) ()
-checkStatusBar textf = do
+checkStatusBar predicate = do
     statusText <- peek $ 
         descendants >=> hasName (=="status bar") >=> text
-    when (textf statusText) $ do
+    unless (predicate statusText) $ do
         logmsg $ "Unexpected text in status bar: " <> statusText
         pfail
 
@@ -98,7 +98,7 @@ testCase = with mainWindow $ do
         sleep 1
         poke $ labeledBy (=="label2") >=> setText "hope this works!"
         sleep 2 
-    poke $ return . _close . wInfo
+    close
 
 main :: IO ()
 main = do
@@ -108,5 +108,7 @@ main = do
       endpoint = Endpoint addr port
 
   r <- runEitherT $ simpleSwingDriver endpoint testCase $ screenshotStream "/tmp"
-  putStrLn $ either (\_->"some error") (\_->"all ok") $ r   
+  putStrLn $ case r of 
+     Left err -> show err
+     Right _ -> "all ok" 
 
