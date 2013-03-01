@@ -28,6 +28,8 @@ public class Driver implements Runnable
     private final ServerSocket serverSocket;
     private final MessagePack messagePack;
     
+    boolean releaseIsPopupTrigger;
+    
     private int lastSnapshotId = 0;
     private Snapshot lastSnapshot = null; 
     
@@ -39,17 +41,26 @@ public class Driver implements Runnable
                 
         try {
             int port = DEFAULT_PORT;
-            if (agentArgs!=null && !agentArgs.isEmpty()) {
-                port = Integer.decode(agentArgs);
-            }
+            boolean releaseIsPopupTrigger = true;
+            
+            String [] splittedArgs = agentArgs.split(",",0);
+            for (int i=0;i<splittedArgs.length;i++) {
+                String arg = splittedArgs[i];
+                if (arg.startsWith("port")) {
+                    port = Integer.decode(arg.substring(arg.indexOf('/')+1));
+                } else if (arg.startsWith("popupTrigger")) {
+                    releaseIsPopupTrigger =
+                            arg.substring(arg.indexOf('/')+1).equals("release");
+                }
+            }                        
             
             final ServerSocket serverSocket = new ServerSocket(DEFAULT_PORT);
             MessagePack messagePack = new MessagePack(); 
                         
-            Thread serverThread = new Thread(new Driver(serverSocket,messagePack));
+            Thread serverThread = new Thread(new Driver(serverSocket,messagePack,releaseIsPopupTrigger));
             serverThread.setDaemon(true);
             serverThread.start();
-            System.out.println("Xanela server started at port " + port);
+            System.out.println("Pianola server started at port " + port);
         } catch (NumberFormatException e) {
             e.printStackTrace();
         }catch (IOException e) {       
@@ -58,10 +69,11 @@ public class Driver implements Runnable
             
     }
 
-    public Driver(ServerSocket serverSocket, MessagePack messagePack) {
+    public Driver(ServerSocket serverSocket, MessagePack messagePack,boolean releaseIsPopupTrigger) {
         super();
         this.serverSocket = serverSocket;
         this.messagePack = messagePack;
+        this.releaseIsPopupTrigger = releaseIsPopupTrigger;
     }
 
     @Override
@@ -81,7 +93,7 @@ public class Driver implements Runnable
                     String methodName = unpacker.readString();                
                     if (methodName.equals("snapshot")) {
                         lastSnapshotId++;
-                        Snapshot pianola = new Snapshot(lastSnapshot);
+                        Snapshot pianola = new Snapshot(lastSnapshot,releaseIsPopupTrigger);
                         packer.write((int)0);
                         pianola.buildAndWrite(lastSnapshotId,packer);
                         lastSnapshot = pianola;     
