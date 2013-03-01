@@ -54,10 +54,11 @@ public class Snapshot {
     
     private List<Component> componentArray = new ArrayList<Component>();
     
-    boolean dirty = false;
+    boolean releaseIsPopupTrigger;
     
-    public Snapshot(Snapshot pianola) {
-        this.imageBin = pianola==null?new ImageBin():pianola.obtainImageBin();
+    public Snapshot(Snapshot pianola, boolean releaseIsPopupTrigger) {
+        this.imageBin = pianola==null ? new ImageBin() : pianola.obtainImageBin();
+        this.releaseIsPopupTrigger = releaseIsPopupTrigger;
     }
     public void buildAndWrite(final int snapid, final Packer packer) throws IOException {
         
@@ -576,8 +577,8 @@ public class Snapshot {
         Point point = new Point(button.getWidth()/2,button.getHeight()/2);
 
         postMouseEvent(button, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
-        postMouseEvent(button, MouseEvent.MOUSE_PRESSED, MouseEvent.BUTTON3_MASK, point, 1, false);
-        postMouseEvent(button, MouseEvent.MOUSE_RELEASED, MouseEvent.BUTTON3_MASK, point, 1, true);
+        postMouseEvent(button, MouseEvent.MOUSE_PRESSED, MouseEvent.BUTTON3_MASK, point, 1, !releaseIsPopupTrigger);
+        postMouseEvent(button, MouseEvent.MOUSE_RELEASED, MouseEvent.BUTTON3_MASK, point, 1, releaseIsPopupTrigger);
         postMouseEvent(button, MouseEvent.MOUSE_CLICKED, MouseEvent.BUTTON3_MASK, point, 1, false); 
     }
            
@@ -620,13 +621,8 @@ public class Snapshot {
                             (char)KeyEvent.VK_ESCAPE       
                         ));
     }    
-    
-    private void setDirty() {
-        this.dirty = true;
-    }
-    
+        
     private ImageBin obtainImageBin() {
-        setDirty();
         return new ImageBin(windowImageMap.values());
     }
     

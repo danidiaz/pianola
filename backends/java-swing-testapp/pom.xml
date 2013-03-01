@@ -40,7 +40,7 @@
         <executable>java</executable>
         <arguments>
           <!-- <argument>-Dmyproperty=myvalue</argument> -->
-          <argument>-javaagent:${settings.localRepository}/info/danidiaz/pianola/pianola-driver/${myprops.pianola-driver.version}/pianola-driver-${myprops.pianola-driver.version}.jar=</argument>
+          <argument>-javaagent:${settings.localRepository}/info/danidiaz/pianola/pianola-driver/${myprops.pianola-driver.version}/pianola-driver-${myprops.pianola-driver.version}.jar=port/26060,popupTrigger/release</argument>
           <!-- automatically creates the classpath using all project dependencies,
                also adding the project build directory -->
           <argument>-classpath</argument>
