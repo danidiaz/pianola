@@ -32,6 +32,8 @@ import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.SwingConstants;
 import javax.swing.border.BevelBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
@@ -40,7 +42,9 @@ import javax.swing.tree.TreeSelectionModel;
 public class TestAppFrame extends JFrame {
 
     private final JTextField textField = new JTextField(18);
+    
     private final JLabel statusLabel;
+    private final JButton clearStatusLabel;
     
     public TestAppFrame() throws HeadlessException {
         super("Test app frame");
@@ -60,16 +64,28 @@ public class TestAppFrame extends JFrame {
 
         getContentPane().add(tabbedPane, BorderLayout.CENTER);
                      
-        
-        JPanel statusPanel = new JPanel();
+                       
+        JPanel statusPanel = new JPanel(new BorderLayout());
         statusPanel.setBorder(new BevelBorder(BevelBorder.LOWERED));
         statusPanel.setPreferredSize(new Dimension(this.getWidth(), 36));
-        statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.X_AXIS));
+        //statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.X_AXIS));
                 
-        statusLabel = new JLabel("status");
+        statusLabel = new JLabel("");
         statusLabel.setName("status bar");
         statusLabel.setHorizontalAlignment(SwingConstants.LEFT);
-        statusPanel.add(statusLabel);
+        statusPanel.add(statusLabel,BorderLayout.CENTER);
+        
+        clearStatusLabel = new JButton("clear");
+        clearStatusLabel.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                    statusLabel.setText("");
+                
+            }
+        });
+        statusPanel.add(clearStatusLabel, BorderLayout.EAST);
+        
 
         getContentPane().add(statusPanel, BorderLayout.SOUTH);
                 
@@ -84,8 +100,7 @@ public class TestAppFrame extends JFrame {
             
             @Override
             public void actionPerformed(ActionEvent arg0) {
-                textField.setText("nananiero nananiero nananiero");
-                
+                statusLabel.setText("clicked on submenuitem1");               
             }
         });
         subMenu.add(menuitem1);
@@ -107,6 +122,15 @@ public class TestAppFrame extends JFrame {
         dialog.setTitle("foo dialog");
         dialog.getContentPane().setLayout(new BorderLayout());
         dialog.getContentPane().add(new JTextArea(18, 10),BorderLayout.CENTER);
+        
+        JButton actionButton = new JButton("click this");
+        actionButton.addActionListener(new ActionListener() {            
+            @Override
+            public void actionPerformed(ActionEvent arg0) {                
+                statusLabel.setText("clicked button in dialog");
+            }
+        });        
+        
         JButton dialogButton = new JButton("close dialog");
         dialogButton.addActionListener(new ActionListener() {
             
@@ -116,7 +140,8 @@ public class TestAppFrame extends JFrame {
                 
             }
         });
-        dialog.getContentPane().add(dialogButton,BorderLayout.NORTH);
+        dialog.getContentPane().add(actionButton,BorderLayout.NORTH);
+        dialog.getContentPane().add(dialogButton,BorderLayout.SOUTH);
         //Display the window.
         dialog.pack();
         dialog.setLocationRelativeTo(null);
@@ -126,6 +151,25 @@ public class TestAppFrame extends JFrame {
     private JPanel createTabOne() {
         JPanel mainPanel = new JPanel(new BorderLayout());
         JPanel textPanel = new JPanel(new BorderLayout());
+        
+        textField.setText("En un lugar de la Mancha");
+        textField.getDocument().addDocumentListener(new DocumentListener() {
+            
+            @Override
+            public void removeUpdate(DocumentEvent arg0) {
+                statusLabel.setText(textField.getText());                               
+            }
+            
+            @Override
+            public void insertUpdate(DocumentEvent arg0) {
+                statusLabel.setText(textField.getText());                            
+            }
+            
+            @Override
+            public void changedUpdate(DocumentEvent arg0) {
+                statusLabel.setText(textField.getText());                
+            }
+        });
         
         textPanel.add(textField,BorderLayout.NORTH); 
         
