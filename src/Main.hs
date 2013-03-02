@@ -19,11 +19,13 @@ import Pianola.Model.Swing.Driver
 
 checkStatusBar :: (Monad m, ComponentLike c, Treeish (c m)) => (T.Text -> Bool) -> Pianola m LogEntry (c m) ()
 checkStatusBar predicate = do
-    statusText <- peek $ 
-        descendants >=> hasName (=="status bar") >=> text
-    unless (predicate statusText) $ do
-        logmsg $ "Unexpected text in status bar: " <> statusText
-        pfail
+    with (descendants >=> hasName (=="status bar")) $ do
+        statusText <- peek text
+        logmsg $ "status text is: " <> statusText
+        unless (predicate statusText) $ do
+            logmsg $ "Unexpected text in status bar: " <> statusText
+            pfail
+    clickButtonByText (=="clear")
 
 type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 
@@ -31,16 +33,18 @@ testCase:: Test
 testCase = with mainWindow $ do
     toFront
     with contentsPane $ do 
+        poke $ descendants >=> hasText (=="En un lugar de la Mancha") 
+                           >=> setText "Lorem ipsum dolor sit amet"
+        checkStatusBar (=="Lorem ipsum dolor sit amet")
         poke $ descendants >=> hasText (=="open dialog") >=> click
         with window $ with childWindow $ with contentsPane $ do
             clickButtonByText (=="close dialog")
         logmsg "testing right click"
         rightClickByText (=="This is a label")
-        sleep 4
-        logmsg "finding popup-before"
-        -- findPopup
+        logmsg "finding popup..."
+        sleep 1
         pmaybe pfail $ retryPoke1s 4 $ window >=> popupItem >=> hasText (=="popupitem2") >=> click  
-        logmsg "finding popup-after"
+        checkStatusBar (=="clicked on popupitem2")
         sleep 1
     logmsg "foo log message"
     selectInMenuBar (Just True) $ map (==) ["Menu1","SubMenu1","submenuitem2"]
@@ -49,11 +53,13 @@ testCase = with mainWindow $ do
     logmsg "now for a second menu"
     autolog $ selectInMenuBar Nothing $ map (==) ["Menu1","SubMenu1","submenuitem1"]
     sleep 2
-    ralentize 3 $ with contentsPane $ do 
-        poke $ descendants >=> hasText (=="open dialog") >=> click
-        logmsg "3 seconds before, 3 after"
+    ralentize 2 $ with contentsPane $ do 
+        logmsg "ralentizing dialog-related actions by two seconds"
+        clickButtonByText (=="open dialog")
         with window $ with childWindow $ with contentsPane $ do
-            poke $ descendants >=> hasText (=="close dialog") >=> click
+            clickButtonByText (=="click this")
+            clickButtonByText (=="close dialog")
+        checkStatusBar (=="clicked button in dialog")
     logmsg "opening a file chooser"
     with (contentsPane >=> descendants >=> hasText (=="Open file chooser")) $ do
         poke click
@@ -108,7 +114,7 @@ main = do
       endpoint = Endpoint addr port
 
   r <- runEitherT $ simpleSwingDriver endpoint testCase $ screenshotStream "/tmp"
-  putStrLn $ case r of 
+  putStrLn $ "result: " <> case r of 
      Left err -> show err
      Right _ -> "all ok" 
 
