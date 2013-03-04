@@ -54,14 +54,19 @@ testCase = with mainWindow $ do
             window >=> popupItem >=> hasText (=="popupitem2") >=> click  
         checkStatusBar (=="clicked on popupitem2")
         sleep 1
+        logmsg "testing checkbox"
+        poke $ descendants >=> hasText (=="This is a checkbox") >=> toggle True
+        checkStatusBar (=="checkbox is now true")
         logmsg "foo log message"
         with window $ selectInMenuBar (Just True) $ 
             map (==) ["Menu1","SubMenu1","submenuitem2"]
+        checkStatusBar (=="checkbox in menu is now true")
         logmsg "getting a screenshot"
         with window $ logcapture
         logmsg "now for a second menu"
         autolog $ with window $ selectInMenuBar Nothing $ 
             map (==) ["Menu1","SubMenu1","submenuitem1"]
+        checkStatusBar (=="clicked on submenuitem1")
         sleep 2
         logmsg "opening a file chooser"
         with (descendants >=> hasText (=="Open file chooser")) $ do
@@ -69,7 +74,8 @@ testCase = with mainWindow $ do
             with window $ with childWindow $ with contentsPane $ do
                 poke $ descendants >=> hasText (=="") >=> setText "/tmp/foofile.txt"   
                 clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]
-            sleep 1
+        checkStatusBar (T.isInfixOf "foofile")
+        sleep 1
         logmsg "working with a combo box"
         with descendants $ do 
             logmsg "this should show the combo"
