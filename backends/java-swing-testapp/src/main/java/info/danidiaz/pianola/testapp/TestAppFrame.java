@@ -6,6 +6,8 @@ import java.awt.GridLayout;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -104,7 +106,15 @@ public class TestAppFrame extends JFrame {
             }
         });
         subMenu.add(menuitem1);
-        subMenu.add(new JCheckBoxMenuItem("submenuitem2"));
+        final JCheckBoxMenuItem checkBoxMenuItem = new JCheckBoxMenuItem("submenuitem2");
+        checkBoxMenuItem.addItemListener(new ItemListener() {
+            
+            @Override
+            public void itemStateChanged(ItemEvent arg0) {
+                statusLabel.setText("checkbox in menu is now "+checkBoxMenuItem.isSelected());                
+            }
+        });
+        subMenu.add(checkBoxMenuItem);
         menu.add(subMenu);         
         
         JMenuBar menuBar = new JMenuBar();
@@ -198,7 +208,15 @@ public class TestAppFrame extends JFrame {
                 "222",
                 "333"                
             }));
-        westPanel.add(new JCheckBox("This is a checkbox"));
+        final JCheckBox checkBox = new JCheckBox("This is a checkbox");
+        checkBox.addItemListener(new ItemListener() {
+            
+            @Override
+            public void itemStateChanged(ItemEvent arg0) {
+                statusLabel.setText("checkbox is now "+checkBox.isSelected());                                
+            }
+        });
+        westPanel.add(checkBox);
         
         
         JLabel label = new JLabel("This is a label");
@@ -245,7 +263,7 @@ public class TestAppFrame extends JFrame {
                 int returnVal = fc.showOpenDialog(fileChooserButton);
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
                     File file = fc.getSelectedFile();
-                    System.out.println("file is: " + file);                    
+                    statusLabel.setText("file is: " + file);                    
                 } 
             }
         });
