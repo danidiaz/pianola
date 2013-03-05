@@ -85,6 +85,9 @@ class Windowed w => WindowLike w where
     escape :: Monad m => Pianola m l (w m) ()
     escape = poke $ return . _escape . wInfo
 
+    enter :: Monad m => Pianola m l (w m) ()
+    enter = poke $ return . _enter . wInfo
+
     close :: Monad m => Pianola m l (w m) ()
     close = poke $ return . _close . wInfo
 
@@ -106,6 +109,7 @@ data WindowInfo m = WindowInfo
     ,  _contentsPane::Component m
     ,  _capture::Nullipotent m Image
     ,  _escape::Sealed m
+    ,  _enter::Sealed m
     ,  _close::Sealed m
     ,  _toFront::Sealed m
     } 

@@ -76,10 +76,11 @@ testCase = with mainWindow $ do
                 clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]
         checkStatusBar (T.isInfixOf "foofile")
         sleep 1
-        logmsg "working with a combo box"
         with descendants $ do 
-            logmsg "this should show the combo"
+            logmsg "working with a combo box"
             selectInComboBox (=="ccc")
+        checkStatusBar (=="selected in combo: ccc")
+        with descendants $ do 
             sleep 2
             selectTabByText (=="tab two")  
             sleep 2
@@ -88,6 +89,8 @@ testCase = with mainWindow $ do
                 cell <- replusify . concat $ ll
                 descendants . renderer >=> hasText (=="7") $ cell
                 return $ clickCell cell
+        checkStatusBar (=="selected index in table: 2")
+        with descendants $ do 
             sleep 2
             poke $ \g -> do
                 Table ll <- return . cType $ g
@@ -98,6 +101,9 @@ testCase = with mainWindow $ do
             poke $ \g -> do    
                 Table {} <- return . cType $ g 
                 children >=> hasText (=="4") >=> setText "77" $ g
+        with window $ enter
+        checkStatusBar (=="table value at row 1 col 1 is 77")
+        with descendants $ do 
             sleep 2
             selectTabByText (=="tab JTree a")  
             logmsg "tab change"
@@ -112,6 +118,7 @@ testCase = with mainWindow $ do
         with descendants $ selectTabByText (=="labels")
         sleep 1
         poke $ labeledBy (=="label2") >=> setText "hope this works!"
+        checkStatusBar (=="hope this works!")
         sleep 2 
     close
 

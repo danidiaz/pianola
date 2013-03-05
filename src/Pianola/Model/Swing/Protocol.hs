@@ -49,9 +49,10 @@ instance Unpackable (WindowInfo Protocol) where
             getWindowImage = Nullipotent $
                 call (pack "getWindowImage":packedargs) iterget >>= hoistEither
             escape = makeAction (T.pack "escape") packedargs 
+            enter = makeAction (T.pack "enter") packedargs 
             closeWindow = makeAction (T.pack "closeWindow") packedargs 
             toFront = makeAction (T.pack "toFront") packedargs 
-        return (WindowInfo v1 v2 v3 v4 v5 getWindowImage escape closeWindow toFront)
+        return (WindowInfo v1 v2 v3 v4 v5 getWindowImage escape enter closeWindow toFront)
 
 instance Unpackable (ComponentInfo Protocol) where
     get = do
