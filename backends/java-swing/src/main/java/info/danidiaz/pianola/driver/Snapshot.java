@@ -621,6 +621,19 @@ public class Snapshot {
                             (char)KeyEvent.VK_ESCAPE       
                         ));
     }    
+    
+    public void enter(final int windowid) {
+        Window window = windowArray.get(windowid);
+        
+        java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
+                new KeyEvent( window, 
+                            KeyEvent.KEY_PRESSED, 
+                            System.currentTimeMillis(), 
+                            0, 
+                            KeyEvent.VK_ENTER,
+                            (char)KeyEvent.VK_ENTER       
+                        ));
+    }     
         
     private ImageBin obtainImageBin() {
         return new ImageBin(windowImageMap.values());
