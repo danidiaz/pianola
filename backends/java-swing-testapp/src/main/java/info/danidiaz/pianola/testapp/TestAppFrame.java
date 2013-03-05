@@ -32,10 +32,15 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTree;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
@@ -197,7 +202,7 @@ public class TestAppFrame extends JFrame {
         textPanel.add(fooButton,BorderLayout.SOUTH);
         
         JPanel westPanel = new JPanel(new GridLayout(6,1));
-        westPanel.add(new JComboBox(new Object [] { "aaa","bbb","ccc",
+        JComboBox combo = new JComboBox(new Object [] { "aaa","bbb","ccc",
                 "ddd",
                 "eee",
                 "fff",
@@ -207,7 +212,16 @@ public class TestAppFrame extends JFrame {
                 "111",
                 "222",
                 "333"                
-            }));
+            }); 
+        combo.addItemListener(new ItemListener() {            
+            @Override
+            public void itemStateChanged(ItemEvent arg0) {
+                statusLabel.setText("selected in combo: " + arg0.getItem());
+                
+            }
+        });
+                    
+        westPanel.add(combo);
         final JCheckBox checkBox = new JCheckBox("This is a checkbox");
         checkBox.addItemListener(new ItemListener() {
             
@@ -278,7 +292,7 @@ public class TestAppFrame extends JFrame {
     private JPanel createTabTwo() {
         JPanel mainPanel = new JPanel(new BorderLayout());
         
-        JTable table = new JTable(new DefaultTableModel(               
+        final JTable table = new JTable(new DefaultTableModel(               
                     new Object[][] {
                             new Object[] { "row1", 2, 3  },
                             new Object[] { "row2", 4 , 6 },
@@ -287,6 +301,28 @@ public class TestAppFrame extends JFrame {
                     
                     new Object[] { "col1", "col2", "col3" }                              
                 ));
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            
+            @Override
+            public void valueChanged(ListSelectionEvent arg0) {
+                ListSelectionModel lsm = (ListSelectionModel)arg0.getSource();
+                if (lsm.isSelectionEmpty()) {
+                } else {                    
+                    int minIndex = lsm.getMinSelectionIndex();
+                    statusLabel.setText("selected index in table: "+ minIndex);
+                }                
+            }
+        });
+        table.getModel().addTableModelListener(new TableModelListener() {
+            
+            @Override
+            public void tableChanged(TableModelEvent arg0) {
+                int row = arg0.getFirstRow();
+                int col = arg0.getColumn();                
+                Object o = table.getModel().getValueAt(row,col);
+                statusLabel.setText("table value at row "+row+" col " +col + " is "+o);
+            }
+        });
         mainPanel.add(table,BorderLayout.CENTER);
         return mainPanel;
     }
@@ -324,7 +360,26 @@ public class TestAppFrame extends JFrame {
         JPanel mainPanel = new JPanel(new BorderLayout());
         JPanel gridPanel = new JPanel(new GridLayout(3,2,10,10));
         gridPanel.add(new JLabel("label1"));
-        gridPanel.add(new JTextField(10));
+        
+        final JTextField textField = new JTextField(10);
+        textField.getDocument().addDocumentListener(new DocumentListener() {
+            
+            @Override
+            public void removeUpdate(DocumentEvent arg0) {
+                statusLabel.setText(textField.getText());                               
+            }
+            
+            @Override
+            public void insertUpdate(DocumentEvent arg0) {
+                statusLabel.setText(textField.getText());                            
+            }
+            
+            @Override
+            public void changedUpdate(DocumentEvent arg0) {
+                statusLabel.setText(textField.getText());                
+            }
+        });        
+        gridPanel.add(textField);
         gridPanel.add(new JLabel("label2"));
         gridPanel.add(new JTextField(10));
         gridPanel.add(new JLabel("label3"));        

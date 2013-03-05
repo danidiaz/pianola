@@ -189,6 +189,12 @@ public class Driver implements Runnable
                         lastSnapshot.escape(windowId);
                         packer.write((int)0);
                         packer.writeNil();
+                    } else if (methodName.equals("enter")) {
+                        int snapshotId = unpacker.readInt();
+                        int windowId = unpacker.readInt();
+                        lastSnapshot.enter(windowId);
+                        packer.write((int)0);
+                        packer.writeNil();
                     } else if (methodName.equals("shutdown")) {
                         shutdownServer = true;
                     }
