@@ -41,9 +41,12 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 public class TestAppFrame extends JFrame {
@@ -51,7 +54,7 @@ public class TestAppFrame extends JFrame {
     private final JTextField textField = new JTextField(18);
     
     private final JLabel statusLabel;
-    private final JButton clearStatusLabel;
+    private final JButton clearStatusLabel;        
     
     public TestAppFrame() throws HeadlessException {
         super("Test app frame");
@@ -62,9 +65,10 @@ public class TestAppFrame extends JFrame {
         tabbedPane.setToolTipTextAt(0, "tooltip for tab one");
         tabbedPane.addTab("tab two", createTabTwo());
         tabbedPane.setToolTipTextAt(1, "tooltip for tab two");
-        tabbedPane.addTab("tab JTree a", createTabJTree(true));
+        JPanel panels [] = createTabJTree();
+        tabbedPane.addTab("tab JTree a", panels[0]);
         tabbedPane.setToolTipTextAt(2, "tooltip for tab three");
-        tabbedPane.addTab("tab JTree b", createTabJTree(false));
+        tabbedPane.addTab("tab JTree b", panels[1]);
         tabbedPane.setToolTipTextAt(3, "tooltip for tab four");
         tabbedPane.addTab("labels", createTabLabeledFields());
         tabbedPane.setToolTipTextAt(4, "tooltip for labels");
@@ -327,8 +331,10 @@ public class TestAppFrame extends JFrame {
         return mainPanel;
     }
 
-    private JPanel createTabJTree(boolean showroot) {
-        JPanel mainPanel = new JPanel(new BorderLayout());
+    private JPanel[] createTabJTree() {
+        JPanel[] panels = new JPanel[2];
+        panels [0] = new JPanel(new BorderLayout());
+        panels [1] = new JPanel(new BorderLayout());
         DefaultMutableTreeNode root = new DefaultMutableTreeNode("this is the root");
         DefaultMutableTreeNode leafa = new DefaultMutableTreeNode("leaf a");
         root.add(leafa);
@@ -345,15 +351,51 @@ public class TestAppFrame extends JFrame {
         DefaultMutableTreeNode leafab = new DefaultMutableTreeNode("leaf a b");
         leafa.add(leafab);
         DefaultMutableTreeNode leafb = new DefaultMutableTreeNode("leaf b");
+        DefaultMutableTreeNode leafba = new DefaultMutableTreeNode("leaf b a");
+        leafb.add(leafba);
+        
         root.add(leafb);
         
         DefaultTreeModel model = new DefaultTreeModel(root);
       
-        JTree tree = new JTree(model);
+        Object o [] = new Object[] { root, leafa };
+        final TreePath treepath = new TreePath(o);
+                               
+        final JTree tree = new JTree(model);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        tree.setRootVisible(showroot);
-        mainPanel.add(new JScrollPane(tree),BorderLayout.CENTER);
-        return mainPanel;
+        tree.setRootVisible(true);
+        tree.addTreeExpansionListener(new TreeExpansionListener() {
+            
+            @Override
+            public void treeExpanded(TreeExpansionEvent arg0) {
+                statusLabel.setText("leaf a is collapsed: "+tree.isCollapsed(treepath));                
+            }
+            
+            @Override
+            public void treeCollapsed(TreeExpansionEvent arg0) {
+                statusLabel.setText("leaf a is collapsed: "+tree.isCollapsed(treepath));                
+            }
+        });
+        panels[0].add(new JScrollPane(tree),BorderLayout.CENTER);
+        
+        final JTree tree2 = new JTree(model);
+        tree2.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        tree2.setRootVisible(false);
+        tree2.addTreeExpansionListener(new TreeExpansionListener() {
+            
+            @Override
+            public void treeExpanded(TreeExpansionEvent arg0) {
+                statusLabel.setText("leaf a is collapsed: "+tree2.isCollapsed(treepath));                
+            }
+            
+            @Override
+            public void treeCollapsed(TreeExpansionEvent arg0) {
+                statusLabel.setText("leaf a is collapsed: "+tree2.isCollapsed(treepath));                
+            }
+        });        
+        panels[1].add(new JScrollPane(tree2),BorderLayout.CENTER);
+                
+        return panels;
     }
     
     private JPanel createTabLabeledFields() {
