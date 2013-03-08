@@ -145,6 +145,8 @@ data ComponentInfo m = ComponentInfo
     ,  _text::Maybe T.Text
     ,  _enabled::Bool
     ,  _componentType::ComponentType m
+    ,  _click::Sealed m
+    ,  _doubleClick::Sealed m
     ,  _rightClick::Sealed m
     } 
 
@@ -186,12 +188,18 @@ class ComponentLike c where
     toggle b (cType -> Toggleable _ f) = return $ f b
     toggle _ _ = mzero
 
+    click:: Monad n => c m -> n (Sealed m)
+    click = return._click.cInfo
+
+    doubleClick:: Monad n => c m -> n (Sealed m)
+    doubleClick = return._doubleClick.cInfo
+
     rightClick:: Monad n => c m -> n (Sealed m)
     rightClick = return._rightClick.cInfo
 
-    click:: MonadPlus n => c m -> n (Sealed m)
-    click (cType -> Button a) = return a
-    click _ = mzero
+    clickButton:: MonadPlus n => c m -> n (Sealed m)
+    clickButton (cType -> Button a) = return a
+    clickButton _ = mzero
 
     clickCombo:: MonadPlus n => c m -> n (Sealed m)
     clickCombo (cType -> ComboBox _ a) = return a
@@ -225,17 +233,17 @@ data ComponentType m =
     |Other T.Text
 
 data Cell m = Cell 
-    { renderer::Component m
-    , clickCell::Sealed m
-    , doubleClickCell::Sealed m
-    , expand:: Maybe (Bool -> Sealed m)
+    { _renderer::Component m
+    , _clickCell::Sealed m
+    , _doubleClickCell::Sealed m
+    , _expand:: Maybe (Bool -> Sealed m)
     }
 
 data Tab m = Tab
-    { tabText::T.Text
-    , tabToolTip::Maybe T.Text
-    , isTabSelected:: Bool
-    , selectTab::Sealed m
+    { _tabText::T.Text
+    , _tabToolTip::Maybe T.Text
+    , _isTabSelected:: Bool
+    , _selectTab::Sealed m
     }
 
 mainWindow :: Glance m l (GUI m) (Window m)
@@ -245,10 +253,10 @@ childWindow :: Glance m l (Window m) (Window m)
 childWindow = children
 
 clickButtonByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Pianola m l (c m) () 
-clickButtonByText f = poke $ descendants >=> hasText f >=> click
+clickButtonByText f = poke $ descendants >=> hasText f >=> clickButton
 
 clickButtonByToolTip :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Pianola m l (c m) () 
-clickButtonByToolTip f = poke $ descendants >=> hasToolTip f >=> click
+clickButtonByToolTip f = poke $ descendants >=> hasToolTip f >=> clickButton
 
 rightClickByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Pianola m l (c m) () 
 rightClickByText f = poke $ descendants >=> hasText f >=> rightClick
@@ -265,9 +273,9 @@ popupItem w =
 selectInMenuBar :: Monad m => Maybe Bool -> [T.Text -> Bool] -> Pianola m l (Window m) ()
 selectInMenuBar shouldToggleLast ps = 
     let go (firstitem,middleitems,lastitem) = do
-           poke $ replusify._menu.wInfo >=> descendants >=> hasText firstitem >=> click
-           let pairs = zip middleitems (click <$ middleitems) ++
-                       [(lastitem, maybe click toggle shouldToggleLast)]
+           poke $ replusify._menu.wInfo >=> descendants >=> hasText firstitem >=> clickButton
+           let pairs = zip middleitems (clickButton <$ middleitems) ++
+                       [(lastitem, maybe clickButton toggle shouldToggleLast)]
            forM_ pairs $ \(txt,action) -> 
                pmaybe pfail $ retryPoke1s 7 $ 
                    popupItem >=> hasText txt >=> action
@@ -281,21 +289,21 @@ selectInComboBox f = do
         with window $ with popupItem $ do 
             poke $ \g -> do 
                 candidateCell <- listCell $ g
-                descendants.renderer >=> hasText f $ candidateCell 
-                return $ clickCell candidateCell  
+                descendants._renderer >=> hasText f $ candidateCell 
+                return $ _clickCell candidateCell  
 
 selectTabByText :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Pianola m l (c m) ()
 selectTabByText f =  
     poke $ tab >=> \aTab -> do    
-        guard $ f . tabText $ aTab
-        return $ selectTab aTab   
+        guard $ f . _tabText $ aTab
+        return $ _selectTab aTab   
 
 selectTabByToolTip :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Pianola m l (c m) ()
 selectTabByToolTip f =  
     poke $ tab >=> \aTab -> do    
-        tooltip <- justZ . tabToolTip $ aTab
+        tooltip <- justZ . _tabToolTip $ aTab
         guard $ f tooltip
-        return $ selectTab aTab   
+        return $ _selectTab aTab   
 
 labeledBy :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Glance m l (c m) (c m)
 labeledBy f o = do

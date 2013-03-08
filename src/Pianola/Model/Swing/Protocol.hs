@@ -65,8 +65,10 @@ instance Unpackable (ComponentInfo Protocol) where
         v5 <- get
         v6 <- get
         v7 <- get
-        let rightClick = makeAction (T.pack  "rightClick") [pack snapid, pack cid]
-        return (ComponentInfo v1 v2 v3 v4 v5 v6 v7 rightClick)
+        let click = makeAction (T.pack  "click") [pack snapid, pack cid]
+            doubleClick = makeAction (T.pack  "doubleClick") [pack snapid, pack cid]
+            rightClick = makeAction (T.pack  "rightClick") [pack snapid, pack cid]
+        return (ComponentInfo v1 v2 v3 v4 v5 v6 v7 click doubleClick rightClick)
 
 instance Unpackable (Component Protocol) where
     get = Component <$> get
@@ -85,7 +87,7 @@ instance Unpackable (ComponentType Protocol) where
                 return $ Toggleable v3 toggle
             3 -> do 
                 v2 <- get::Parser Int
-                let click = makeAction (T.pack "click") $
+                let click = makeAction (T.pack "clickButton") $
                         [pack snapid, pack v2]
                 return $ Button click
             4 -> do
