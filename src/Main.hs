@@ -35,6 +35,26 @@ checkDialog = do
         clickButtonByText (=="close dialog")
     checkStatusBar (=="clicked button in dialog")
 
+checkDelayedDialog :: Monad m => Pianola m LogEntry (ComponentW m) ()
+checkDelayedDialog = do
+    clickButtonByText (=="open slow dialog")
+    with window $ do
+        pmaybe pfail $ withRetry1s 14 childWindow $ do       
+            with contentsPane $ clickButtonByText (=="close dialog")
+        logmsg "clicked delayed close button"
+        pmaybe pfail $ retryPeek1s 14 $ missing childWindow 
+    checkStatusBar (=="Performed delayed close")
+
+expandAndCheckLeafA :: Monad m => Pianola m LogEntry (ComponentW m) ()
+expandAndCheckLeafA = do
+    with descendants $ do 
+        poke $ \g -> do    
+            Treegui forest <- return . cType $ g
+            cell <- replusify >=> descendants $ forest
+            descendants . renderer . rootLabel >=> hasText (=="leaf a") $ cell
+            (justZ . expand . rootLabel $ cell) <*> pure True
+    checkStatusBar (=="leaf a is collapsed: false")
+
 type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 
 testCase:: Test
@@ -48,6 +68,8 @@ testCase = with mainWindow $ do
         checkDialog
         logmsg "dialog again, each action ralentized"
         ralentize 2 $ checkDialog 
+        logmsg "dialog with delayed open and close"
+        checkDelayedDialog    
         logmsg "testing right click"
         rightClickByText (=="This is a label")
         pmaybe pfail $ retryPoke1s 4 $ 
@@ -107,13 +129,12 @@ testCase = with mainWindow $ do
             sleep 2
             selectTabByText (=="tab JTree a")  
             logmsg "tab change"
+        expandAndCheckLeafA 
+        with descendants $ do 
             sleep 2
-            poke $ \g -> do    
-                Treegui forest <- return . cType $ g
-                cell <- replusify >=> descendants $ forest
-                descendants . renderer . rootLabel >=> hasText (=="leaf a") $ cell
-                (justZ . expand . rootLabel $ cell) <*> pure True
-            sleep 2
+            selectTabByText (=="tab JTree b")  
+            logmsg "tab change"
+        expandAndCheckLeafA 
     with contentsPane $ do
         with descendants $ selectTabByText (=="labels")
         sleep 1
