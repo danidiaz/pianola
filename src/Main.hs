@@ -51,8 +51,8 @@ expandAndCheckLeafA = do
         poke $ \g -> do    
             Treegui forest <- return . cType $ g
             cell <- replusify >=> descendants $ forest
-            descendants . renderer . rootLabel >=> hasText (=="leaf a") $ cell
-            (justZ . expand . rootLabel $ cell) <*> pure True
+            descendants . _renderer . rootLabel >=> hasText (=="leaf a") $ cell
+            (justZ . _expand . rootLabel $ cell) <*> pure True
     checkStatusBar (=="leaf a is collapsed: false")
 
 type Test = Pianola Protocol LogEntry (GUI Protocol) ()
@@ -71,9 +71,13 @@ testCase = with mainWindow $ do
         logmsg "dialog with delayed open and close"
         checkDelayedDialog    
         logmsg "testing right click"
+        poke $ descendants >=> hasText (=="click dbl click") >=> click
+        checkStatusBar (=="clicked on label")
+        poke $ descendants >=> hasText (=="click dbl click") >=> doubleClick
+        checkStatusBar (=="double-clicked on label")
         rightClickByText (=="This is a label")
         pmaybe pfail $ retryPoke1s 4 $ 
-            window >=> popupItem >=> hasText (=="popupitem2") >=> click  
+            window >=> popupItem >=> hasText (=="popupitem2") >=> clickButton  
         checkStatusBar (=="clicked on popupitem2")
         sleep 1
         logmsg "testing checkbox"
@@ -92,7 +96,7 @@ testCase = with mainWindow $ do
         sleep 2
         logmsg "opening a file chooser"
         with (descendants >=> hasText (=="Open file chooser")) $ do
-            poke click
+            poke clickButton
             with window $ with childWindow $ with contentsPane $ do
                 poke $ descendants >=> hasText (=="") >=> setText "/tmp/foofile.txt"   
                 clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]
@@ -109,16 +113,16 @@ testCase = with mainWindow $ do
             poke $ \g -> do
                 Table ll <- return . cType $ g
                 cell <- replusify . concat $ ll
-                descendants . renderer >=> hasText (=="7") $ cell
-                return $ clickCell cell
+                descendants . _renderer >=> hasText (=="7") $ cell
+                return $ _clickCell cell
         checkStatusBar (=="selected index in table: 2")
         with descendants $ do 
             sleep 2
             poke $ \g -> do
                 Table ll <- return . cType $ g
                 cell <- replusify . concat $ ll
-                descendants . renderer >=> hasText (=="4") $ cell
-                return $ doubleClickCell cell
+                descendants . _renderer >=> hasText (=="4") $ cell
+                return $ _doubleClickCell cell
             sleep 2
             poke $ \g -> do    
                 Table {} <- return . cType $ g 
