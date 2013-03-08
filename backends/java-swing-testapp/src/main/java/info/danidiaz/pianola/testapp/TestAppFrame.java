@@ -34,6 +34,7 @@ import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -203,7 +204,20 @@ public class TestAppFrame extends JFrame {
                 createAndShowDialog(TestAppFrame.this);
             }
         });
-        textPanel.add(fooButton,BorderLayout.SOUTH);
+        
+        JPanel dialogButtonPanel = new JPanel(new GridLayout(2,1));
+        dialogButtonPanel.add(fooButton);
+        JButton slowDialogButton = new JButton("open slow dialog");
+        slowDialogButton.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent arg0) {                       
+                new DialogOpenDelayer(TestAppFrame.this,statusLabel).execute();                
+            }
+        });
+        dialogButtonPanel.add(slowDialogButton);        
+        
+        textPanel.add(dialogButtonPanel,BorderLayout.SOUTH);
         
         JPanel westPanel = new JPanel(new GridLayout(6,1));
         JComboBox combo = new JComboBox(new Object [] { "aaa","bbb","ccc",
@@ -430,4 +444,71 @@ public class TestAppFrame extends JFrame {
         return mainPanel;
     }
     
+    private static class DialogOpenDelayer extends SwingWorker<Object, Object> {
+
+        JFrame frame;
+        JLabel statusLabel;                     
+
+        public DialogOpenDelayer(JFrame frame, JLabel statusLabel) {
+            super();
+            this.frame = frame;
+            this.statusLabel = statusLabel;
+        }
+
+        @Override
+        protected Object doInBackground() throws Exception {
+            Thread.currentThread().sleep(7000);
+            return "";
+        }
+
+        @Override
+        protected void done() {
+            super.done();
+            
+            final JDialog dialog = new JDialog(frame,true);
+            dialog.setTitle("slow dialog");
+            dialog.getContentPane().setLayout(new BorderLayout());
+            dialog.getContentPane().add(new JTextArea(18, 10),BorderLayout.CENTER);
+            
+            JButton dialogButton = new JButton("close dialog");
+            dialogButton.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new DialogCloseDelayer(dialog, statusLabel).execute();
+                    
+                }
+            });
+            dialog.getContentPane().add(dialogButton,BorderLayout.SOUTH);
+            //Display the window.
+            dialog.pack();
+            dialog.setLocationRelativeTo(null);
+            dialog.setVisible(true);        
+        }                
+    }
+    
+    private static class DialogCloseDelayer extends SwingWorker<Object, Object> {
+
+        JDialog dialog;
+        JLabel statusLabel;
+
+        public DialogCloseDelayer(JDialog dialog,JLabel statusLabel) {
+            super();
+            this.dialog = dialog;
+            this.statusLabel = statusLabel;
+        }
+
+        @Override
+        protected Object doInBackground() throws Exception {
+            Thread.currentThread().sleep(7000);
+            return "";
+        }
+
+        @Override
+        protected void done() {
+            super.done();
+            statusLabel.setText("Performed delayed close");
+            dialog.setVisible(false);
+        }                
+    }
 }
