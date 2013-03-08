@@ -286,6 +286,22 @@ public class TestAppFrame extends JFrame {
       
         westPanel.add(label);  
   
+        JLabel label2 = new JLabel("click dbl click");
+        label2.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                
+                if (e.getClickCount() == 1) {
+                    statusLabel.setText("clicked on label");
+                } else if (e.getClickCount() == 2) {
+                    statusLabel.setText("double-clicked on label");
+                }
+            }
+        });
+        westPanel.add(label2);
+        
         final JFileChooser fc = new JFileChooser();
         final JButton fileChooserButton = new JButton("Open file chooser");
         fileChooserButton.addActionListener(new ActionListener() {

@@ -443,14 +443,14 @@ public class Snapshot {
                 final AbstractButton button = (AbstractButton)componentArray.get(buttonId);
                 
                 if (button.isSelected() != targetState) {
-                    click(buttonId);
+                    clickButton(buttonId);
                 }                 
             }
         });
 
     }
         
-    public void click(int buttonId) {
+    public void clickButton(int buttonId) {
         
         final AbstractButton button = (AbstractButton)componentArray.get(buttonId);
         Point point = new Point(button.getWidth()/2,button.getHeight()/2);
@@ -568,6 +568,24 @@ public class Snapshot {
                 tpane.setSelectedIndex(tabid);
             }
         });
+    }
+    
+    public void click(int componentid) {
+        
+        final JComponent c = (JComponent)componentArray.get(componentid);
+        Point point = new Point(c.getWidth()/2,c.getHeight()/2);
+        postMouseEvent(c, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
+        pressedReleasedClicked1(c, new Rectangle(0, 0, c.getWidth(), c.getHeight()), 1);
+    }
+    
+    public void doubleClick(int componentid) {
+        
+        final JComponent c = (JComponent)componentArray.get(componentid);
+        Point point = new Point(c.getWidth()/2,c.getHeight()/2);
+        postMouseEvent(c, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
+        Rectangle rect =  new Rectangle(0, 0, c.getWidth(), c.getHeight());
+        pressedReleasedClicked1(c, rect, 1);
+        pressedReleasedClicked1(c, rect, 2);
     }
     
     public void rightClick(final int componentid) {
