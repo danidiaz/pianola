@@ -157,7 +157,7 @@ main = do
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
 
-  r <- runEitherT $ simpleSwingDriver endpoint testCase $ screenshotStream "dist/tests"
+  r <- runEitherT $ simpleSwingDriver endpoint testCase $ screenshotStream "dist/test"
   case r of
      Left err -> do
         putStrLn $ "result: " <> show err
