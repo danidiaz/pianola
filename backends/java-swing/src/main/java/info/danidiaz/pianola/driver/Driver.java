@@ -105,10 +105,10 @@ public class Driver implements Runnable
                         packer.write((int)0);
                         packer.writeNil();
                             
-                    }  else if (methodName.equals("click")) {
+                    }  else if (methodName.equals("clickButton")) {
                         int snapshotId = unpacker.readInt();
                         int buttonId = unpacker.readInt();
-                        lastSnapshot.click(buttonId);
+                        lastSnapshot.clickButton(buttonId);
                         packer.write((int)0);
                         packer.writeNil();
                             
@@ -119,6 +119,18 @@ public class Driver implements Runnable
                         packer.write((int)0);
                         packer.writeNil();
                             
+                    } else if (methodName.equals("click")) {
+                        int snapshotId = unpacker.readInt();
+                        int cId = unpacker.readInt();
+                        lastSnapshot.click(cId);
+                        packer.write((int)0);
+                        packer.writeNil();
+                    } else if (methodName.equals("doubleClick")) {
+                        int snapshotId = unpacker.readInt();
+                        int cId = unpacker.readInt();
+                        lastSnapshot.doubleClick(cId);
+                        packer.write((int)0);
+                        packer.writeNil();
                     } else if (methodName.equals("rightClick")) {
                         int snapshotId = unpacker.readInt();
                         int cId = unpacker.readInt();
