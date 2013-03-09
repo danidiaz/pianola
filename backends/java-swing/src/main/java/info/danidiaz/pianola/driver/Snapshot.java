@@ -1,6 +1,7 @@
 package info.danidiaz.pianola.driver;
 
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Window;
@@ -48,7 +49,7 @@ import org.msgpack.packer.Packer;
 public class Snapshot {
     
     private ImageBin imageBin;
-
+ 
     private List<Window> windowArray = new ArrayList<Window>();
     private Map<Window,BufferedImage> windowImageMap = new HashMap<Window,BufferedImage>();
     
@@ -136,7 +137,7 @@ public class Snapshot {
         writePopupLayer(snapid,packer,w);
                         
         RootPaneContainer rpc = (RootPaneContainer)w;
-        writeComponent(snapid, packer, (JComponent) rpc.getContentPane(),w);                                                               
+        writeComponent(snapid, packer, (Component) rpc.getContentPane(),w);                                                               
         
         writeWindowArray(snapid, packer, w.getOwnedWindows());
     }
@@ -170,7 +171,7 @@ public class Snapshot {
         }
         packer.writeArrayBegin(countShowing(popupLayerArray));        
         for (int i=0;i<popupLayerArray.length;i++) {
-            JComponent c = (JComponent) popupLayerArray[i];
+            Component c = (Component) popupLayerArray[i];
             if (c.isShowing()) {
                 writeComponent(snapid, packer, c, w);    
             }
@@ -178,7 +179,7 @@ public class Snapshot {
         packer.writeArrayEnd();
     }
         
-    private void writeComponent(int snapid, Packer packer, JComponent c, Component coordBase) throws IOException {
+    private void writeComponent(int snapid, Packer packer, Component c, Component coordBase) throws IOException {
         
         int componentId = componentArray.size();
         componentArray.add(c);
@@ -202,7 +203,8 @@ public class Snapshot {
         packer.writeArrayEnd();
         
         writePotentiallyNullString(packer,c.getName());
-        writePotentiallyNullString(packer,c.getToolTipText());
+        String tooltipText = (c instanceof JComponent) ? ((JComponent)c).getToolTipText() : "";
+        writePotentiallyNullString(packer,tooltipText);
         
         if (c instanceof AbstractButton) {
             writePotentiallyNullString(packer,((AbstractButton)c).getText());
@@ -218,12 +220,15 @@ public class Snapshot {
         
         writeComponentType(snapid, packer, componentId, c, coordBase);
         
-        Component children[] = c.getComponents();
+        Component children[] = new Component[]{};
+        if (c instanceof Container) {            
+            children = ((Container)c).getComponents();
+        }
                               
         packer.writeArrayBegin(countShowing(children));
         for (int i=0;i<children.length;i++) {
             if (children[i].isShowing()) {                                
-                writeComponent(snapid, packer, (JComponent)children[i],coordBase);
+                writeComponent(snapid, packer, (Component)children[i],coordBase);
             }
         }
         packer.writeArrayEnd();
@@ -231,7 +236,7 @@ public class Snapshot {
     
     private void writeComponentType( int snapid, Packer packer, 
                 int componentId,
-                JComponent c, 
+                Component c, 
                 Component coordBase 
             ) throws IOException 
     {
@@ -270,7 +275,7 @@ public class Snapshot {
             if (comboBox.getSelectedIndex()==-1) {
                 packer.writeNil();
             } else {
-                JComponent cell = (JComponent)renderer.getListCellRendererComponent(dummyJList, 
+                Component cell = (Component)renderer.getListCellRendererComponent(dummyJList, 
                                 comboBox.getModel().getElementAt(comboBox.getSelectedIndex()), 
                                 comboBox.getSelectedIndex(), 
                                 false, 
@@ -291,7 +296,7 @@ public class Snapshot {
                             packer, 
                             componentId, 
                             rowid, 0, 
-                            (JComponent)renderer.getListCellRendererComponent(list, 
+                            (Component)renderer.getListCellRendererComponent(list, 
                                     list.getModel().getElementAt(rowid), 
                                     rowid, 
                                     false, 
@@ -321,7 +326,7 @@ public class Snapshot {
                             packer, 
                             componentId, 
                             i, j, 
-                            (JComponent)renderer.getTableCellRendererComponent(table, 
+                            (Component)renderer.getTableCellRendererComponent(table, 
                                     model.getValueAt(i, j),  
                                     false, 
                                     false,
@@ -359,7 +364,7 @@ public class Snapshot {
                         packer, 
                         componentId, 
                         rowid, 0, 
-                        (JComponent)renderer.getTreeCellRendererComponent(
+                        (Component)renderer.getTreeCellRendererComponent(
                                 tree,
                                 path.getLastPathComponent(),
                                 tree.isRowSelected(rowid),
@@ -412,7 +417,7 @@ public class Snapshot {
                 int componentid, 
                 int rowid, 
                 int colid, 
-                JComponent rendererc, 
+                Component rendererc, 
                 Component coordBase,
                 boolean belongsToJTree 
             ) throws IOException 
@@ -436,7 +441,7 @@ public class Snapshot {
 
    public void click(int componentid) {
         
-        final JComponent c = (JComponent)componentArray.get(componentid);
+        final Component c = (Component)componentArray.get(componentid);
         Point point = new Point(c.getWidth()/2,c.getHeight()/2);
         postMouseEvent(c, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
         pressedReleasedClicked1(c, new Rectangle(0, 0, c.getWidth(), c.getHeight()), 1);
@@ -444,7 +449,7 @@ public class Snapshot {
     
     public void doubleClick(int componentid) {
         
-        final JComponent c = (JComponent)componentArray.get(componentid);
+        final Component c = (Component)componentArray.get(componentid);
         Point point = new Point(c.getWidth()/2,c.getHeight()/2);
         postMouseEvent(c, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
         Rectangle rect =  new Rectangle(0, 0, c.getWidth(), c.getHeight());
@@ -454,7 +459,7 @@ public class Snapshot {
     
     public void rightClick(final int componentid) {
         // http://stackoverflow.com/questions/5736872/java-popup-trigger-in-linux
-        final JComponent button = (JComponent)componentArray.get(componentid);
+        final Component button = (Component)componentArray.get(componentid);
         
         Point point = new Point(button.getWidth()/2,button.getHeight()/2);
 
