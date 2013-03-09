@@ -17,6 +17,7 @@ module Pianola.Model.Swing (
         Tab (..),
         mainWindow,
         childWindow,
+        windowTitled,
         clickButtonByText,
         clickButtonByToolTip,
         rightClickByText,
@@ -251,6 +252,9 @@ mainWindow = replusify
 
 childWindow :: Glance m l (Window m) (Window m)
 childWindow = children
+
+windowTitled :: (T.Text -> Bool) -> Glance m l (GUI m) (Window m)
+windowTitled f = replusify >=> descendants >=> hasTitle f 
 
 clickButtonByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Pianola m l (c m) () 
 clickButtonByText f = poke $ descendants >=> hasText f >=> clickButton
