@@ -97,28 +97,6 @@ public class Driver implements Runnable
                         packer.write((int)0);
                         pianola.buildAndWrite(lastSnapshotId,packer);
                         lastSnapshot = pianola;     
-                    } else if (methodName.equals("toggle")) {
-                        int snapshotId = unpacker.readInt();
-                        int buttonId = unpacker.readInt();
-                        boolean targetState = unpacker.readBoolean();
-                        lastSnapshot.toggle(buttonId,targetState);
-                        packer.write((int)0);
-                        packer.writeNil();
-                            
-                    }  else if (methodName.equals("clickButton")) {
-                        int snapshotId = unpacker.readInt();
-                        int buttonId = unpacker.readInt();
-                        lastSnapshot.clickButton(buttonId);
-                        packer.write((int)0);
-                        packer.writeNil();
-                            
-                    } else if (methodName.equals("clickCombo")) {
-                        int snapshotId = unpacker.readInt();
-                        int buttonId = unpacker.readInt();
-                        lastSnapshot.clickCombo(buttonId);
-                        packer.write((int)0);
-                        packer.writeNil();
-                            
                     } else if (methodName.equals("click")) {
                         int snapshotId = unpacker.readInt();
                         int cId = unpacker.readInt();
@@ -137,7 +115,27 @@ public class Driver implements Runnable
                         lastSnapshot.rightClick(cId);
                         packer.write((int)0);
                         packer.writeNil();
-                    }  else if (methodName.equals("setTextField")) {
+                    } else if (methodName.equals("clickButton")) {
+                        int snapshotId = unpacker.readInt();
+                        int buttonId = unpacker.readInt();
+                        lastSnapshot.clickButton(buttonId);
+                        packer.write((int)0);
+                        packer.writeNil();
+                            
+                    } else if (methodName.equals("toggle")) {
+                        int snapshotId = unpacker.readInt();
+                        int buttonId = unpacker.readInt();
+                        boolean targetState = unpacker.readBoolean();
+                        lastSnapshot.toggle(buttonId,targetState);
+                        packer.write((int)0);
+                        packer.writeNil();                            
+                    }  else if (methodName.equals("clickCombo")) {
+                        int snapshotId = unpacker.readInt();
+                        int buttonId = unpacker.readInt();
+                        lastSnapshot.clickCombo(buttonId);
+                        packer.write((int)0);
+                        packer.writeNil();                            
+                    } else if (methodName.equals("setTextField")) {
                         int snapshotId = unpacker.readInt();
                         int buttonId = unpacker.readInt();
                         String text = unpacker.readString();

@@ -434,6 +434,44 @@ public class Snapshot {
         }
     }
 
+   public void click(int componentid) {
+        
+        final JComponent c = (JComponent)componentArray.get(componentid);
+        Point point = new Point(c.getWidth()/2,c.getHeight()/2);
+        postMouseEvent(c, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
+        pressedReleasedClicked1(c, new Rectangle(0, 0, c.getWidth(), c.getHeight()), 1);
+    }
+    
+    public void doubleClick(int componentid) {
+        
+        final JComponent c = (JComponent)componentArray.get(componentid);
+        Point point = new Point(c.getWidth()/2,c.getHeight()/2);
+        postMouseEvent(c, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
+        Rectangle rect =  new Rectangle(0, 0, c.getWidth(), c.getHeight());
+        pressedReleasedClicked1(c, rect, 1);
+        pressedReleasedClicked1(c, rect, 2);
+    }
+    
+    public void rightClick(final int componentid) {
+        // http://stackoverflow.com/questions/5736872/java-popup-trigger-in-linux
+        final JComponent button = (JComponent)componentArray.get(componentid);
+        
+        Point point = new Point(button.getWidth()/2,button.getHeight()/2);
+
+        postMouseEvent(button, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
+        postMouseEvent(button, MouseEvent.MOUSE_PRESSED, MouseEvent.BUTTON3_MASK, point, 1, !releaseIsPopupTrigger);
+        postMouseEvent(button, MouseEvent.MOUSE_RELEASED, MouseEvent.BUTTON3_MASK, point, 1, releaseIsPopupTrigger);
+        postMouseEvent(button, MouseEvent.MOUSE_CLICKED, MouseEvent.BUTTON3_MASK, point, 1, false); 
+    }    
+    
+    public void clickButton(int buttonId) {
+        
+        final AbstractButton button = (AbstractButton)componentArray.get(buttonId);
+        Point point = new Point(button.getWidth()/2,button.getHeight()/2);
+        postMouseEvent(button, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
+        pressedReleasedClicked1(button, new Rectangle(0, 0, button.getWidth(), button.getHeight()), 1);
+    }
+    
     public void toggle(final int buttonId, final boolean targetState) {
 
         SwingUtilities.invokeLater(new Runnable() {
@@ -448,15 +486,7 @@ public class Snapshot {
             }
         });
 
-    }
-        
-    public void clickButton(int buttonId) {
-        
-        final AbstractButton button = (AbstractButton)componentArray.get(buttonId);
-        Point point = new Point(button.getWidth()/2,button.getHeight()/2);
-        postMouseEvent(button, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
-        pressedReleasedClicked1(button, new Rectangle(0, 0, button.getWidth(), button.getHeight()), 1);
-    }
+    }        
 
     public void clickCombo(final int buttonId) {
         
@@ -569,37 +599,7 @@ public class Snapshot {
             }
         });
     }
-    
-    public void click(int componentid) {
-        
-        final JComponent c = (JComponent)componentArray.get(componentid);
-        Point point = new Point(c.getWidth()/2,c.getHeight()/2);
-        postMouseEvent(c, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
-        pressedReleasedClicked1(c, new Rectangle(0, 0, c.getWidth(), c.getHeight()), 1);
-    }
-    
-    public void doubleClick(int componentid) {
-        
-        final JComponent c = (JComponent)componentArray.get(componentid);
-        Point point = new Point(c.getWidth()/2,c.getHeight()/2);
-        postMouseEvent(c, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
-        Rectangle rect =  new Rectangle(0, 0, c.getWidth(), c.getHeight());
-        pressedReleasedClicked1(c, rect, 1);
-        pressedReleasedClicked1(c, rect, 2);
-    }
-    
-    public void rightClick(final int componentid) {
-        // http://stackoverflow.com/questions/5736872/java-popup-trigger-in-linux
-        final JComponent button = (JComponent)componentArray.get(componentid);
-        
-        Point point = new Point(button.getWidth()/2,button.getHeight()/2);
-
-        postMouseEvent(button, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
-        postMouseEvent(button, MouseEvent.MOUSE_PRESSED, MouseEvent.BUTTON3_MASK, point, 1, !releaseIsPopupTrigger);
-        postMouseEvent(button, MouseEvent.MOUSE_RELEASED, MouseEvent.BUTTON3_MASK, point, 1, releaseIsPopupTrigger);
-        postMouseEvent(button, MouseEvent.MOUSE_CLICKED, MouseEvent.BUTTON3_MASK, point, 1, false); 
-    }
-           
+              
     public BufferedImage getWindowImage(final int windowId) {
        Window window = windowArray.get(windowId);
        return windowImageMap.get(window);
