@@ -20,7 +20,7 @@ import System.Exit (exitFailure)
 
 type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 
-testCase:: String -> Test
+testCase:: T.Text -> Test
 testCase jarpath = do
     with (windowTitled (T.isInfixOf "DbVisualizer")) $ do
         toFront
@@ -39,7 +39,7 @@ testCase jarpath = do
         sleep 2
         clickButtonByToolTip (T.isInfixOf "Open file")
         with window $ with childWindow $ with contentsPane $ do
-            poke $ descendants >=> hasText (=="") >=> setText "C:/Users/ESDPC/Downloads/mysql-connector-java-5.1.23-bin.jar"
+            poke $ descendants >=> hasText (=="") >=> setText jarpath
             sleep 2
             clickButtonByText (=="Abrir")
             sleep 2
@@ -53,7 +53,7 @@ main = do
      addr : jarpath : _ -> do
         let port = PortNumber . fromIntegral $ 26060
             endpoint = Endpoint addr port
-        r <- runEitherT $ simpleSwingDriver endpoint (testCase jarpath) $ screenshotStream "."
+        r <- runEitherT $ simpleSwingDriver endpoint (testCase $ T.pack jarpath) $ screenshotStream "."
         case r of
            Left err -> do
               putStrLn $ "result: " <> show err
