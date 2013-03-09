@@ -1,10 +1,9 @@
-{-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings  #-}
 
 module Main where
 
 import Prelude hiding (catch,(.),id)
-import System.Environment
 import Data.Monoid
 import Data.Tree
 import qualified Data.Text as T
@@ -13,9 +12,11 @@ import Control.Category
 import Control.Monad
 import Control.Error
 import Control.Applicative
-import Control.Proxy
 
 import Pianola.Model.Swing.Driver
+
+import System.Environment
+import System.Exit (exitFailure)
 
 checkStatusBar :: (Monad m, ComponentLike c, Treeish (c m)) => (T.Text -> Bool) -> Pianola m LogEntry (c m) ()
 checkStatusBar predicate = do
@@ -150,12 +151,15 @@ testCase = with mainWindow $ do
 main :: IO ()
 main = do
   args <- getArgs 
-  let addr = head args
+  let addr = case args of 
+        [] -> "127.0.0.1"
+        x:_ -> x
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
 
-  r <- runEitherT $ simpleSwingDriver endpoint testCase $ screenshotStream "/tmp"
-  putStrLn $ "result: " <> case r of 
-     Left err -> show err
-     Right _ -> "all ok" 
-
+  r <- runEitherT $ simpleSwingDriver endpoint testCase $ screenshotStream "dist/tests"
+  case r of
+     Left err -> do
+        putStrLn $ "result: " <> show err
+        exitFailure
+     Right _ -> putStrLn $ "result: all ok" 
