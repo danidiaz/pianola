@@ -37,12 +37,13 @@ public class Driver implements Runnable
     
     // http://docs.oracle.com/javase/6/docs/api/java/lang/instrument/package-summary.html
     public static void premain(String agentArgs) {
+        agentArgs = agentArgs == null ? "" : agentArgs;
+        
         System.out.println( "Hi, I'm the agent, started with options: " + agentArgs );
                 
         try {
             int port = DEFAULT_PORT;
-            boolean releaseIsPopupTrigger = true;
-            
+            boolean releaseIsPopupTrigger = true;            
             String [] splittedArgs = agentArgs.split(",",0);
             for (int i=0;i<splittedArgs.length;i++) {
                 String arg = splittedArgs[i];
