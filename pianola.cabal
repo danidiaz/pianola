@@ -27,7 +27,7 @@ Extra-Source-Files:
     backends/java-swing/src/main/java/info/danidiaz/pianola/driver/*.java
     backends/java-swing-testapp/pom.xml
     backends/java-swing-testapp/README.md
-    backends/java-swing/src/main/java/info/danidiaz/pianola/testapp/*.java
+    backends/java-swing-testapp/src/main/java/info/danidiaz/pianola/testapp/*.java
 
 Library
     hs-source-dirs: src

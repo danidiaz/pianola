@@ -41,7 +41,7 @@ testCase jarpath = do
         with window $ with childWindow $ with contentsPane $ do
             poke $ descendants >=> hasText (=="") >=> setText jarpath
             sleep 2
-            clickButtonByText (=="Abrir")
+            clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]
             sleep 2
         with window $ close 
     return ()

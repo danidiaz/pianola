@@ -8,6 +8,6 @@ A Java Swing test application is included in the **backends/java-swing-testapp**
 
 For instructions on how to use the library itself, check the Haddock documentation for the **Pianola.Tutorial** package.
 
-The **tests** folder contains automated tests for the library. For the tests to work, the java test application must be up ad running.
+The **tests** folder contains automated tests for the library. For the tests to work, the java test application must be up and running.
 
 The **examples** folder contains scripts for interacting with popular Java Swing applications (only **DbVisualizer** at the moment). Check the README there for instructions on how to set up the Pianola agent for these applications.      
