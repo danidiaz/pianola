@@ -18,6 +18,7 @@ Description:   This is a library for remotely controlling
 build-type:    Simple
 cabal-version: >= 1.10
 Extra-Source-Files:
+    README.md
     examples/dbvisualizer.hs    
     examples/README.md
 
@@ -29,6 +30,7 @@ Library
         Pianola.Geometry
         Pianola.Pianola
         Pianola.Pianola.Driver
+        Pianola.Tutorial
         Pianola.Protocol
         Pianola.Protocol.IO
         Pianola.Model.Swing
