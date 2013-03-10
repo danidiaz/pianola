@@ -4,6 +4,10 @@ module Pianola.Tutorial (
     
     -- * First steps
     -- $firststeps
+
+    -- * Logging
+    -- $logging
+
 ) where 
 
 import Prelude hiding (catch,(.),id,head,repeat,tail,map,iterate)
@@ -60,6 +64,18 @@ This tutorial will refer to the Java Swing application as the Application Under 
 >        Left err -> do
 >           "ERROR: " ++ show err
 >        Right title -> "title: " ++ show title
+-}
+
+{- $logging
+We could also have logged the title inside the Pianola monad:
+
+> extractTitle2 :: Pianola Protocol LogEntry (GUI Protocol) ()
+> extractTitle2 = do 
+>     txt <- peek $ mainWindow >=> title  
+>     logmsg txt
+
+Log messages emitted in the Pianola monad are printed as they are generated, unlike in a Writer monad. This is useful to check the progress of long-running scripts.
+
 -}
 
 

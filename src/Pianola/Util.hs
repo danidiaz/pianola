@@ -39,9 +39,6 @@ replusify = msum . map return
 tomaybet:: Monad m => LogicT m a -> MaybeT m a
 tomaybet = MaybeT . liftM replusify . observeManyT 1
 
---maybify :: Monad m => LogicT m a -> LogicT m (Maybe a)
---maybify l = lift $ observeManyT 1 l >>= return . replusify
-
 class Treeish l where
     children :: MonadPlus m => l -> m l
     descendants :: MonadPlus m => l -> m l
