@@ -67,7 +67,7 @@ This tutorial will refer to the Java Swing application as the Application Under 
 -}
 
 {- $logging
-We could also have logged the title inside the Pianola monad:
+We could also have logged the title inside the 'Pianola' monad:
 
 > extractTitle2 :: Pianola Protocol LogEntry (GUI Protocol) ()
 > extractTitle2 = do 
@@ -76,6 +76,17 @@ We could also have logged the title inside the Pianola monad:
 
 Log messages emitted in the Pianola monad are printed as they are generated, unlike in a Writer monad. This is useful to check the progress of long-running scripts.
 
+The expression to the right of 'peek' has type 'Glance'. Glance is just a type synonym for the Kleisli arrows of a particular monad. This monad allows some effects and disallows others. Turns out that logging is one of the allowed effects, so we can also emit messages inside a Glance: 
+
+> import Data.Functor.Identity
+>
+> extractTitle3 :: Pianola Protocol LogEntry (GUI Protocol) ()
+> extractTitle3 = do 
+>     peek $ \gui -> do
+>         win <- mainWindow gui 
+>         logmsg $ runIdentity $ title win
+
+Why bother at all with logging inside a 'Glance', instead of always doing it in the 'Pianola' monad? As it happens, nondeterminism (returning several, or zero, results) is another of the allowed effects inside Glances. We can log about objects explored in search branches even if those branches eventually fail to produce any result. This can be useful for debugging.
 -}
 
 

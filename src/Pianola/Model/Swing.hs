@@ -56,7 +56,7 @@ class Windowed w where
 class Windowed w => WindowLike w where
     wInfo :: w m -> WindowInfo m 
 
-    title :: Monad m => Glance m l (w m) T.Text
+    title :: (Monad m,Monad n) => (w m) -> n T.Text
     title = return . _windowTitle . wInfo
 
     hasTitle :: MonadPlus n => (T.Text -> Bool) -> w m -> n (w m)
