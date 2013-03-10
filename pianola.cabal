@@ -19,9 +19,15 @@ build-type:    Simple
 cabal-version: >= 1.10
 Extra-Source-Files:
     README.md
+    tests/README.md
     examples/dbvisualizer.hs    
     examples/README.md
-    tests/README.md
+    backends/java-swing/pom.xml
+    backends/java-swing/README.md
+    backends/java-swing/src/main/java/info/danidiaz/pianola/driver/*.java
+    backends/java-swing-testapp/pom.xml
+    backends/java-swing-testapp/README.md
+    backends/java-swing/src/main/java/info/danidiaz/pianola/testapp/*.java
 
 Library
     hs-source-dirs: src
