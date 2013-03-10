@@ -9,11 +9,11 @@ category:      Jvm, GUI
 Synopsis:      Remotely controlling Java Swing applications
 Description:   This is a library for remotely controlling 
                Java Swing desktop applications that have been 
-               instrumented with a pianola agent. 
+               instrumented with a special pianola agent. 
 
                The agent exposes the Swing component hierarchy
                over the network, and accepts requests for 
-               generating GUI events. This library handles the
+               generating GUI events. The library handles the
                interaction on the Haskell side.
 build-type:    Simple
 cabal-version: >= 1.10
