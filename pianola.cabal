@@ -21,6 +21,7 @@ Extra-Source-Files:
     README.md
     examples/dbvisualizer.hs    
     examples/README.md
+    tests/README.md
 
 Library
     hs-source-dirs: src

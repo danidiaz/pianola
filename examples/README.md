@@ -9,8 +9,8 @@ Compile the Java agent. Copy **xanela-driver-1.0.jar**, **javassist-3.16.1-GA.ja
 
 Edit file **dbvis.vmoptions** from the Db Visualizer installation and add a line like the following:
 
-> -javaagent:C:\Progs\DbVisualizer\lib\pianola-driver-1.0.jar=port/26060,popupTrigger=release
+> -javaagent:C:\Progs\DbVisualizer\lib\pianola-driver-1.0.jar=port/26060,popupTrigger/release
 
-In Linux, use **popupTrigger=press** instead of **popupTrigger=release**.
+In Linux, use **popupTrigger/press** instead of **popupTrigger/release**.
 
 
