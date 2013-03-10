@@ -6,7 +6,7 @@ The agent offers a "snapshot" method which serializes the current component hier
 
 **Important**: Every change in the GUI, however minimal, must be followed by getting a new snapshot. Re-using a snapshot in the client to invoke several actions based on it won't work and should be discouraged by the client-side libraries.
 
-When an snapshot is taken, the agent also stores in memory image captures of all the windows at the moment of the request. However, these images are not sent along with the snapshot for efficiency reasons. They are requested through an special method. When a new snapshot is taken, the old images are discarded.
+When a snapshot is taken, the agent also stores in memory image captures of all the windows at the moment of the request. However, these images are not sent along with the snapshot for efficiency reasons. They are requested through an special method. When a new snapshot is taken, the old images are discarded.
 
 Building the agent 
 ==================
@@ -17,7 +17,7 @@ Invoke
 
 > mvn install 
 
-If the compilation is successful, the pianola-driver jar should appear in the **target** folder. Additionally, the **target/dependency** folder should contain **javassist** and **msgpack** jars (also a **json-simple** jar, but this isn't used for anything). 
+If the compilation is successful, the **pianola-driver** jar should appear in the **target** folder. Additionally, the **target/dependency** folder should contain **javassist** and **msgpack** jars (also a **json-simple** jar, but this it isn't used for anything). 
 
 Configuring the Application Under Test
 ======================================
