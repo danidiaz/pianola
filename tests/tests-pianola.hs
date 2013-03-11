@@ -85,13 +85,13 @@ testCase = with mainWindow $ do
         poke $ descendants >=> hasText (=="This is a checkbox") >=> toggle True
         checkStatusBar (=="checkbox is now true")
         logmsg "foo log message"
-        with window $ selectInMenuBar (Just True) $ 
+        with window $ toggleInMenuBar True $ 
             map (==) ["Menu1","SubMenu1","submenuitem2"]
         checkStatusBar (=="checkbox in menu is now true")
         logmsg "getting a screenshot"
         with window $ logcapture
         logmsg "now for a second menu"
-        autolog $ with window $ selectInMenuBar Nothing $ 
+        autolog $ with window $ selectInMenuBar $ 
             map (==) ["Menu1","SubMenu1","submenuitem1"]
         checkStatusBar (=="clicked on submenuitem1")
         sleep 2
@@ -111,11 +111,12 @@ testCase = with mainWindow $ do
             sleep 2
             selectTabByText (=="tab two")  
             sleep 2
-            poke $ \g -> do
-                Table ll <- return . cType $ g
-                cell <- replusify . concat $ ll
-                descendants . _renderer >=> hasText (=="7") $ cell
-                return $ _clickCell cell
+            poke $ tableCellByText 2 (=="7") >=> return._clickCell.fst
+--            poke $ \g -> do
+--                Table ll <- return . cType $ g
+--                cell <- replusify . concat $ ll
+--                descendants . _renderer >=> hasText (=="7") $ cell
+--                return $ _clickCell cell
         checkStatusBar (=="selected index in table: 2")
         with descendants $ do 
             sleep 2

@@ -23,6 +23,7 @@ module Pianola.Model.Swing (
         rightClickByText,
         popupItem,
         selectInMenuBar,
+        toggleInMenuBar,
         selectInComboBox,
         selectTabByText, 
         selectTabByToolTip,
@@ -206,9 +207,26 @@ class ComponentLike c where
     clickCombo (cType -> ComboBox _ a) = return a
     clickCombo _ = mzero
 
-    listCell:: MonadPlus n => c m -> n (Cell m)
-    listCell (cType -> List l) = replusify l
-    listCell _ = mzero
+    listCellByText:: MonadPlus n => (T.Text -> Bool) -> c m -> n (Cell m)
+    listCellByText f (cType -> List l) = do 
+        cell <- replusify l
+        let renderer = _renderer cell
+        descendants >=> hasText f $ renderer
+        return cell
+    listCellByText _ _ = mzero
+
+    tableCellByText:: MonadPlus n => Int -> (T.Text -> Bool) -> c m -> n (Cell m,[Cell m])  
+    tableCellByText colIndex f (cType -> Table listOfCols) = do
+        column <- atZ listOfCols colIndex
+        (rowfocus,row) <- replusify $ zip column $ transpose listOfCols  
+        let renderer = _renderer rowfocus
+        descendants >=> hasText f $ renderer
+        return (rowfocus,row)    
+    tableCellByText _ _ _ = mzero
+
+    treeCellByText :: MonadPlus n => Int -> (T.Text -> Bool) -> c m -> n (Tree (Cell m))
+    treeCellByText depth f (cType -> Treegui cellTree) = undefined
+    treeCellByText _ _ _ = mzero
 
     tab:: MonadPlus n => c m -> n (Tab m)
     tab (cType -> TabbedPane p) = replusify p
@@ -274,27 +292,35 @@ popupItem w =
     in (popupLayer >=> descendants $ w) `mplus` 
        (insidepop >=> return . Component . lower . unComponentW $ w)
 
-selectInMenuBar :: Monad m => Maybe Bool -> [T.Text -> Bool] -> Pianola m l (Window m) ()
-selectInMenuBar shouldToggleLast ps = 
+selectInMenuBar :: Monad m => [T.Text -> Bool] -> Pianola m l (Window m) ()
+selectInMenuBar ps = 
     let go (firstitem,middleitems,lastitem) = do
            poke $ replusify._menu.wInfo >=> descendants >=> hasText firstitem >=> clickButton
            let pairs = zip middleitems (clickButton <$ middleitems) ++
-                       [(lastitem, maybe clickButton toggle shouldToggleLast)]
+                       [(lastitem, clickButton)]
            forM_ pairs $ \(txt,action) -> 
                pmaybe pfail $ retryPoke1s 7 $ 
                    popupItem >=> hasText txt >=> action
-           when (isJust shouldToggleLast) $ replicateM_ (length pairs) escape
+        clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ) <*> lastZ l
+    in maybe pfail go (clip ps)
+
+toggleInMenuBar :: Monad m => Bool -> [T.Text -> Bool] -> Pianola m l (Window m) ()
+toggleInMenuBar toggleStatus ps = 
+    let go (firstitem,middleitems,lastitem) = do
+           poke $ replusify._menu.wInfo >=> descendants >=> hasText firstitem >=> clickButton
+           let pairs = zip middleitems (clickButton <$ middleitems) ++
+                       [(lastitem, toggle toggleStatus)]
+           forM_ pairs $ \(txt,action) -> 
+               pmaybe pfail $ retryPoke1s 7 $ 
+                   popupItem >=> hasText txt >=> action
+           replicateM_ (length pairs) escape
         clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
     in maybe pfail go (clip ps)
 
 selectInComboBox :: (Monad m, ComponentLike c, Windowed c) => (T.Text -> Bool) -> Pianola m l (c m) ()
 selectInComboBox f = do
         poke $ clickCombo
-        with window $ with popupItem $ do 
-            poke $ \g -> do 
-                candidateCell <- listCell $ g
-                descendants._renderer >=> hasText f $ candidateCell 
-                return $ _clickCell candidateCell  
+        poke $ window >=> popupItem >=> listCellByText f >=> return._clickCell
 
 selectTabByText :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Pianola m l (c m) ()
 selectTabByText f =  
