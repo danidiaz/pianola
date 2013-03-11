@@ -9,6 +9,7 @@ For instructions on how to use the library, check out the Haddock documentation 
 The **tests** folder contains automated tests for the library. For the tests to work, the Java example application must be up and running.
 
 The **examples** folder contains scripts for interacting with popular Java Swing applications (only **DbVisualizer** at the moment). Check out the corresponding README for instructions on how to set up the Pianola agent for these applications.      
+
 Pianola offers some of the functionality of tools like [Marathon](http://marathontesting.com/), altough it doesn't have any recording capabilities. The scripts must be written by hand. Also, unlike Marathon, Pianola doesn't concern itself with launching the AUT, which must be started through other means.
 
 Rationale
