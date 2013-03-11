@@ -315,10 +315,10 @@ public class Snapshot {
             
             int rowcount = model.getRowCount();
             int columncount = model.getColumnCount();
-            packer.writeArrayBegin(rowcount);            
-            for (int i=0;i<rowcount;i++) {
-                packer.writeArrayBegin(columncount);
-                for (int j=0;j<columncount;j++) {
+            packer.writeArrayBegin(columncount);            
+            for (int j=0;j<columncount;j++) {            
+                packer.writeArrayBegin(rowcount);
+                for (int i=0;i<rowcount;i++) {
                     
                     TableCellRenderer renderer = table.getCellRenderer(i, j);                    
                     writeCell(  
