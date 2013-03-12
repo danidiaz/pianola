@@ -26,22 +26,22 @@ checkStatusBar predicate = do
         unless (predicate statusText) $ do
             logmsg $ "Unexpected text in status bar: " <> statusText
             pfail
-    clickButtonByText (=="clear")
+    poke $ clickButtonByText (=="clear")
 
 checkDialog :: Monad m => Pianola m LogEntry (ComponentW m) ()
 checkDialog = do
-    clickButtonByText (=="open dialog")
+    poke $ clickButtonByText (=="open dialog")
     with window $ with childWindow $ with contentsPane $ do
-        clickButtonByText (=="click this")
-        clickButtonByText (=="close dialog")
+        poke $ clickButtonByText (=="click this")
+        poke $ clickButtonByText (=="close dialog")
     checkStatusBar (=="clicked button in dialog")
 
 checkDelayedDialog :: Monad m => Pianola m LogEntry (ComponentW m) ()
 checkDelayedDialog = do
-    clickButtonByText (=="open slow dialog")
+    poke $ clickButtonByText (=="open slow dialog")
     with window $ do
         pmaybe pfail $ withRetry1s 14 childWindow $ do       
-            with contentsPane $ clickButtonByText (=="close dialog")
+            with contentsPane $ poke $ clickButtonByText (=="close dialog")
         logmsg "clicked delayed close button"
         pmaybe pfail $ retryPeek1s 14 $ missing childWindow 
     checkStatusBar (=="Performed delayed close")
@@ -76,7 +76,7 @@ testCase = with mainWindow $ do
         checkStatusBar (=="clicked on label")
         poke $ descendants >=> hasText (=="click dbl click") >=> doubleClick
         checkStatusBar (=="double-clicked on label")
-        rightClickByText (=="This is a label")
+        poke $ rightClickByText (=="This is a label")
         pmaybe pfail $ retryPoke1s 4 $ 
             window >=> popupItem >=> hasText (=="popupitem2") >=> clickButton  
         checkStatusBar (=="clicked on popupitem2")
@@ -100,7 +100,7 @@ testCase = with mainWindow $ do
             poke clickButton
             with window $ with childWindow $ with contentsPane $ do
                 poke $ descendants >=> hasText (=="") >=> setText "/tmp/foofile.txt"   
-                clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]
+                poke $ clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]
         checkStatusBar (T.isInfixOf "foofile")
         sleep 1
         with descendants $ do 
@@ -112,19 +112,10 @@ testCase = with mainWindow $ do
             selectTabByText (=="tab two")  
             sleep 2
             poke $ tableCellByText 2 (=="7") >=> return._clickCell.fst
---            poke $ \g -> do
---                Table ll <- return . cType $ g
---                cell <- replusify . concat $ ll
---                descendants . _renderer >=> hasText (=="7") $ cell
---                return $ _clickCell cell
         checkStatusBar (=="selected index in table: 2")
         with descendants $ do 
             sleep 2
-            poke $ \g -> do
-                Table ll <- return . cType $ g
-                cell <- replusify . concat $ ll
-                descendants . _renderer >=> hasText (=="4") $ cell
-                return $ _doubleClickCell cell
+            poke $ tableCellByText 1 (=="4") >=> return._doubleClickCell.fst
             sleep 2
             poke $ \g -> do    
                 Table {} <- return . cType $ g 

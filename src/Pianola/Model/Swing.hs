@@ -274,14 +274,14 @@ childWindow = children
 windowTitled :: (T.Text -> Bool) -> Glance m l (GUI m) (Window m)
 windowTitled f = replusify >=> descendants >=> hasTitle f 
 
-clickButtonByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Pianola m l (c m) () 
-clickButtonByText f = poke $ descendants >=> hasText f >=> clickButton
+clickButtonByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Glance m l (c m) (Sealed m) 
+clickButtonByText f = descendants >=> hasText f >=> clickButton
 
-clickButtonByToolTip :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Pianola m l (c m) () 
-clickButtonByToolTip f = poke $ descendants >=> hasToolTip f >=> clickButton
+clickButtonByToolTip :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Glance m l (c m) (Sealed m) 
+clickButtonByToolTip f = descendants >=> hasToolTip f >=> clickButton
 
-rightClickByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Pianola m l (c m) () 
-rightClickByText f = poke $ descendants >=> hasText f >=> rightClick
+rightClickByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Glance m l (c m) (Sealed m) 
+rightClickByText f = descendants >=> hasText f >=> rightClick
 
 popupItem :: Monad m => Glance m l (Window m) (Component m)
 popupItem w = 
