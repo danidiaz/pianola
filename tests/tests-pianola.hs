@@ -109,7 +109,7 @@ testCase = with mainWindow $ do
         checkStatusBar (=="selected in combo: ccc")
         with descendants $ do 
             sleep 2
-            selectTabByText (=="tab two")  
+            poke $ selectTabByText (=="tab two")  
             sleep 2
             poke $ tableCellByText 2 (=="7") >=> return._clickCell.fst
         checkStatusBar (=="selected index in table: 2")
@@ -124,16 +124,16 @@ testCase = with mainWindow $ do
         checkStatusBar (=="table value at row 1 col 1 is 77")
         with descendants $ do 
             sleep 2
-            selectTabByText (=="tab JTree a")  
+            poke $ selectTabByText (=="tab JTree a")  
             logmsg "tab change"
         expandAndCheckLeafA 
         with descendants $ do 
             sleep 2
-            selectTabByText (=="tab JTree b")  
+            poke $ selectTabByText (=="tab JTree b")  
             logmsg "tab change"
         expandAndCheckLeafA 
     with contentsPane $ do
-        with descendants $ selectTabByText (=="labels")
+        with descendants $ poke $ selectTabByText (=="labels")
         sleep 1
         poke $ labeledBy (=="label2") >=> setText "hope this works!"
         checkStatusBar (=="hope this works!")

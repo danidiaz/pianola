@@ -322,15 +322,15 @@ selectInComboBox f = do
         poke $ clickCombo
         poke $ window >=> popupItem >=> listCellByText f >=> return._clickCell
 
-selectTabByText :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Pianola m l (c m) ()
+selectTabByText :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Glance m l (c m) (Sealed m)
 selectTabByText f =  
-    poke $ tab >=> \aTab -> do    
+    tab >=> \aTab -> do    
         guard $ f . _tabText $ aTab
         return $ _selectTab aTab   
 
-selectTabByToolTip :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Pianola m l (c m) ()
+selectTabByToolTip :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Glance m l (c m) (Sealed m)
 selectTabByToolTip f =  
-    poke $ tab >=> \aTab -> do    
+    tab >=> \aTab -> do    
         tooltip <- justZ . _tabToolTip $ aTab
         guard $ f tooltip
         return $ _selectTab aTab   
