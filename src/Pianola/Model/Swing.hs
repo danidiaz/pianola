@@ -81,17 +81,17 @@ class Windowed w => WindowLike w where
                   . wInfo 
                   $ win
     
-    toFront :: Monad m => Pianola m l (w m) ()
-    toFront = poke $ return . _toFront . wInfo
+    toFront :: Monad m => Glance m l (w m) (Sealed m)
+    toFront = return . _toFront . wInfo
 
-    escape :: Monad m => Pianola m l (w m) ()
-    escape = poke $ return . _escape . wInfo
+    escape :: Monad m => Glance m l (w m) (Sealed m)
+    escape = return . _escape . wInfo
 
-    enter :: Monad m => Pianola m l (w m) ()
-    enter = poke $ return . _enter . wInfo
+    enter :: Monad m => Glance m l (w m) (Sealed m)
+    enter = return . _enter . wInfo
 
-    close :: Monad m => Pianola m l (w m) ()
-    close = poke $ return . _close . wInfo
+    close :: Monad m => Glance m l (w m) (Sealed m)
+    close = return . _close . wInfo
 
 instance Treeish (Window m) where
     children (Window c) = children c >>= return . Window
@@ -313,7 +313,7 @@ toggleInMenuBar toggleStatus ps =
            forM_ pairs $ \(txt,action) -> 
                pmaybe pfail $ retryPoke1s 7 $ 
                    popupItem >=> hasText txt >=> action
-           replicateM_ (length pairs) escape
+           replicateM_ (length pairs) $ poke escape
         clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
     in maybe pfail go (clip ps)
 

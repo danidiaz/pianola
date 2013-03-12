@@ -60,7 +60,7 @@ type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 
 testCase:: Test
 testCase = with mainWindow $ do
-    toFront
+    poke toFront
     with contentsPane $ do 
         poke $ descendants >=> hasText (=="En un lugar de la Mancha") 
                            >=> setText "Lorem ipsum dolor sit amet"
@@ -120,7 +120,7 @@ testCase = with mainWindow $ do
             poke $ \g -> do    
                 Table {} <- return . cType $ g 
                 children >=> hasText (=="4") >=> setText "77" $ g
-        with window $ enter
+        with window $ poke enter
         checkStatusBar (=="table value at row 1 col 1 is 77")
         with descendants $ do 
             sleep 2
@@ -138,7 +138,7 @@ testCase = with mainWindow $ do
         poke $ labeledBy (=="label2") >=> setText "hope this works!"
         checkStatusBar (=="hope this works!")
         sleep 2 
-    close
+    poke close
 
 main :: IO ()
 main = do
