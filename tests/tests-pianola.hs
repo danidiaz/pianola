@@ -26,22 +26,22 @@ checkStatusBar predicate = do
         unless (predicate statusText) $ do
             logmsg $ "Unexpected text in status bar: " <> statusText
             pfail
-    clickButtonByText (=="clear")
+    poke $ clickButtonByText (=="clear")
 
 checkDialog :: Monad m => Pianola m LogEntry (ComponentW m) ()
 checkDialog = do
-    clickButtonByText (=="open dialog")
+    poke $ clickButtonByText (=="open dialog")
     with window $ with childWindow $ with contentsPane $ do
-        clickButtonByText (=="click this")
-        clickButtonByText (=="close dialog")
+        poke $ clickButtonByText (=="click this")
+        poke $ clickButtonByText (=="close dialog")
     checkStatusBar (=="clicked button in dialog")
 
 checkDelayedDialog :: Monad m => Pianola m LogEntry (ComponentW m) ()
 checkDelayedDialog = do
-    clickButtonByText (=="open slow dialog")
+    poke $ clickButtonByText (=="open slow dialog")
     with window $ do
         pmaybe pfail $ withRetry1s 14 childWindow $ do       
-            with contentsPane $ clickButtonByText (=="close dialog")
+            with contentsPane $ poke $ clickButtonByText (=="close dialog")
         logmsg "clicked delayed close button"
         pmaybe pfail $ retryPeek1s 14 $ missing childWindow 
     checkStatusBar (=="Performed delayed close")
@@ -60,7 +60,7 @@ type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 
 testCase:: Test
 testCase = with mainWindow $ do
-    toFront
+    poke toFront
     with contentsPane $ do 
         poke $ descendants >=> hasText (=="En un lugar de la Mancha") 
                            >=> setText "Lorem ipsum dolor sit amet"
@@ -76,7 +76,7 @@ testCase = with mainWindow $ do
         checkStatusBar (=="clicked on label")
         poke $ descendants >=> hasText (=="click dbl click") >=> doubleClick
         checkStatusBar (=="double-clicked on label")
-        rightClickByText (=="This is a label")
+        poke $ rightClickByText (=="This is a label")
         pmaybe pfail $ retryPoke1s 4 $ 
             window >=> popupItem >=> hasText (=="popupitem2") >=> clickButton  
         checkStatusBar (=="clicked on popupitem2")
@@ -85,13 +85,13 @@ testCase = with mainWindow $ do
         poke $ descendants >=> hasText (=="This is a checkbox") >=> toggle True
         checkStatusBar (=="checkbox is now true")
         logmsg "foo log message"
-        with window $ selectInMenuBar (Just True) $ 
+        with window $ toggleInMenuBar True $ 
             map (==) ["Menu1","SubMenu1","submenuitem2"]
         checkStatusBar (=="checkbox in menu is now true")
         logmsg "getting a screenshot"
         with window $ logcapture
         logmsg "now for a second menu"
-        autolog $ with window $ selectInMenuBar Nothing $ 
+        autolog $ with window $ selectInMenuBar $ 
             map (==) ["Menu1","SubMenu1","submenuitem1"]
         checkStatusBar (=="clicked on submenuitem1")
         sleep 2
@@ -100,7 +100,7 @@ testCase = with mainWindow $ do
             poke clickButton
             with window $ with childWindow $ with contentsPane $ do
                 poke $ descendants >=> hasText (=="") >=> setText "/tmp/foofile.txt"   
-                clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]
+                poke $ clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]
         checkStatusBar (T.isInfixOf "foofile")
         sleep 1
         with descendants $ do 
@@ -109,44 +109,36 @@ testCase = with mainWindow $ do
         checkStatusBar (=="selected in combo: ccc")
         with descendants $ do 
             sleep 2
-            selectTabByText (=="tab two")  
+            poke $ selectTabByText (=="tab two")  
             sleep 2
-            poke $ \g -> do
-                Table ll <- return . cType $ g
-                cell <- replusify . concat $ ll
-                descendants . _renderer >=> hasText (=="7") $ cell
-                return $ _clickCell cell
+            poke $ tableCellByText 2 (=="7") >=> return._clickCell.fst
         checkStatusBar (=="selected index in table: 2")
         with descendants $ do 
             sleep 2
-            poke $ \g -> do
-                Table ll <- return . cType $ g
-                cell <- replusify . concat $ ll
-                descendants . _renderer >=> hasText (=="4") $ cell
-                return $ _doubleClickCell cell
+            poke $ tableCellByText 1 (=="4") >=> return._doubleClickCell.fst
             sleep 2
             poke $ \g -> do    
                 Table {} <- return . cType $ g 
                 children >=> hasText (=="4") >=> setText "77" $ g
-        with window $ enter
+        with window $ poke enter
         checkStatusBar (=="table value at row 1 col 1 is 77")
         with descendants $ do 
             sleep 2
-            selectTabByText (=="tab JTree a")  
+            poke $ selectTabByText (=="tab JTree a")  
             logmsg "tab change"
         expandAndCheckLeafA 
         with descendants $ do 
             sleep 2
-            selectTabByText (=="tab JTree b")  
+            poke $ selectTabByText (=="tab JTree b")  
             logmsg "tab change"
         expandAndCheckLeafA 
     with contentsPane $ do
-        with descendants $ selectTabByText (=="labels")
+        with descendants $ poke $ selectTabByText (=="labels")
         sleep 1
         poke $ labeledBy (=="label2") >=> setText "hope this works!"
         checkStatusBar (=="hope this works!")
         sleep 2 
-    close
+    poke close
 
 main :: IO ()
 main = do

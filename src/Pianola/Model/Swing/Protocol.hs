@@ -124,9 +124,10 @@ instance Unpackable (Cell Protocol) where
             packed4 = packed3 ++ [pack columnid]
             clickCell = makeAction (T.pack "clickCell") packed4
             doubleClickCell = makeAction (T.pack "doubleClickCell") packed4
+            rightClickCell = makeAction (T.pack "rightClickCell") packed4
             expandCollapse b = makeAction (T.pack "expandCollapseCell") $
                 packed3 ++ [pack b] 
-        return $ Cell renderer clickCell doubleClickCell (guard isTreeCell *> pure expandCollapse)
+        return $ Cell renderer clickCell doubleClickCell rightClickCell (guard isTreeCell *> pure expandCollapse)
 
 instance Unpackable (Tab Protocol) where
     get = do

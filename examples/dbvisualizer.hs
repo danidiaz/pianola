@@ -23,27 +23,23 @@ type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 testCase:: T.Text -> Test
 testCase jarpath = do
     with (windowTitled (T.isInfixOf "DbVisualizer")) $ do
-        toFront
-        withMaybe (children >=> contentsPane) $ clickButtonByText (=="Cancel")
-        selectInMenuBar Nothing $ map (==) ["Tools","Driver Manager..."]
+        poke $ toFront
+        pokeMaybe $ children >=> contentsPane >=> clickButtonByText (=="Cancel")
+        selectInMenuBar $ map (==) ["Tools","Driver Manager..."]
         sleep 1
     with (windowTitled (=="Driver Manager")) $ with contentsPane $ do
         logmsg "Opened Driver Manager"
-        logmsg "Selecting Mysql"
-        with descendants $ poke $ \c -> do
-            Table cells <- return . cType $ c
-            cell <- replusify . concat $ cells
-            txt <- descendants._renderer >=> text $ cell
-            guard $ txt == "MySQL"
-            return . _clickCell $ cell
+        logmsg "Selecting MySQL"
+        with descendants $ do 
+            poke $ tableCellByText 0 (=="MySQL") >=> return._clickCell.fst
         sleep 2
-        clickButtonByToolTip (T.isInfixOf "Open file")
+        poke $ clickButtonByToolTip (T.isInfixOf "Open file")
         with window $ with childWindow $ with contentsPane $ do
             poke $ descendants >=> hasText (=="") >=> setText jarpath
             sleep 2
-            clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]
+            poke $ clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]
             sleep 2
-        with window $ close 
+        with window $ poke close 
     return ()
 
 main :: IO ()
