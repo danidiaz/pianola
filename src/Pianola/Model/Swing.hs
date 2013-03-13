@@ -255,6 +255,7 @@ data Cell m = Cell
     { _renderer::Component m
     , _clickCell::Sealed m
     , _doubleClickCell::Sealed m
+    , _rightClickCell::Sealed m
     , _expand:: Maybe (Bool -> Sealed m)
     }
 
