@@ -10,7 +10,7 @@ The **tests** folder contains automated tests for the library. For the tests to 
 
 The **examples** folder contains scripts for interacting with popular Java Swing applications (only **DbVisualizer** at the moment). Check out the corresponding README for instructions on how to set up the Pianola agent for these applications.      
 
-Pianola offers some of the functionality of tools like [Marathon](http://marathontesting.com/), altough it doesn't have any recording capabilities. The scripts must be written by hand. Also, unlike Marathon, Pianola doesn't concern itself with launching the AUT, which must be started through other means.
+Pianola offers some of the functionality of tools like [Marathon](http://marathontesting.com/), although it doesn't have any recording capabilities. The scripts must be written by hand. Also, unlike Marathon, Pianola doesn't concern itself with launching the AUT, which must be started through other means.
 
 Rationale
 =========
@@ -21,7 +21,7 @@ Rationale
 
 * Pianola doesn't require the client and the AUT to reside in the same machine.
 
-* I'm partial to statically typed languages. I find very annoying when a long-running script developted in a dynamically typed language fails midway due to a dumb error like the misspelling of a variable's name. I realize that this inconvenience is solved through comprehensive unit testing, but when then things you are developing are *themselves* test scripts, isn't it a bit of overkill to have tests of tests?
+* I'm partial to statically typed languages. I find very annoying when a long-running script developted in a dynamically typed language fails midway due to a dumb error like the misspelling of a variable's name. I realize that this inconvenience is solved through unit testing, but when then things you are developing are *themselves* test scripts, isn't it a bit of overkill to have tests of tests?
 
 * Related to the previous point: statically typed languages give you more assurances that you don't break anything when refactoring.
 
@@ -29,9 +29,9 @@ Rationale
 
 * Haskell's higher-order functions should (at least in theory) give more flexibility when locating individual components. For example, identifying a component depending on an arbitrary predicate applied to its text. 
 
-* [Marathon](http://marathontesting.com/) is a flexible tool that can handle many corner cases when testing Swing GUIs. Still, there are annoyances. There isn't (to my knowledge) an easy way to identify a component by its text in other manner than by total equality.
+* [Marathon](http://marathontesting.com/) is a versatile tool that can handle many corner cases when testing Swing GUIs. Still, there are annoyances. There isn't (to my knowledge) an easy way to identify a component by its text in other manner than by total equality.
 
-* Marathon annoyance #2: There isn't (to my knowledge) an easy way to handle components which may or may not appear during a test's execution. For example, a warning dialog which appears only occasionally. There doesn't seem to be a "find component, if it exists" kind of primitive operation. 
+* Marathon annoyance #2: There isn't (to my knowledge) an easy way to handle components which may or may not appear during a test's execution. For example, a warning dialog which appears only occasionally. There doesn't seem to be a "find component, if it exists" operation. 
 
 * Marathon annoyance #3: There isn't (to my knowledge) a way to make Marathon scripts fail quickly when they can't find a component in the GUI. Sometimes they block for a surprisingly long time before failing!
 
