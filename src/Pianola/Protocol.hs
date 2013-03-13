@@ -27,7 +27,9 @@ type Protocol = EitherT ServerError (Free ProtocolF)
 call :: [BL.ByteString] -> (I.Iteratee B.ByteString Identity x) -> Protocol x
 call bs i = lift . liftF $ Compose (bs,i)
 
-data ServerError = ObsoleteRef | InternalError
+data ServerError = ObsoleteRef 
+                 | InternalError 
+                 deriving Show
 
 instance Unpackable (ServerError) where
     get = do

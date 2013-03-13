@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Pianola.Protocol.IO (
         RunInIOError(..),
         Endpoint(..),
@@ -22,7 +24,9 @@ import qualified Data.ByteString.Lazy as BL
 import Control.Monad.Reader
 import Pianola.Protocol
 
-data RunInIOError = CommError T.Text | ParseError T.Text
+data RunInIOError = CommError IOException 
+                  | ParseError T.Text
+                  deriving Show
 
 data Endpoint = Endpoint {
         hostName::HostName,
@@ -44,7 +48,10 @@ runFree lens ( Free (Compose (b,i)) ) = do
             hFlush h
             I.run =<< IH.enumHandle 1024 h ii   
     endp <- lift $ asks lens
-    nextFree <- liftIO $ rpcCall endp $ doStuff iterIO    
+    let handler = \(ex :: IOException) -> return . Left . CommError $ ex
+    nextFree <- EitherT . liftIO $ 
+            catches (fmap Right $ rpcCall endp $ doStuff iterIO) 
+            [Handler handler]
     runFree lens nextFree 
 runFree _ ( Pure a ) = return a 
 

@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Pianola.Pianola.Driver (
     simpleDriver,
@@ -29,14 +30,15 @@ import System.FilePath
 delayer :: MonadIO m => () -> Consumer ProxyFast Delay m a
 delayer () = forever $ request () >>= liftIO . threadDelay . (*1000000)
 
-logger:: MonadIO m => (IOException -> m a) -> m FilePath -> () -> Consu LogEntry m a
+logger:: MonadIO m => (forall b. IOException -> m b) -> m FilePath -> () -> Consu LogEntry m a
 logger errHandler filegen () = forever $ do 
       entry <- request ()
       case entry of  
-          TextEntry txt -> liftIO $ TIO.putStrLn txt
+          TextEntry txt -> lift . convertErr . liftIO . try $ TIO.putStrLn txt
           ImageEntry image -> do
                file <- lift filegen
-               liftIO $ B.writeFile file image
+               lift . convertErr . liftIO . try $ B.writeFile file image
+   where convertErr x = x >>= either errHandler return 
 
 filePathStream :: String -> Int -> String -> FilePath -> Stream FilePath
 filePathStream extension padding prefix folder = 
@@ -51,9 +53,9 @@ screenshotStream :: FilePath -> Stream FilePath
 screenshotStream = filePathStream  "png" 3 "pianola-capture-" 
 
 data DriverError =
-     DriverIOError
-    |PianolaIOError
-    |ProtocolError
+     DriverIOError IOException
+    |PianolaIOError RunInIOError
+    |ServerError_ ServerError
     |PianolaFailure
     deriving Show
 
@@ -71,11 +73,12 @@ simpleDriver snapshot endpoint pianola namestream = do
         errpeeled = runEitherT . runEitherT . runEitherT $ logless
     (result,_,())  <- lift $ runRWST errpeeled endpoint namestream
     case result of 
-        Left _ -> left DriverIOError
+        Left e -> left $ PianolaIOError e
         Right s -> case s of
-            Left _ -> left PianolaIOError
+            Left e -> left $ ServerError_ e
             Right r2 -> case r2 of 
-                Left _ -> left ProtocolError
+                Left e -> left $ DriverIOError e
                 Right r3 -> case r3 of
                     Nothing -> left PianolaFailure
                     Just a  -> return a
+
