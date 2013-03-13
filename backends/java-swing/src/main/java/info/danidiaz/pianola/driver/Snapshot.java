@@ -575,6 +575,40 @@ public class Snapshot {
         });                         
     }
     
+    public void rightClickCell(final int componentid, final int rowid, final int columnid) {
+
+        SwingUtilities.invokeLater(new Runnable() {
+            
+            @Override
+            public void run() {   
+                    final Component component = componentArray.get(componentid);
+                    Rectangle bounds = new Rectangle(0,0,0,0);
+                    if (component instanceof JList) {
+                        JList list = (JList) component;
+                        bounds = list.getCellBounds(rowid, rowid);
+                        list.ensureIndexIsVisible(rowid);
+                    } else if (component instanceof JTable) {
+                        JTable table = (JTable) component;            
+                        bounds = table.getCellRect(rowid, columnid, false);
+                        table.scrollRectToVisible(bounds);
+                    } else if (component instanceof JTree) {
+                        JTree tree = (JTree) component;
+                        bounds = tree.getRowBounds(rowid);
+                        tree.scrollRowToVisible(rowid);                        
+                    } else {
+                        throw new RuntimeException("can't handle component");
+                    }
+                    
+                    Point point = new Point(bounds.x + bounds.width/2,bounds.y + bounds.height/2);
+
+                    postMouseEvent(component, MouseEvent.MOUSE_ENTERED, 0, point, 0, false);
+                    postMouseEvent(component, MouseEvent.MOUSE_PRESSED, MouseEvent.BUTTON3_MASK, point, 1, !releaseIsPopupTrigger);
+                    postMouseEvent(component, MouseEvent.MOUSE_RELEASED, MouseEvent.BUTTON3_MASK, point, 1, releaseIsPopupTrigger);
+                    postMouseEvent(component, MouseEvent.MOUSE_CLICKED, MouseEvent.BUTTON3_MASK, point, 1, false); 
+            }
+        });                         
+    }
+    
     public void expandCollapseCell(final int componentid, final int rowid, final boolean expand) {
                        
        SwingUtilities.invokeLater(new Runnable() {

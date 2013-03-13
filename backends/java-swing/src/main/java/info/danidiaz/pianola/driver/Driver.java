@@ -160,6 +160,14 @@ public class Driver implements Runnable
                         lastSnapshot.doubleClickCell(componentId,rowId,columnId);
                         packer.write((int)0);
                         packer.writeNil();
+                    }  else if (methodName.equals("rightClickCell")) {
+                        int snapshotId = unpacker.readInt();
+                        int componentId = unpacker.readInt();
+                        int rowId = unpacker.readInt();
+                        int columnId = unpacker.readInt();
+                        lastSnapshot.rightClickCell(componentId,rowId,columnId);
+                        packer.write((int)0);
+                        packer.writeNil();
                     } else if (methodName.equals("expandCollapseCell")) {
                         int snapshotId = unpacker.readInt();
                         int componentId = unpacker.readInt();
