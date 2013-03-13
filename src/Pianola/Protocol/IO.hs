@@ -12,6 +12,7 @@ import System.IO
 import qualified Data.Text as T
 import qualified Data.Iteratee as I
 import qualified Data.Iteratee.IO.Handle as IH
+import qualified Data.Attoparsec.Iteratee as AI 
 import Network 
 import Data.Functor.Compose
 import Control.Category
@@ -48,10 +49,11 @@ runFree lens ( Free (Compose (b,i)) ) = do
             hFlush h
             I.run =<< IH.enumHandle 1024 h ii   
     endp <- lift $ asks lens
-    let handler = \(ex :: IOException) -> return . Left . CommError $ ex
+    let ioErrHandler = \(ex :: IOException) -> return . Left . CommError $ ex
+        parseErrHandler = \(ex :: AI.ParseError) -> return . Left . ParseError . T.pack . show $ ex   
     nextFree <- EitherT . liftIO $ 
             catches (fmap Right $ rpcCall endp $ doStuff iterIO) 
-            [Handler handler]
+            [Handler ioErrHandler, Handler parseErrHandler]
     runFree lens nextFree 
 runFree _ ( Pure a ) = return a 
 
