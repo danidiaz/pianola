@@ -57,8 +57,8 @@ data DriverError =
      DriverIOError IOException
     |PianolaIOError IOException 
     |PianolaParseError T.Text
-    |PianolaSnapshotError
-    |PianolaServerError
+    |PianolaSnapshotError Int Int
+    |PianolaServerError T.Text
     |PianolaFailure
     deriving Show
 
@@ -81,8 +81,8 @@ simpleDriver snapshot endpoint pianola namestream = do
                    ParseError perr -> PianolaParseError perr
         Right s -> case s of
             Left e -> left $ case e of 
-                   ObsoleteRef -> PianolaSnapshotError 
-                   InternalError -> PianolaServerError  
+                   SnapshotError u v -> PianolaSnapshotError u v
+                   ServerError txt -> PianolaServerError txt
             Right r2 -> case r2 of 
                 Left e -> left $ DriverIOError e
                 Right r3 -> case r3 of
