@@ -11,6 +11,7 @@ module Pianola.Pianola.Driver (
 import Prelude hiding (catch,(.),id,head,repeat,tail,map,iterate)
 import Data.Stream.Infinite
 import qualified Data.ByteString as B
+import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Control.Category
 import Control.Error
@@ -54,8 +55,10 @@ screenshotStream = filePathStream  "png" 3 "pianola-capture-"
 
 data DriverError =
      DriverIOError IOException
-    |PianolaIOError RunInIOError
-    |ServerError_ ServerError
+    |PianolaIOError IOException 
+    |PianolaParseError T.Text
+    |PianolaSnapshotError
+    |PianolaServerError
     |PianolaFailure
     deriving Show
 
@@ -73,9 +76,13 @@ simpleDriver snapshot endpoint pianola namestream = do
         errpeeled = runEitherT . runEitherT . runEitherT $ logless
     (result,_,())  <- lift $ runRWST errpeeled endpoint namestream
     case result of 
-        Left e -> left $ PianolaIOError e
+        Left e -> left $ case e of 
+                   CommError ioerr -> PianolaIOError ioerr
+                   ParseError perr -> PianolaParseError perr
         Right s -> case s of
-            Left e -> left $ ServerError_ e
+            Left e -> left $ case e of 
+                   ObsoleteRef -> PianolaSnapshotError 
+                   InternalError -> PianolaFailure                   
             Right r2 -> case r2 of 
                 Left e -> left $ DriverIOError e
                 Right r3 -> case r3 of
