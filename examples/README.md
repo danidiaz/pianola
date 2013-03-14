@@ -13,4 +13,4 @@ Edit file **dbvis.vmoptions** from the Db Visualizer installation and add a line
 
 In Linux, use **popupTrigger/press** instead of **popupTrigger/release**.
 
-
+**NOTE**: Unfortunately, I haven't been able to manipulate the tree to the left side of the main window using Pianola. Perhaps it is is some kind of custom component instead of a JTree or a subclass of JTree. 
