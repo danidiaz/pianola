@@ -82,7 +82,7 @@ simpleDriver snapshot endpoint pianola namestream = do
         Right s -> case s of
             Left e -> left $ case e of 
                    ObsoleteRef -> PianolaSnapshotError 
-                   InternalError -> PianolaFailure                   
+                   InternalError -> PianolaServerError  
             Right r2 -> case r2 of 
                 Left e -> left $ DriverIOError e
                 Right r3 -> case r3 of
