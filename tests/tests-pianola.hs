@@ -46,14 +46,10 @@ checkDelayedDialog = do
         pmaybe pfail $ retryPeek1s 14 $ missing childWindow 
     checkStatusBar (=="Performed delayed close")
 
-expandAndCheckLeafA :: Monad m => Pianola m LogEntry (ComponentW m) ()
-expandAndCheckLeafA = do
+expandAndCheckLeafA :: Monad m => Int -> Pianola m LogEntry (ComponentW m) ()
+expandAndCheckLeafA depth = do
     with descendants $ do 
-        poke $ \g -> do    
-            Treegui forest <- return . cType $ g
-            cell <- replusify >=> descendants $ forest
-            descendants . _renderer . rootLabel >=> hasText (=="leaf a") $ cell
-            (justZ . _expand . rootLabel $ cell) <*> pure True
+        poke $ treeCellByText depth (=="leaf a") >=> expand True
     checkStatusBar (=="leaf a is collapsed: false")
 
 type Test = Pianola Protocol LogEntry (GUI Protocol) ()
@@ -126,12 +122,12 @@ testCase = with mainWindow $ do
             sleep 2
             poke $ selectTabByText (=="tab JTree a")  
             logmsg "tab change"
-        expandAndCheckLeafA 
+        expandAndCheckLeafA 1
         with descendants $ do 
             sleep 2
             poke $ selectTabByText (=="tab JTree b")  
             logmsg "tab change"
-        expandAndCheckLeafA 
+        expandAndCheckLeafA 0
     with contentsPane $ do
         with descendants $ poke $ selectTabByText (=="labels")
         sleep 1

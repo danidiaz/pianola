@@ -27,6 +27,7 @@ module Pianola.Model.Swing (
         selectInComboBox,
         selectTabByText, 
         selectTabByToolTip,
+        expand,
         labeledBy   
     ) where
 
@@ -37,6 +38,7 @@ import Data.Functor.Identity
 import qualified Data.Text as T
 import Control.Error
 import Control.Monad
+import Control.Comonad
 import Control.Applicative
 import Control.Monad.Trans.Class
 import Control.Comonad.Trans.Class
@@ -225,7 +227,13 @@ class ComponentLike c where
     tableCellByText _ _ _ = mzero
 
     treeCellByText :: MonadPlus n => Int -> (T.Text -> Bool) -> c m -> n (Tree (Cell m))
-    treeCellByText depth f (cType -> Treegui cellTree) = undefined
+    treeCellByText depth f (cType -> Treegui cellForest) = do
+        tree <- replusify cellForest
+        level <- flip atZ depth . levels . duplicate $ tree
+        subtree <- replusify level
+        let renderer = _renderer . rootLabel $ subtree
+        descendants >=> hasText f $ renderer
+        return subtree
     treeCellByText _ _ _ = mzero
 
     tab:: MonadPlus n => c m -> n (Tab m)
@@ -335,6 +343,9 @@ selectTabByToolTip f =
         tooltip <- justZ . _tabToolTip $ aTab
         guard $ f tooltip
         return $ _selectTab aTab   
+
+expand :: Monad m => Bool -> Glance m l (Tree (Cell m)) (Sealed m)
+expand b cell = (justZ . _expand . rootLabel $ cell) <*> pure True
 
 labeledBy :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Glance m l (c m) (c m)
 labeledBy f o = do
