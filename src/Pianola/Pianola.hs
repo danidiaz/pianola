@@ -43,8 +43,17 @@ import Control.Monad.Logic
 
 import Pianola.Util
 
+-- | A Glance is just a kleisli arrow used to locate and extract particular elements in a data structure. The following effects are allowed:
+--     * Nondeterminism and failure. A Glance can return more than one value (or zero values, with mzero). See the 'replusify' function, which is a valid Glance.
+--     * Logging. A Glance can log messages of type l about the elements it encounters during search, even elements visited in search branches which ultimately fail to produce any results.
+--     * Interactions  with the server through the monad m, but only interactions that don't change the state of the GUI. For example, getting a image capture of a windows. See 'Nullipotent'.
+--     
+-- The following effects are forbidden:
+--     * Any kind of delay effect. Glances must return "as soon as possible".
+--     * Interactions with the server which do change the state of the GUI. Note that you can target and return the actions of type 'Sealed' which "dangle" on the branches of the source data structure. You just can't execute them inside a Glance. To actually execute them, pass the glance as an argument to 'poke'.
 type Glance m l o a = o -> LogicT (Produ l (Nullipotent m)) a
 
+-- | Takes all the values returned by a 'Glance' and returns a new Glance in which those values have been collected in a 'MonadPlus' (often a list). This is useful when we want to recover a list of components which meet a certain criteria in order to compare them among themselves (for example, sorting the components left to right by their position on the screen).
 collect :: (Monad m, MonadPlus n) => Glance m l o a -> Glance m l o (n a)
 collect = fmap $ \x -> lift $ observeAllT x >>= return . replusify
 
@@ -78,6 +87,8 @@ newtype Pianola m l o a = Pianola
 instance Monad m => Loggy (Pianola m LogEntry o) where
     logentry = Pianola . lift . lift . lift . logentry
 
+-- | Unwinds all the Glances contained in a 'Pianola' by supplying them with the monadic value passed as the first argument. When a 'Glance' returns with more than one result, one of the results is chosen in order to continue (/TO DO/: emit a warning when this happens). The log messages of the glances are fused with the Pianola's own log stream. All the 'Sealed' actions are injected into the base monad. The delay and log effects remain uninjected. 
+-- Usually, clients should not call this function directly, but use a driver-like functiona like 'Pianola.Pianola.Driver.simpleDriver'.
 play :: Monad m => m o -> Pianola m l o a -> Produ Delay (MaybeT (Produ l m)) a
 play mom pi =
     let smashMaybe m () = runMaybeT m >>= lift . hoistMaybe
@@ -91,15 +102,19 @@ play mom pi =
             lift . lift . lift . lift $ unseal s
     in runProxy $ const pi' >-> injector
 
+-- Aborts a 'Pianola' computation.
 pfail :: Monad m => Pianola m l o a
 pfail = Pianola . lift . lift $ mzero
 
+-- If the second argument 'Pianola' returns Nothing, the firs one is executed. Often used in combination with 'pfail'. 
 pmaybe :: Monad m => Pianola m l o a -> Pianola m l o (Maybe a) -> Pianola m l o a  
 pmaybe f p = p >>= maybe f return 
 
+-- Lifts a 'Glance' into the 'Pianola' monad.
 peek :: Monad m => Glance m l o a -> Pianola m l o a
 peek = Pianola . lift . lift . lift . lift . liftF . Compose
 
+-- | Like 'peek', but if the 'Glance' returns zero results then Nothing is returned instead of failing and halting the whole computation. 
 peekMaybe :: Monad m => Glance m l o a -> Pianola m l o (Maybe a)
 peekMaybe = peek . collect
 
@@ -134,9 +149,11 @@ withRetry1s = withRetry $ sleep 1
 inject :: Monad m => Sealed m -> Pianola m l o ()
 inject = Pianola . respond 
 
+-- | Takes a glance that extracts an action of type 'Sealed' from a data structure, and returns a 'Pianola' executing the action (when the Pianola is interpreted by some driver-like fuction.)
 poke :: Monad m => Glance m l o (Sealed m) -> Pianola m l o () 
 poke locator = peek locator >>= inject
 
+-- | Like 'poke', but if the 'Glance' returns zero results then Nothing is returned instead of failing and halting the whole computation. 
 pokeMaybe :: Monad m => Glance m l o (Sealed m) -> Pianola m l o (Maybe ())
 pokeMaybe locator = do 
     actionMaybe <- peekMaybe locator 
@@ -154,6 +171,7 @@ retryPoke delay times glance = do
 retryPoke1s :: Monad m => Int -> Glance m l o (Sealed m)  -> Pianola m l o (Maybe ())
 retryPoke1s = retryPoke $ sleep 1
 
+-- | Sleeps for the specified number of seconds
 sleep :: Monad m => Delay -> Pianola m l o ()
 sleep = Pianola . lift . respond 
 
@@ -169,9 +187,11 @@ ralentizeByTag f delay (Pianola p) =
             when (f . tags $ s) (lift $ respond delay) 
     in Pianola $ const p >-> delayer $ ()
     
+-- | Takes a delay in seconds and a 'Pianola' as parameters, and returns a ralentized Pianola in which the delay has been inserted after every action.
 ralentize :: Delay -> Pianola m l o a -> Pianola m l o a
 ralentize = ralentizeByTag $ const True
     
+-- | Modifies a 'Pianola' so that the default tags associated to an action are logged automatically when the action is exectued.
 autolog :: Pianola m LogEntry o a -> Pianola m LogEntry o a 
 autolog (Pianola p) =
     let logger () = forever $ do
