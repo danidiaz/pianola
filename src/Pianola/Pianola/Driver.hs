@@ -3,7 +3,7 @@
 
 module Pianola.Pianola.Driver (
     simpleDriver,
-    DriverError,
+    DriverError(..),
     filePathStream,
     screenshotStream
 ) where 
