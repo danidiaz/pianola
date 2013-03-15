@@ -107,7 +107,7 @@ instance Windowed Window where
 
 data WindowInfo m = WindowInfo 
     {  _windowTitle::T.Text
-    ,  _windowDim::(Int,Int)
+    ,  _windowDim::(Int,Int) 
     ,  _menu::[Component m]
     ,  _popupLayer:: [Component m]
     ,  _contentsPane::Component m
@@ -245,25 +245,53 @@ class ComponentLike c where
         TextField (Just f) -> return $ f txt
         _ -> mzero
 
+-- | Represents data specific to each subclass of Swing components.
 data ComponentType m =
      Panel
+ -- | A check box, either in a window or in a popup menu. The bool value is the
+ -- current selection state.
     |Toggleable Bool (Bool -> Sealed m)
+ -- | A button with its selection action. Menu items in popup menus are also
+ -- treated as buttons.
     |Button (Sealed m)
-    |TextField (Maybe (T.Text -> Sealed m)) -- Nothing if not editable
+ -- | 'Nothing' when the textfield is not editable.
+    |TextField (Maybe (T.Text -> Sealed m)) 
     |Label
+ -- | A combo box which may already have a selection, and offers a click action
+ -- which shows the drop-down list. See 'selectInComboBox'. 
     |ComboBox (Maybe (Component m)) (Sealed m)
     |List [Cell m]
+ -- | Tables are represented as lists of columns.
     |Table [[Cell m]]
-    |Treegui (Forest (Cell m))
+ -- | A list of trees of 'Cell'. It is a list of trees instead of a single tree
+ -- so that JTrees which do not show the root can be represented.
+    |Treegui (Forest (Cell m)) 
+ -- | In Swing, popup menus reside in the popup layer of a window or, if the
+ -- popup extends beyond the window, in the contents pane of a child window
+ -- created to hold the popup. See 'popupItem'.
     |PopupMenu  
     |TabbedPane [Tab m]
+ -- | The text value holds the name of the class.
     |Other T.Text
 
+-- | Complex gui components like lists, tables and trees are represented as
+-- composed of cells.
+--
+-- Bear in mind that in Swing the renderer sub-components of a complex
+-- component do /not/ count as children of the component. However, editor
+-- components /do/ count as children of the component. A common case is to
+-- double click on a table cell to activate the cell's editor, and then having
+-- to look for that editor among the descendants of the table.
 data Cell m = Cell 
-    { _renderer::Component m
+    { 
+    -- | The rendering component. Clients should not try to invoke actions on
+    -- rendering components, as they are inert and only used for display
+    -- purposes. 
+      _renderer::Component m
     , _clickCell::Sealed m
     , _doubleClickCell::Sealed m
     , _rightClickCell::Sealed m
+    -- | Always Nothing for cells not belonging to trees.
     , _expand:: Maybe (Bool -> Sealed m)
     }
 
