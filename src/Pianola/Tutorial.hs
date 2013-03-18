@@ -8,6 +8,8 @@ module Pianola.Tutorial (
     -- * Logging
     -- $logging
 
+    -- * Clicking buttons
+    -- $clicking
 ) where 
 
 import Prelude hiding (catch,(.),id,head,repeat,tail,map,iterate)
@@ -89,7 +91,12 @@ The expression to the right of 'peek' has type 'Glance'. Glance is just a type s
 Why bother at all with logging inside a 'Glance', instead of always doing it in the 'Pianola' monad? As it happens, nondeterminism (returning several, or zero, results) is another of the allowed effects inside Glances. We can log about objects explored in search branches even if those branches eventually fail to produce any result. This can be useful for debugging.
 -}
 
+{- $clicking
+Enough with just inspecting the GUI and logging the results! What if we want to actually efftect some change, like clicking a button? For this, we can use the 'poke' function.
 
+> clicky :: Pianola Protocol LogEntry (GUI Protocol) ()
+> clicky = poke $ mainWindow >=> contentsPane >=> descendants >=> hasText (=="open dialog") >=> clickButton  
+-}
 
 
 

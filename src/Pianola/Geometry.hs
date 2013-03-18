@@ -29,14 +29,19 @@ before1d (x1,_) x = x <= x1
 after1d :: Interval -> Point1d -> Bool
 after1d (_,x2) x = x2 <= x
 
+-- | (x,y)
 type Point2d = (Int,Int)
 
+-- | (width,height)
 type Dimensions2d = (Int,Int)
 
 mid :: Interval -> Point1d
 mid (x1,x2) = div (x1+x2) 2
 
+-- | Class of objects with rectangular shape and located in a two-dimensional
+-- plane.
 class Geometrical g where
+    -- | Position of the north-west corner.
     nwcorner :: g -> Point2d
 
     dimensions :: g -> Dimensions2d
@@ -72,12 +77,11 @@ class Geometrical g where
     area :: g -> Int
     area g = width g * height g
 
-    areacmp :: g -> g -> Ordering
-    areacmp g1 g2 = compare (area g1) (area g2)
-
     midpoint :: g -> Point2d
     midpoint g = (midX g, midY g)
 
+-- | True if the second object is roughly at the same height and to the right
+-- of the first object.
 sameLevelRightOf :: (Geometrical g1, Geometrical g2) => g1 -> g2 -> Bool
 sameLevelRightOf ref c =
     inside1d (yband c) (midY ref) && after1d (xband ref) (minX c)

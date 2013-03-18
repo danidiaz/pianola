@@ -26,6 +26,8 @@ import Pianola.Model.Swing
 iterget :: (Monad m, Unpackable a) => I.Iteratee B.ByteString m a 
 iterget = AI.parserToIteratee get
 
+-- | Monadic action to obtain a local representation of the state of a remote
+-- Swing GUI.
 snapshot :: Protocol (GUI Protocol)
 snapshot = call [pack "snapshot"] iterget >>= hoistEither
 

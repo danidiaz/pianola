@@ -3,7 +3,6 @@
 module Pianola.Protocol.IO (
         RunInIOError(..),
         Endpoint(..),
-        runFree,
         runProtocol
     ) where
 
@@ -57,5 +56,9 @@ runFree lens ( Free (Compose (b,i)) ) = do
     runFree lens nextFree 
 runFree _ ( Pure a ) = return a 
 
+-- | Runs a sequence of RPC calls in a base monad which has access to an
+-- 'Endpoint' value which identifies the server. An accessor function must be
+-- provided to extract the Endpoint from the base monad's environment, which
+-- may be more general. 
 runProtocol :: (MonadIO m, MonadReader r m) => (r -> Endpoint) -> Protocol a -> EitherT ServerError (EitherT RunInIOError m) a  
 runProtocol lens = EitherT . runFree lens . runEitherT
