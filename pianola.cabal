@@ -4,7 +4,7 @@ license:       MIT
 license-file:  LICENSE
 data-files:    
 author:        Daniel Díaz Carrete
-maintainer:    Daniel Díaz Carrete
+maintainer:    diaz_carrete@yahoo.com
 category:      Jvm, GUI
 Synopsis:      Remotely controlling Java Swing applications
 Description:   This is a library for remotely controlling 
