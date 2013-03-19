@@ -19,5 +19,7 @@ import Pianola.Pianola.Driver
 import Pianola.Model.Swing
 import Pianola.Model.Swing.Protocol (snapshot)
 
+-- | Specialization of 'simpleDriver' which doesn't require the client to
+-- provide the snapshot action.
 simpleSwingDriver :: Endpoint -> Pianola Protocol LogEntry (GUI Protocol) a -> Stream FilePath -> EitherT DriverError IO a
 simpleSwingDriver = simpleDriver snapshot

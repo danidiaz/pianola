@@ -33,14 +33,19 @@ import qualified Data.ByteString as B
 
 import Pianola.Internal
 
+-- | Convenience function to transform a list into any 'MonadPlus'.
 replusify:: MonadPlus m => [a] -> m a
 replusify = msum . map return
 
+-- | Transforms a zero-or-many result into a zero-or-one result.
 tomaybet:: Monad m => LogicT m a -> MaybeT m a
 tomaybet = MaybeT . liftM replusify . observeManyT 1
 
+-- | Class of types whose values have children of the same type as themselves.
 class Treeish l where
+    -- | Direct descendants.
     children :: MonadPlus m => l -> m l
+    -- | All direct or indirect descendants, plus the original value.
     descendants :: MonadPlus m => l -> m l
 
 instance Treeish (Tree a) where
@@ -75,6 +80,7 @@ class Functor l => Loggy l where
     logimg::Image -> l ()
     logimg = logentry . ImageEntry
 
+    -- | Logs a message and returns the second argument unchanged.
     logmsgK::T.Text -> a -> l a
     logmsgK msg = (<$ logmsg msg) 
 

@@ -3,7 +3,7 @@
 
 module Pianola.Pianola.Driver (
     simpleDriver,
-    DriverError,
+    DriverError(..),
     filePathStream,
     screenshotStream
 ) where 
@@ -41,6 +41,9 @@ logger errHandler filegen () = forever $ do
                lift . convertErr . liftIO . try $ B.writeFile file image
    where convertErr x = x >>= either errHandler return 
 
+-- | A more general version of 'screenshotStream', which allows the client to
+-- specify the prefix before the file number, the amount of padding for the
+-- file number, and the suffix after the file number.
 filePathStream :: String -> Int -> String -> FilePath -> Stream FilePath
 filePathStream extension padding prefix folder = 
      let pad i c str = replicate (max 0 (i - length str)) c ++ str
@@ -50,18 +53,37 @@ filePathStream extension padding prefix folder =
                          . show 
      in map pathFromNumber $ iterate succ 1 
 
+-- | Returns an infinite stream of filenames for storing screenshots, located
+-- in the directory supplied as a parameter.
 screenshotStream :: FilePath -> Stream FilePath
 screenshotStream = filePathStream  "png" 3 "pianola-capture-" 
 
+-- | Possible failure outcomes when running a pianola computation.
 data DriverError =
+    -- | Local exception while storing screenshots or log messages.  
      DriverIOError IOException
+    -- | Exception when connecting the remote system.
     |PianolaIOError IOException 
+    -- | Remote system returns unparseable data. 
     |PianolaParseError T.Text
+    -- | An operation was requested on an obsolete snapshot (first integer) of
+    -- the remote system (whose current snapshot number is the second integer).
     |PianolaSnapshotError Int Int
+    -- | Server couldn't complete requested operation (either because it
+    -- doesn't support the operation or because of an internal error.)
     |PianolaServerError T.Text
+    -- | Failure from a call to 'pfail' or from a 'Glance' without results. 
     |PianolaFailure
     deriving Show
 
+-- | Runs a pianola computation. Receives as argument a monadic action to
+-- obtain snapshots of type /o/ of a remote system, a connection endpoint to
+-- the remote system, a 'Pianola' computation with context of type /o/ and
+-- return value of type /a/, and an infinite stream of filenames to store the
+-- screenshots. Textual log messages are written to standard output. The
+-- computation may fail with an error of type 'DriverError'. 
+--
+-- See also 'Pianola.Model.Swing.Driver.simpleSwingDriver'.
 simpleDriver :: Protocol o -> Endpoint -> Pianola Protocol LogEntry o a -> Stream FilePath -> EitherT DriverError IO a
 simpleDriver snapshot endpoint pianola namestream = do
     let played = play snapshot pianola

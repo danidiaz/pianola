@@ -24,17 +24,17 @@ testCase:: T.Text -> Test
 testCase jarpath = do
     with (windowTitled (T.isInfixOf "DbVisualizer")) $ do
         poke $ toFront
-        pokeMaybe $ children >=> contentsPane >=> clickButtonByText (=="Cancel")
+        pokeMaybe $ children >=> contentPane >=> clickButtonByText (=="Cancel")
         selectInMenuBar $ map (==) ["Tools","Driver Manager..."]
         sleep 1
-    with (windowTitled (=="Driver Manager")) $ with contentsPane $ do
+    with (windowTitled (=="Driver Manager")) $ with contentPane $ do
         logmsg "Opened Driver Manager"
         logmsg "Selecting MySQL"
         with descendants $ do 
             poke $ tableCellByText 0 (=="MySQL") >=> return._clickCell.fst
         sleep 2
         poke $ clickButtonByToolTip (T.isInfixOf "Open file")
-        with window $ with childWindow $ with contentsPane $ do
+        with window $ with childWindow $ with contentPane $ do
             poke $ descendants >=> hasText (=="") >=> setText jarpath
             sleep 2
             poke $ clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]

@@ -21,7 +21,7 @@ Rationale
 
 * Pianola doesn't require the client and the AUT to reside in the same machine.
 
-* I'm partial to statically typed languages. I find very annoying when a long-running script developted in a dynamically typed language fails midway due to a dumb error like the misspelling of a variable's name. I realize that this inconvenience is solved through unit testing, but when then things you are developing are *themselves* test scripts, isn't it a bit of overkill to have tests of tests?
+* I'm partial to statically typed languages. I find very annoying when a long-running script developed in a dynamically typed language fails midway due to a dumb error like the misspelling of a variable's name. I realize that this inconvenience is solved through unit testing, but when then things you are developing are *themselves* test scripts, isn't it a bit of overkill to have tests of tests?
 
 * Related to the previous point: statically typed languages give you more assurances that you don't break anything when refactoring.
 

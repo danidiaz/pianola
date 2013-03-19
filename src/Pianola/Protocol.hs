@@ -22,14 +22,25 @@ import Control.Error
 import Control.Monad.Trans
 import Control.Monad.Free
 
+-- | A 'Functor' which models a RPC call as a pair in which the first component
+-- is a list of bytestrings (the arguments of the call) and the second is a
+-- pure 'Iteratee' that consumes the bytes sent from the server and returns the
+-- response of the call.
 type ProtocolF = Compose ((,) [BL.ByteString]) (I.Iteratee B.ByteString Identity) 
 
+-- | A monad to represent interactions with a remote server. A free monad over
+-- a RPC call functor, augmented with some error conditions.
 type Protocol = EitherT ServerError (Free ProtocolF)
 
+-- | Constructs a RPC call from a packed list of arguments and a pure
+-- 'Iteratee' to consume the response.
 call :: [BL.ByteString] -> (I.Iteratee B.ByteString Identity x) -> Protocol x
 call bs i = lift . liftF $ Compose (bs,i)
 
-data ServerError = SnapshotError Int Int
+data ServerError = 
+                   -- | Client targeted obsolete snapshot. 
+                   SnapshotError Int Int
+                   -- | Server couldn't perform the requested operation.
                  | ServerError T.Text
                  deriving Show
 
