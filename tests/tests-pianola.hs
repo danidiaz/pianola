@@ -31,7 +31,7 @@ checkStatusBar predicate = do
 checkDialog :: Monad m => Pianola m LogEntry (ComponentW m) ()
 checkDialog = do
     poke $ clickButtonByText (=="open dialog")
-    with window $ with childWindow $ with contentsPane $ do
+    with window $ with childWindow $ with contentPane $ do
         poke $ clickButtonByText (=="click this")
         poke $ clickButtonByText (=="close dialog")
     checkStatusBar (=="clicked button in dialog")
@@ -41,7 +41,7 @@ checkDelayedDialog = do
     poke $ clickButtonByText (=="open slow dialog")
     with window $ do
         pmaybe pfail $ withRetry1s 14 childWindow $ do       
-            with contentsPane $ poke $ clickButtonByText (=="close dialog")
+            with contentPane $ poke $ clickButtonByText (=="close dialog")
         logmsg "clicked delayed close button"
         pmaybe pfail $ retryPeek1s 14 $ missing childWindow 
     checkStatusBar (=="Performed delayed close")
@@ -57,7 +57,7 @@ type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 testCase:: Test
 testCase = with mainWindow $ do
     poke toFront
-    with contentsPane $ do 
+    with contentPane $ do 
         poke $ descendants >=> hasText (=="En un lugar de la Mancha") 
                            >=> setText "Lorem ipsum dolor sit amet"
         checkStatusBar (=="Lorem ipsum dolor sit amet")
@@ -94,7 +94,7 @@ testCase = with mainWindow $ do
         logmsg "opening a file chooser"
         with (descendants >=> hasText (=="Open file chooser")) $ do
             poke clickButton
-            with window $ with childWindow $ with contentsPane $ do
+            with window $ with childWindow $ with contentPane $ do
                 poke $ descendants >=> hasText (=="") >=> setText "/tmp/foofile.txt"   
                 poke $ clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]
         checkStatusBar (T.isInfixOf "foofile")
@@ -128,7 +128,7 @@ testCase = with mainWindow $ do
             poke $ selectTabByText (=="tab JTree b")  
             logmsg "tab change"
         expandAndCheckLeafA 0
-    with contentsPane $ do
+    with contentPane $ do
         with descendants $ poke $ selectTabByText (=="labels")
         sleep 1
         poke $ labeledBy (=="label2") >=> setText "hope this works!"

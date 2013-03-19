@@ -85,13 +85,13 @@ class Windowed w => WindowLike w where
 
     -- | Convenience function which returns the content pane component
     -- augmented with a reference to the containing window. 
-    contentsPane :: Monad m => Glance m l (w m) (ComponentW m)
-    contentsPane win = 
+    contentPane :: Monad m => Glance m l (w m) (ComponentW m)
+    contentPane win = 
         let concrete = runIdentity $ window win
         in return . ComponentW 
                   . EnvT concrete
                   . unComponent 
-                  . _contentsPane   
+                  . _contentPane   
                   . wInfo 
                   $ win
     
@@ -129,8 +129,8 @@ data WindowInfo m = WindowInfo
     -- | List of components in the popup layer.
     ,  _popupLayer:: [Component m]
     -- | The contents pane. All non-popup components of the window are
-    -- descendants of the contents pane. See 'contentsPane' and 'descendants'. 
-    ,  _contentsPane::Component m
+    -- descendants of the contents pane. See 'contentPane' and 'descendants'. 
+    ,  _contentPane::Component m
     -- | Action which returns a screenshot capture of the window. See 'logcapture'.
     ,  _capture::Nullipotent m Image
     -- | See 'escape'. 
@@ -399,7 +399,7 @@ rightClickByText f = descendants >=> hasText f >=> rightClick
 -- directly.
 popupItem :: Monad m => Glance m l (Window m) (Component m)
 popupItem w = 
-    let insidepop = children >=> contentsPane >=> descendants >=> \c -> 
+    let insidepop = children >=> contentPane >=> descendants >=> \c -> 
             case cType c of
                 PopupMenu -> descendants c
                 _ -> mzero
