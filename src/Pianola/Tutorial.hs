@@ -22,6 +22,19 @@ module Pianola.Tutorial (
 
     -- * Going slow
     -- $ralentizing
+    
+    -- * Failing
+    -- $failing
+
+    -- * Optional components
+    -- $optionals
+    
+    -- * Retries
+    -- $retries
+    
+    -- * Complex components
+    -- $complex
+
 ) where 
 
 import Prelude hiding (catch,(.),id,head,repeat,tail,map,iterate)
@@ -140,18 +153,100 @@ This is equivalent to the previous code:
 In this case, we could even go a little further:
 
 > groupy4 :: Pianola Protocol LogEntry (GUI Protocol) ()
-> groupy4 =
->    with mainWindow $ with contentPane $ with descendants $ do
+> groupy4 = with mainWindow $ with contentPane $ with descendants $ do
 >       forM_ ["clear","open dialog] $ \txt ->
 >          poke $ hasText (==txt) >=> clickButton 
 
 -}
 
 {- $autologging
+Besides purely textual messages, we can also log window image captures. The
+easiest way is by using the 'logcapture' function.
+
+> captureExample :: Pianola Protocol LogEntry (GUI Protocol) () 
+> captureExample = with mainWindow $ logcapture
+
+Remember that in the first example of the tutorial, one of the parameters
+passed to 'simpleSwingDriver' was an infinite stream of screenshot filenames,
+created using 'screenshotStream'. Each time a screenshot is taken, the current
+head of the filename stream is used to store the screenshot.
+
+A certain degree of automatic logging is also supported. The 'autolog' function
+trasforms a Pianola by automatically inserting log messages after each executed
+action. The messages are not very detailed, but they distinguish between types
+of actions.
+
+> autologged = autolog groupy3
 -}
 
 {- $sleeping
+If we need to introduce a delay between two steps of a pianola computation, we
+can use the 'sleep' function, supplying it with the delay in seconds. 
+
+> delayed1 :: Pianola Protocol LogEntry (GUI Protocol) ()
+> delayed1 = with mainWindow $ with contentPane $ with descendants $ do
+>    poke $ hasText (=="clear") >=> clickButton  
+>    sleep 3
+>    poke $ hasText (=="open dialog") >=> clickButton  
 -}
 
 {- $ralentizing
+Sometimes it can be useful to play a computation in slow motion. Instead of
+inserting 'sleep' commands manually, we can use the 'ralentize' function which
+automatically inserts a delay after each action performed on the GUI. 
+
+> ralentized = ralentize 4 groupy3 
 -}
+
+
+{- $failing
+We can abort a pianola computation with 'pfail'. It is recommended that the
+user emits an informative log message before calling this function.
+
+Another way for a pianola computation to fail is when a glance to returns no
+results (unless we are using 'peekMaybe' or similar function, see the next
+section.)
+ 
+-}
+
+{- $optionals 
+Sometimes we want to target a component which may be present in the interface,
+but without failing outright if the component can't be found. In those cases we
+can use 'peekMaybe' or 'pokeMaybe', which return 'Nothing' when the 'Glance'
+fails to find any result. 
+
+> pokeOptional = with (mainWindow >=> contentPane >=> descendants) $ do
+>    pokeMaybe $ hasText (=="no component which this text") >=> clickButton  
+-}
+
+{- $retries
+For components which only appear after a certain delay, a few retries may be
+needed until the component is found. To target these kinds of components, we
+can use the 'retryPeek1s', 'retryPoke1s' and 'withRetry1s' functions.
+
+> retryExample = with mainWindow $ with contentPane $ do
+>     poke $ clickButtonByText (=="open slow dialog")
+>     with window $ do
+>         pmaybe pfail $ withRetry1s 14 childWindow $ do       
+>             with contentPane $ poke $ clickButtonByText (=="close dialog")
+
+These functions can be combined with 'pmaybe' and 'pfail' to abort the pianola
+computation if the component is not found after the specified retries.
+
+But what if instead of waiting for a component to appear, we want to wait for a
+component to dissapear? We can do this with the help of the 'missing' function:
+
+> poke $ clickButtonByText (=="open slow dialog")
+> with window $ do
+>     pmaybe pfail $ withRetry1s 14 childWindow $ do       
+>         with contentPane $ poke $ clickButtonByText (=="close dialog")
+>     logmsg "clicked delayed close button"
+>     pmaybe pfail $ retryPeek1s 14 $ missing childWindow 
+-}
+
+
+{- $complex
+Complex Swing components like lists, tables and trees are represented Haskell-side as composed of 'Cell' values. See the documentation for 'Cell' and 'ComponentInfo' for more details.
+
+Cells do not count as regular children of a component and they do not appear among the results of a 'children' or 'descendants' call. Instead, see the family of functions 'listCellByText', 'tableCellByText' and 'treeCellByText'.
+ -}
