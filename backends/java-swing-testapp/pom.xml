@@ -12,7 +12,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <myprops.pianola-driver.version>1.0-SNAPSHOT</myprops.pianola-driver.version>
+    <myprops.pianola-driver.version>1.0</myprops.pianola-driver.version>
   </properties>
 
   <build>
