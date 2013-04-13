@@ -473,7 +473,7 @@ public class TestAppFrame extends JFrame {
 
         @Override
         protected Object doInBackground() throws Exception {
-            Thread.currentThread().sleep(7000);
+            Thread.currentThread().sleep(3000);
             return "";
         }
 
@@ -516,7 +516,7 @@ public class TestAppFrame extends JFrame {
 
         @Override
         protected Object doInBackground() throws Exception {
-            Thread.currentThread().sleep(7000);
+            Thread.currentThread().sleep(3000);
             return "";
         }
 

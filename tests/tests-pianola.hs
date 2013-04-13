@@ -40,10 +40,10 @@ checkDelayedDialog :: Monad m => Pianola m LogEntry (ComponentW m) ()
 checkDelayedDialog = do
     poke $ clickButtonByText (=="open slow dialog")
     with window $ do
-        pmaybe pfail $ withRetry1s 14 childWindow $ do       
+        pmaybe pfail $ withRetry1s 7 childWindow $ do       
             with contentPane $ poke $ clickButtonByText (=="close dialog")
         logmsg "clicked delayed close button"
-        pmaybe pfail $ retryPeek1s 14 $ missing childWindow 
+        pmaybe pfail $ retryPeek1s 7 $ missing childWindow 
     checkStatusBar (=="Performed delayed close")
 
 expandAndCheckLeafA :: Monad m => Int -> Pianola m LogEntry (ComponentW m) ()
@@ -102,6 +102,7 @@ testCase = with mainWindow $ do
         with descendants $ do 
             logmsg "working with a combo box"
             selectInComboBox (=="ccc")
+            sleep 1
         checkStatusBar (=="selected in combo: ccc")
         with descendants $ do 
             sleep 2
