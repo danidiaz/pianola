@@ -36,10 +36,10 @@ import Data.Monoid
 import Control.Category
 import Control.Error
 import Control.Applicative
-import Control.Proxy
 import Control.Monad
 import Control.Monad.Free
 import Control.Monad.Logic
+import Pipes
 
 import Pianola.Util
 
@@ -192,7 +192,7 @@ retryPeek delay times glance =
 
 
 inject :: Monad m => Sealed m -> Pianola m l o ()
-inject = Pianola . respond 
+inject = Pianola . yield
 
 -- | Takes a glance that extracts an action of type 'Sealed' from a data
 -- structure, and returns a 'Pianola' executing the action (when the Pianola is
@@ -226,7 +226,7 @@ retryPoke delay times glance = do
 
 -- | Sleeps for the specified number of seconds
 sleep :: Monad m => Delay -> Pianola m l o ()
-sleep = Pianola . lift . respond 
+sleep = Pianola . lift . yield
 
 -- | Expands the context of a 'Pianola' using a 'Glance'. Typical use: transform a Pianola whose context is a particular window to a Pianola whose context is the whole GUI, using a Glance which locates the window in the GUI.
 -- 
@@ -280,23 +280,23 @@ ralentize = ralentizeByTag $ const True
     
 ralentizeByTag :: ([Tag] -> Bool) -> Delay -> Pianola m l o a -> Pianola m l o a
 ralentizeByTag f delay (Pianola p) = 
-    let delayer () = forever $ do  
-            s <- request ()
-            respond s
-            when (f . tags $ s) (lift $ respond delay) 
-    in Pianola $ const p >-> delayer $ ()
+    let delayer = forever $ do  
+            s <- await
+            yield s
+            when (f . tags $ s) (lift $ yield delay) 
+    in Pianola $ p >-> delayer
     
 -- | Modifies a 'Pianola' so that the default tags associated to an action are
 -- logged automatically when the action is executed.
 autolog :: Pianola m LogEntry o a -> Pianola m LogEntry o a 
 autolog (Pianola p) =
-    let logger () = forever $ do
-            s <- request ()
-            respond s
+    let logger = forever $ do
+            s <- await
+            yield s
             lift . lift . lift . logmsg $ fmtAction s
         fmtAction s = 
             "### Executed action with tags:" <> mconcat ( map (" "<>) . tags $ s ) 
-    in Pianola $ const p >-> logger $ ()
+    in Pianola $ p >-> logger
 
 -- | Unwinds all the Glances contained in a 'Pianola' by supplying them with
 -- the monadic value passed as the first argument. When a 'Glance' returns with
@@ -309,14 +309,14 @@ autolog (Pianola p) =
 -- driver function like 'Pianola.Pianola.Driver.simpleDriver'.
 play :: Monad m => m o -> Pianola m l o a -> Produ Delay (MaybeT (Produ l m)) a
 play mom pi =
-    let smashMaybe m () = runMaybeT m >>= lift . hoistMaybe
-        smashProducer () = forever $
-                request () >>= lift . lift . respond
-        smash :: Monad m => MaybeT (Produ l (MaybeT (Produ l m))) a -> MaybeT (Produ l m) a
-        smash mp = runProxy $ smashMaybe mp >-> smashProducer
+    let smashMaybe m = runMaybeT m >>= lift . hoistMaybe
+        smashProducer = forever $
+                await >>= lift . lift . yield
+        -- smash :: Monad m => MaybeT (Produ l (MaybeT (Produ l m))) a -> MaybeT (Produ l m) a
+        smash mp = runEffect $ smashMaybe mp >-> smashProducer
         pi' = hoist (hoist (smash . hoist (hoist $ runObserver mom))) $ unPianola pi 
-        injector () = forever $ do
-            s <- request ()
+        injector = forever $ do
+            s <- await
             lift . lift . lift . lift $ unseal s
-    in runProxy $ const pi' >-> injector
+    in runEffect $ pi' >-> injector
 
