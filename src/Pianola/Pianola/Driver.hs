@@ -15,7 +15,6 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Control.Category
 import Control.Error
-import Control.Proxy
 import Control.Exception
 import Control.Monad.State.Class
 import Control.Monad.Logic
@@ -25,15 +24,16 @@ import Pianola.Pianola
 import Pianola.Util
 import Pianola.Protocol
 import Pianola.Protocol.IO
+import Pipes
 
 import System.FilePath
 
-delayer :: MonadIO m => () -> Consumer ProxyFast Delay m a
-delayer () = forever $ request () >>= liftIO . threadDelay . (*1000000)
+delayer :: MonadIO m => Consumer Delay m a
+delayer = forever $ await >>= liftIO . threadDelay . (*1000000)
 
-logger:: MonadIO m => (forall b. IOException -> m b) -> m FilePath -> () -> Consu LogEntry m a
-logger errHandler filegen () = forever $ do 
-      entry <- request ()
+logger:: MonadIO m => (forall b. IOException -> m b) -> m FilePath -> Consu LogEntry m a
+logger errHandler filegen = forever $ do 
+      entry <- await
       case entry of  
           TextEntry txt -> lift . convertErr . liftIO . try $ TIO.putStrLn txt
           ImageEntry image -> do
@@ -89,11 +89,11 @@ simpleDriver snapshot endpoint pianola namestream = do
     let played = play snapshot pianola
         -- the lift makes a hole for an (EitherT DriverIOError...)
         rebased = hoist (hoist (hoist $ lift . runProtocol id)) $ played
-        logprod = runMaybeT $ runProxy $ const rebased >-> delayer
+        logprod = runMaybeT $ runEffect $ rebased >-> delayer
 
         filegen = state $ \stream -> (head stream, tail stream) 
 
-        logless = runProxy $ const logprod >-> logger left filegen
+        logless = runEffect $ logprod >-> logger left filegen
 
         errpeeled = runEitherT . runEitherT . runEitherT $ logless
     (result,_,())  <- lift $ runRWST errpeeled endpoint namestream
