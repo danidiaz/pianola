@@ -27,9 +27,9 @@ import Control.Comonad.Trans.Env
 import Control.Applicative
 import Control.Monad.Trans.Maybe
 import Control.Monad.Logic
-import Control.Proxy
 import qualified Data.Text as T
 import qualified Data.ByteString as B
+import Pipes
 
 import Pianola.Internal
 
@@ -88,11 +88,11 @@ data LogEntry = TextEntry T.Text
                 |ImageEntry Image
 
 -- pipes
-type Produ t = Producer ProxyFast t
-type Consu t = Consumer ProxyFast t
+type Produ t = Producer t
+type Consu t = Consumer t
 
 instance Monad m => Loggy (Produ LogEntry m) where
-    logentry = respond 
+    logentry = yield
 
 instance (Monad l, Loggy l) => Loggy (LogicT l) where
     logentry = lift . logentry
