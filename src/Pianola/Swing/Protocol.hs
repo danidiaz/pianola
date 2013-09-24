@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Pianola.Model.Swing.Protocol (
+module Pianola.Swing.Protocol (
         snapshot
     ) where
 
@@ -21,7 +21,7 @@ import Control.Applicative
 import Pianola.Util
 import Pianola.Internal
 import Pianola.Protocol
-import Pianola.Model.Swing
+import Pianola.Swing
 
 iterget :: (Monad m, Unpackable a) => I.Iteratee B.ByteString m a 
 iterget = AI.parserToIteratee get

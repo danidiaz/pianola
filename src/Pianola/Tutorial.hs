@@ -44,8 +44,8 @@ import Pianola
 import Pianola.Util
 import Pianola.Protocol
 import Pianola.Protocol.IO
-import Pianola.Pianola.Driver
-import Pianola.Model.Swing
+import Pianola.Driver
+import Pianola.Swing
 
 {- $setup
     This tutorial assumes that the Java Swing test application bundled with the

@@ -28,12 +28,12 @@ Library
         Pianola.Internal
         Pianola.Util
         Pianola.Geometry
-        Pianola.Pianola.Driver
+        Pianola.Driver
         Pianola.Tutorial
         Pianola.Protocol
         Pianola.Protocol.IO
-        Pianola.Model.Swing
-        Pianola.Model.Swing.Protocol
+        Pianola.Swing
+        Pianola.Swing.Protocol
     other-modules: 
     build-depends:         
         base >= 4.4 && < 5,    

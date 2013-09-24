@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Pianola.Pianola.Driver (
-    simpleDriver,
+module Pianola.Driver (
+    drive,
     DriverError(..),
     filePathStream,
     screenshotStream,
@@ -87,8 +87,8 @@ data DriverError =
 -- computation may fail with an error of type 'DriverError'. 
 --
 -- See also 'Pianola.Model.Swing.Driver.simpleSwingDriver'.
-simpleDriver :: Protocol o -> Endpoint -> Pianola Protocol LogEntry o a -> Stream FilePath -> EitherT DriverError IO a
-simpleDriver snapshot endpoint pianola namestream = do
+drive :: Protocol o -> Endpoint -> Pianola Protocol LogEntry o a -> Stream FilePath -> EitherT DriverError IO a
+drive snapshot endpoint pianola namestream = do
     let played = play snapshot pianola
         -- the lift makes a hole for an (EitherT DriverIOError...)
         rebased = hoist (hoist (hoist $ lift . runProtocol id)) $ played

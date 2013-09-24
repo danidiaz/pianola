@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Pianola.Model.Swing (
+module Pianola.Swing (
         GUI (..),
         Window (..),
         WindowInfo (..),

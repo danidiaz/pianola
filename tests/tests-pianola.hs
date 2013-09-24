@@ -15,9 +15,9 @@ import Control.Applicative
 
 import Pianola
 import Pianola.Util
-import Pianola.Pianola.Driver
-import Pianola.Model.Swing
-import Pianola.Model.Swing.Protocol (snapshot)
+import Pianola.Driver
+import Pianola.Swing
+import Pianola.Swing.Protocol (snapshot)
 
 import System.Environment
 import System.Exit (exitFailure)
@@ -150,7 +150,7 @@ main = do
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
 
-  r <- runEitherT $ simpleDriver snapshot endpoint testCase $ screenshotStream "dist/test"
+  r <- runEitherT $ drive snapshot endpoint testCase $ screenshotStream "dist/test"
   case r of
      Left err -> do
         putStrLn $ "result: " <> show err
