@@ -32,7 +32,3 @@ Rationale
 * [Marathon](http://marathontesting.com/) is a versatile tool that can handle many corner cases when testing Swing GUIs. Still, there are annoyances. There isn't (to my knowledge) an easy way to identify a component by its text in other manner than by total equality.
 
 * Marathon annoyance #2: There isn't (to my knowledge) an easy way to handle components which may or may not appear during a test's execution. For example, a warning dialog which appears only occasionally. There doesn't seem to be a "find component, if it exists" operation. 
-
-* Marathon annoyance #3: There isn't (to my knowledge) a way to make Marathon scripts fail quickly when they can't find a component in the GUI. Sometimes they block for a surprisingly long time before failing!
-
-
