@@ -13,8 +13,8 @@ import Control.Monad
 import Control.Error
 import Control.Applicative
 
+import Pianola
 import Pianola.Util
-import Pianola.Pianola
 import Pianola.Pianola.Driver
 import Pianola.Model.Swing
 import Pianola.Model.Swing.Protocol (snapshot)

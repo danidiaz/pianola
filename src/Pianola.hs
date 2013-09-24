@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Pianola.Pianola (
+module Pianola (
         Glance(..),
         missing,
         collect,

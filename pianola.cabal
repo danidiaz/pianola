@@ -24,10 +24,10 @@ Extra-Source-Files:
 Library
     hs-source-dirs: src
     exposed-modules: 
+        Pianola
         Pianola.Internal
         Pianola.Util
         Pianola.Geometry
-        Pianola.Pianola
         Pianola.Pianola.Driver
         Pianola.Tutorial
         Pianola.Protocol

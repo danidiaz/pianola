@@ -6,7 +6,7 @@ module Pianola.Pianola.Driver (
     DriverError(..),
     filePathStream,
     screenshotStream,
-    module Pianola.Pianola,
+    module Pianola,
     module Pianola.Protocol,
     module Pianola.Protocol.IO
 ) where 
@@ -23,7 +23,7 @@ import Control.Monad.State.Class
 import Control.Monad.Logic
 import Control.Concurrent (threadDelay)
 import Control.Monad.RWS.Strict
-import Pianola.Pianola
+import Pianola
 import Pianola.Util
 import Pianola.Protocol
 import Pianola.Protocol.IO

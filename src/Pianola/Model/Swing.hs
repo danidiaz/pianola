@@ -44,8 +44,8 @@ import Control.Monad.Trans.Class
 import Control.Comonad.Trans.Class
 import Control.Comonad.Trans.Env    
 import Data.List
+import Pianola
 import Pianola.Util
-import Pianola.Pianola
 import Pianola.Geometry
 import Control.Monad.Logic
 
