@@ -34,7 +34,7 @@ import System.FilePath
 delayer :: MonadIO m => Consumer Delay m a
 delayer = forever $ await >>= liftIO . threadDelay . (*1000000)
 
-logger:: MonadIO m => (forall b. IOException -> m b) -> m FilePath -> Consu LogEntry m a
+logger:: MonadIO m => (forall b. IOException -> m b) -> m FilePath -> Consumer LogEntry m a
 logger errHandler filegen = forever $ do 
       entry <- await
       case entry of  

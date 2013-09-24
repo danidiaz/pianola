@@ -68,7 +68,7 @@ import Pianola.Util
 --       on the branches of the source data structure. You just can't execute them
 --       inside a Glance. To actually execute them, pass the glance as an argument to
 --       'poke'.
-type Glance m l o a = o -> LogicT (Produ l (Nullipotent m)) a
+type Glance m l o a = o -> LogicT (Producer l (Nullipotent m)) a
 
 -- | Takes all the values returned by a 'Glance' and returns a new Glance in
 -- which those values have been collected in a 'MonadPlus' (often a list). This
@@ -93,7 +93,7 @@ missing :: Monad m => Glance m l o a -> Glance m l o ()
 missing = fmap lnot
 
 -- A Glance wrapped in a constructor to make it an instance of Functor.
-type ObserverF m l o = Compose ((->) o) (LogicT (Produ l (Nullipotent m)))
+type ObserverF m l o = Compose ((->) o) (LogicT (Producer l (Nullipotent m)))
 
 -- A bunch of Glances chained together.  
 type Observer m l o = Free (ObserverF m l o)
@@ -107,7 +107,7 @@ focus prefix v =
 -- Uses the value of type m o to unwind all the Glances in an Observer. When
 -- one Glance returns with more than one result, one of the results is selected
 -- in order to continue. Also, the Nullipotent restriction is removed. 
-runObserver :: Monad m => m o -> Observer m l o a -> MaybeT (Produ l m) a
+runObserver :: Monad m => m o -> Observer m l o a -> MaybeT (Producer l m) a
 runObserver _ (Pure b) = return b
 runObserver mom (Free f) =
    let squint = fmap $ hoist (hoist runNullipotent) . tomaybet
@@ -151,7 +151,7 @@ type Delay = Int
 -- To actually execute a Pianola, use a driver function like
 -- 'Pianola.Pianola.Driver.simpleDriver' or a specialization of it.
 newtype Pianola m l o a = Pianola 
-    { unPianola :: Produ (Sealed m) (Produ Delay (MaybeT (Produ l (Observer m l o)))) a 
+    { unPianola :: Producer (Sealed m) (Producer Delay (MaybeT (Producer l (Observer m l o)))) a 
     } deriving (Functor,Monad)
 
 instance Monad m => Loggy (Pianola m LogEntry o) where
@@ -307,12 +307,12 @@ autolog (Pianola p) =
 --
 -- Usually, clients should not call this function directly, but use a
 -- driver function like 'Pianola.Pianola.Driver.simpleDriver'.
-play :: Monad m => m o -> Pianola m l o a -> Produ Delay (MaybeT (Produ l m)) a
+play :: Monad m => m o -> Pianola m l o a -> Producer Delay (MaybeT (Producer l m)) a
 play mom pi =
     let smashMaybe m = runMaybeT m >>= lift . hoistMaybe
         smashProducer = forever $
                 await >>= lift . lift . yield
-        -- smash :: Monad m => MaybeT (Produ l (MaybeT (Produ l m))) a -> MaybeT (Produ l m) a
+        -- smash :: Monad m => MaybeT (Producer l (MaybeT (Producer l m))) a -> MaybeT (Producer l m) a
         smash mp = runEffect $ smashMaybe mp >-> smashProducer
         pi' = hoist (hoist (smash . hoist (hoist $ runObserver mom))) $ unPianola pi 
         injector = forever $ do

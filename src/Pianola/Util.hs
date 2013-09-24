@@ -4,8 +4,6 @@ module Pianola.Util (
         replusify,
         tomaybet,
         Treeish(..),
-        Produ,
-        Consu,
         Loggy(..),
         LogEntry(..),
         Image,
@@ -87,11 +85,7 @@ class Functor l => Loggy l where
 data LogEntry = TextEntry T.Text 
                 |ImageEntry Image
 
--- pipes
-type Produ t = Producer t
-type Consu t = Consumer t
-
-instance Monad m => Loggy (Produ LogEntry m) where
+instance Monad m => Loggy (Producer LogEntry m) where
     logentry = yield
 
 instance (Monad l, Loggy l) => Loggy (LogicT l) where
