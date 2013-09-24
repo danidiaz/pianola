@@ -5,7 +5,10 @@ module Pianola.Pianola.Driver (
     simpleDriver,
     DriverError(..),
     filePathStream,
-    screenshotStream
+    screenshotStream,
+    module Pianola.Pianola,
+    module Pianola.Protocol,
+    module Pianola.Protocol.IO
 ) where 
 
 import Prelude hiding (catch,(.),id,head,repeat,tail,map,iterate)

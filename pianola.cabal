@@ -20,8 +20,6 @@ cabal-version: >= 1.10
 Extra-Source-Files:
     README.md
     tests/README.md
-    examples/dbvisualizer.hs    
-    examples/README.md
 
 Library
     hs-source-dirs: src
@@ -35,7 +33,6 @@ Library
         Pianola.Protocol
         Pianola.Protocol.IO
         Pianola.Model.Swing
-        Pianola.Model.Swing.Driver
         Pianola.Model.Swing.Protocol
     other-modules: 
     build-depends:         
