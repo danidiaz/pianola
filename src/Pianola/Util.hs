@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Pianola.Util (
         replusify,
@@ -50,9 +51,11 @@ instance Treeish (Tree a) where
     children = replusify . subForest
     descendants = replusify . flatten . duplicate
 
-instance Treeish (EnvT e Tree a) where
-    children  = replusify . map rootLabel . subForest . lower . duplicate
-    descendants = replusify . flatten . lower . duplicate
+instance (Comonad c, Treeish (c a)) => Treeish (EnvT e c a) where
+    children  a = replusify . map (EnvT e) . children . lower $ a
+        where e = ask a 
+    descendants a = replusify . map (EnvT e) . descendants . lower $ a
+        where e = ask a 
 
 -- useful msgpack instances
 instance (Unpackable a, Unpackable b) => Unpackable (Either a b) where
