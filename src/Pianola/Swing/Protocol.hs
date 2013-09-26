@@ -35,6 +35,9 @@ makeAction :: T.Text -> [BL.ByteString] -> Sealed Protocol
 makeAction method args = Sealed [T.pack "@" <> method] $
     call (pack method:args) iterget >>= hoistEither
 
+instance Unpackable (GUI Protocol) where
+    get = GUI <$> get
+
 instance Unpackable (Window Protocol) where
     get = Window <$> get
 

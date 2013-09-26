@@ -51,7 +51,7 @@ import Control.Monad.Logic
 
 -- | A client-side representation of the state of a remote Swing GUI.
 -- Interaction with the GUI is through actions in the monad /m/. 
-type GUI m = [Window m]
+newtype GUI m = GUI { _topLevelWindows :: [Window m] }
 
 newtype Window m = Window { unWindow :: Tree (WindowInfo m) }
 
@@ -370,7 +370,7 @@ data Tab m = Tab
 -- | Returns the main window of the application. Only works properly when there
 -- is only one top-level window.
 mainWindow :: Glance m l (GUI m) (Window m)
-mainWindow = replusify
+mainWindow = replusify . _topLevelWindows
 
 -- | Returns the children of a window.
 childWindow :: Glance m l (Window m) (Window m)
@@ -378,7 +378,7 @@ childWindow = children
 
 -- | Returns all visible windows whose title satisfies the predicate.
 windowTitled :: (T.Text -> Bool) -> Glance m l (GUI m) (Window m)
-windowTitled f = replusify >=> descendants >=> hasTitle f 
+windowTitled f = mainWindow >=> descendants >=> hasTitle f 
 
 -- | If the component or *any of its descendants* is a button whose text
 -- satisfies the predicate, returns the click action. Otherwise 'mzero'.
