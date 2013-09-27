@@ -116,6 +116,8 @@ data ComponentType =
     |TabbedPane [Tab]
     |Other T.Text
 
+makePrisms ''ComponentType
+
 data Cell = Cell 
     { _rowId::Int
     , _columnId::Int

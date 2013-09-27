@@ -25,7 +25,7 @@ import System.Exit (exitFailure)
 checkStatusBar :: Monad m => Poker m -> (T.Text -> Bool) -> Pianola m LogEntry GUIComponent ()
 checkStatusBar p predicate = do
     with (descendants >=> forWhich _windowTitle (=="status bar")) $ do
-        statusText <- peek $ replusify _text
+        statusText <- peek $ perhaps _text
         logmsg $ "status text is: " <> statusText
         unless (predicate statusText) $ do
             logmsg $ "Unexpected text in status bar: " <> statusText

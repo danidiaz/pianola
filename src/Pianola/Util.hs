@@ -4,6 +4,7 @@
 module Pianola.Util (
         replusify,
         tomaybet,
+        perhaps,
         the,
         forWhich,
         forWhichAny,
@@ -64,6 +65,9 @@ instance (Comonad c, Treeish (c a)) => Treeish (EnvT e c a) where
         where e = ask a 
 
 -----------------------------------------------------------------------
+
+perhaps :: (Foldable f, MonadPlus m) => f a -> m a
+perhaps = replusify
 
 the :: (Comonad c, Monad m) => (a -> b) -> c a -> m b 
 the f = return . f . extract  
