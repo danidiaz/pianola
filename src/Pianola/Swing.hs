@@ -1,6 +1,7 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Pianola.Swing (
         GUIInfo (..),
@@ -12,12 +13,13 @@ module Pianola.Swing (
         ComponentType (..),
         Component,
         GUIComponent,
+        window,
         Cell (..),
         Tab (..),
 --        mainWindow,
 --        childWindow,
 --        windowTitled,
---        clickButtonByText,
+        clickButtonByText,
 --        clickButtonByToolTip,
 --        rightClickByText,
 --        popupItem,
@@ -97,6 +99,9 @@ type Component = Tree ComponentInfo
 
 type GUIComponent = EnvT GUIWindow Tree ComponentInfo
 
+window :: GUIComponent -> GUIWindow
+window = ask
+
 data ComponentType =
      Panel
     |Toggleable Bool -- (Bool -> Sealed m)
@@ -133,6 +138,14 @@ data Tab = Tab
 --
 --clickButtonByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Glance m l (c m) (Sealed m) 
 --clickButtonByText f = descendants >=> hasText f >=> clickButton
+
+data Poker m = Poker
+    { 
+        clickButton :: MonadPlus n => GUIComponent -> n (Sealed m)
+    }
+
+clickButtonByText :: Monad m => Poker m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m) 
+clickButtonByText p predicate = descendants >=> forWhichAny _text predicate >=> clickButton p
 
 -- newtype Window m = Window { unWindow :: Tree (WindowInfo m) }
 
@@ -362,8 +375,4 @@ data Tab = Tab
 --        return c
 --    headZ $ sortBy (compare `on` minX) candidates 
 --
-
-data Poker m = Poker
-    { 
-    }
 

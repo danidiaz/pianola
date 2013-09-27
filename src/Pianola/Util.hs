@@ -6,6 +6,7 @@ module Pianola.Util (
         tomaybet,
         the,
         forWhich,
+        forWhichAny,
         the',
         allThe',
         Treeish(..),
@@ -69,6 +70,9 @@ the f = return . f . extract
 
 forWhich :: (Comonad c, MonadPlus m) => (a -> b) -> (b -> Bool) -> c a -> m (c a)
 forWhich f p x = guard (p . f $ extract x) >> return x 
+
+forWhichAny :: (Comonad c, Foldable f, MonadPlus m) => (a -> f b) -> (b -> Bool) -> c a -> m (c a)
+forWhichAny f p x = guard (or . map p . toList . f $ extract x) >> return x 
 
 the' ::  (Comonad c, Comonad c', Monad m) => (a -> c' b) -> c a -> m (EnvT (c a) c' b)
 the' f x = return . EnvT x $ f (extract x)

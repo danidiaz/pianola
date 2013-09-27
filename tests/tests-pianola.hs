@@ -23,38 +23,38 @@ import System.Environment
 import System.Exit (exitFailure)
 
 checkStatusBar :: Monad m => Poker m -> (T.Text -> Bool) -> Pianola m LogEntry GUIComponent ()
-checkStatusBar predicate = do
+checkStatusBar p predicate = do
     with (descendants >=> forWhich _windowTitle (=="status bar")) $ do
-        statusText <- peek $ the _text
+        statusText <- peek $ replusify _text
         logmsg $ "status text is: " <> statusText
         unless (predicate statusText) $ do
             logmsg $ "Unexpected text in status bar: " <> statusText
             pfail
-    poke $ clickButtonByText (=="clear")
+    poke $ clickButtonByText p (=="clear")
 
-checkDialog :: Monad m => Pianola m LogEntry (ComponentW m) ()
-checkDialog = do
-    poke $ clickButtonByText (=="open dialog")
-    with window $ with childWindow $ with contentPane $ do
-        poke $ clickButtonByText (=="click this")
-        poke $ clickButtonByText (=="close dialog")
-    checkStatusBar (=="clicked button in dialog")
+checkDialog :: Monad m => Poker m -> Pianola m LogEntry GUIComponent ()
+checkDialog p = do
+    poke $ clickButtonByText p (=="open dialog")
+    with (the window >=> children >=> the _contentPane) $ do
+        poke $ clickButtonByText p (=="click this")
+        poke $ clickButtonByText p (=="close dialog")
+    checkStatusBar p (=="clicked button in dialog")
 
-checkDelayedDialog :: Monad m => Pianola m LogEntry (ComponentW m) ()
-checkDelayedDialog = do
-    poke $ clickButtonByText (=="open slow dialog")
+checkDelayedDialog :: Monad m => Poker m -> Pianola m LogEntry GUIComponent ()
+checkDelayedDialog p = do
+    poke $ clickButtonByText p (=="open slow dialog")
     with window $ do
-        pmaybe pfail $ withRetry1s 7 childWindow $ do       
-            with contentPane $ poke $ clickButtonByText (=="close dialog")
+        pmaybe pfail $ withRetry1s 7 children $ do       
+            with (the _contentPane) $ poke $ clickButtonByText p (=="close dialog")
         logmsg "clicked delayed close button"
-        pmaybe pfail $ retryPeek1s 7 $ missing childWindow 
-    checkStatusBar (=="Performed delayed close")
+        pmaybe pfail $ retryPeek1s 7 $ missing children
+    checkStatusBar p (=="Performed delayed close")
 
-expandAndCheckLeafA :: Monad m => Int -> Pianola m LogEntry (ComponentW m) ()
-expandAndCheckLeafA depth = do
+expandAndCheckLeafA :: Monad m => Poker m -> Int -> Pianola m LogEntry GUIComponent ()
+expandAndCheckLeafA p depth = do
     with descendants $ do 
-        poke $ treeCellByText depth (=="leaf a") >=> expand True
-    checkStatusBar (=="leaf a is collapsed: false")
+        poke $ treeCellByText depth (=="leaf a") >=> expand p True
+    checkStatusBar p (=="leaf a is collapsed: false")
 
 type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 
