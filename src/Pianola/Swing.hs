@@ -3,7 +3,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Pianola.Swing (
-        GUI (..),
+        GUI,
+        GUIInfo (..),
         Window (..),
         WindowInfo (..),
         WindowLike (..),
@@ -45,16 +46,19 @@ import Control.Monad.Trans.Class
 import Control.Comonad.Trans.Class
 import Control.Comonad.Trans.Env    
 import Data.List
+import Data.Functor.Identity
 import Pianola
 import Pianola.Util
 import Pianola.Geometry
 import Control.Monad.Logic
 
+type GUI m = Identity (GUIInfo m)
+
 -- | A client-side representation of the state of a remote Swing GUI.
 -- Interaction with the GUI is through actions in the monad /m/. 
-data GUI m = GUI { snapshotId :: Int
-                 , _topLevelWindows :: [Window m] 
-                 }
+data GUIInfo m = GUIInfo { snapshotId :: Int
+                         , _topLevelWindows :: [Window m] 
+                         }
 
 newtype Window m = Window { unWindow :: Tree (WindowInfo m) }
 
@@ -375,7 +379,7 @@ data Tab m = Tab
 -- | Returns the main window of the application. Only works properly when there
 -- is only one top-level window.
 mainWindow :: Glance m l (GUI m) (Window m)
-mainWindow = replusify . _topLevelWindows
+mainWindow = replusify . _topLevelWindows . runIdentity
 
 -- | Returns the children of a window.
 childWindow :: Glance m l (Window m) (Window m)

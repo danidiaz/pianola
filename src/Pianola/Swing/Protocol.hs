@@ -5,6 +5,7 @@ module Pianola.Swing.Protocol (
     ) where
 
 import Prelude hiding (catch,(.),id)
+import Data.Functor.Identity
 import Data.Monoid
 import Data.MessagePack
 import Data.Attoparsec.ByteString
@@ -35,8 +36,11 @@ makeAction :: T.Text -> [BL.ByteString] -> Sealed Protocol
 makeAction method args = Sealed [T.pack "@" <> method] $
     call (pack method:args) iterget >>= hoistEither
 
-instance Unpackable (GUI Protocol) where
-    get = GUI <$> get <*> get
+instance Unpackable a => Unpackable (Identity a) where
+    get = Identity <$> get
+
+instance Unpackable (GUIInfo Protocol) where
+    get = GUIInfo <$> get <*> get
 
 instance Unpackable (Window Protocol) where
     get = Window <$> get
