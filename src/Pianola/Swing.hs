@@ -117,7 +117,10 @@ data ComponentType =
     |Other T.Text
 
 data Cell = Cell 
-    { _renderer::Component 
+    { _rowId::Int
+    , _columnId::Int
+    , _isFromTree::Bool
+    , _renderer::Component 
 --    , _clickCell::Sealed 
 --    , _doubleClickCell::Sealed 
 --    , _rightClickCell::Sealed 

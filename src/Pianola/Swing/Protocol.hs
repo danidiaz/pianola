@@ -119,7 +119,7 @@ instance Unpackable Cell where
         rowid <- get::Parser Int
         columnid <- get::Parser Int
         renderer <- get
-        isTreeCell <- get::Parser Bool
+        isFromTree <- get::Parser Bool
 --        let packed3 = map pack [snapid, componentid, rowid]
 --            packed4 = packed3 ++ [pack columnid]
 --            clickCell = makeAction (T.pack "clickCell") packed4
@@ -127,7 +127,7 @@ instance Unpackable Cell where
 --            rightClickCell = makeAction (T.pack "rightClickCell") packed4
 --            expandCollapse b = makeAction (T.pack "expandCollapseCell") $
 --                packed3 ++ [pack b] 
-        return $ Cell renderer -- clickCell doubleClickCell rightClickCell (guard isTreeCell *> pure expandCollapse)
+        return $ Cell rowid columnid isFromTree renderer -- clickCell doubleClickCell rightClickCell (guard isTreeCell *> pure expandCollapse)
 
 instance Unpackable Tab where
     get = do
