@@ -265,6 +265,7 @@ public class Driver implements Runnable
                         lastSnapshotId++;
                         Snapshot pianola = new Snapshot(lastSnapshot,releaseIsPopupTrigger);
                         packer.write((int)0); // No error happened.
+                        packer.write((int)lastSnapshotId);
                         pianola.buildAndWrite(lastSnapshotId,packer);
                         lastSnapshot = pianola;     
                     } else {

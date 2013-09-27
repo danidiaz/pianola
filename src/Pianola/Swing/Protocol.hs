@@ -36,7 +36,7 @@ makeAction method args = Sealed [T.pack "@" <> method] $
     call (pack method:args) iterget >>= hoistEither
 
 instance Unpackable (GUI Protocol) where
-    get = GUI <$> get
+    get = GUI <$> get <*> get
 
 instance Unpackable (Window Protocol) where
     get = Window <$> get
@@ -57,7 +57,7 @@ instance Unpackable (WindowInfo Protocol) where
             enter = makeAction (T.pack "enter") packedargs 
             closeWindow = makeAction (T.pack "closeWindow") packedargs 
             toFront = makeAction (T.pack "toFront") packedargs 
-        return (WindowInfo v1 v2 v3 v4 v5 getWindowImage escape enter closeWindow toFront)
+        return (WindowInfo wid v1 v2 v3 v4 v5 getWindowImage escape enter closeWindow toFront)
 
 instance Unpackable (ComponentInfo Protocol) where
     get = do
@@ -73,7 +73,7 @@ instance Unpackable (ComponentInfo Protocol) where
         let click = makeAction (T.pack  "click") [pack snapid, pack cid]
             doubleClick = makeAction (T.pack  "doubleClick") [pack snapid, pack cid]
             rightClick = makeAction (T.pack  "rightClick") [pack snapid, pack cid]
-        return (ComponentInfo v1 v2 v3 v4 v5 v6 v7 click doubleClick rightClick)
+        return (ComponentInfo cid v1 v2 v3 v4 v5 v6 v7 click doubleClick rightClick)
 
 instance Unpackable (Component Protocol) where
     get = Component <$> get

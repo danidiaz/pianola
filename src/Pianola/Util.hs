@@ -4,6 +4,7 @@
 module Pianola.Util (
         replusify,
         tomaybet,
+        the,
         Treeish(..),
         Loggy(..),
         LogEntry(..),
@@ -56,6 +57,9 @@ instance (Comonad c, Treeish (c a)) => Treeish (EnvT e c a) where
         where e = ask a 
     descendants a = replusify . map (EnvT e) . descendants . lower $ a
         where e = ask a 
+
+the ::  (Comonad c, Comonad c') => (a -> c' b) -> c a -> EnvT (c a) c' b
+the f x = EnvT x $ f (extract x)
 
 -- useful msgpack instances
 instance (Unpackable a, Unpackable b) => Unpackable (Either a b) where

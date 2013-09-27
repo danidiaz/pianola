@@ -28,7 +28,8 @@ module Pianola.Swing (
         selectTabByText, 
         selectTabByToolTip,
         expand,
-        labeledBy   
+        labeledBy,
+        Poker(..)
     ) where
 
 import Prelude hiding (catch)
@@ -51,7 +52,9 @@ import Control.Monad.Logic
 
 -- | A client-side representation of the state of a remote Swing GUI.
 -- Interaction with the GUI is through actions in the monad /m/. 
-newtype GUI m = GUI { _topLevelWindows :: [Window m] }
+data GUI m = GUI { snapshotId :: Int
+                 , _topLevelWindows :: [Window m] 
+                 }
 
 newtype Window m = Window { unWindow :: Tree (WindowInfo m) }
 
@@ -121,7 +124,8 @@ instance Windowed Window where
     window = return . id
 
 data WindowInfo m = WindowInfo 
-    {  _windowTitle::T.Text
+    {  windowId::Int
+    ,  _windowTitle::T.Text
     -- | Width, height.
     ,  _windowDim::(Int,Int) 
     -- | List of components in the menu bar. See 'selectInMenuBar'.
@@ -169,7 +173,8 @@ instance ComponentLike Component where
     cInfo = rootLabel . unComponent
 
 data ComponentInfo m = ComponentInfo 
-    {   -- | The position of the component within the containing window. 
+    {  componentId :: Int 
+    ,   -- | The position of the component within the containing window. 
        _pos::(Int,Int)
         -- | Width and height.
     ,  _dim::(Int,Int)
@@ -495,3 +500,10 @@ labeledBy f o = do
         return c
     headZ $ sortBy (compare `on` minX) candidates 
 
+-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+
+data Poker m = Poker
+    { 
+    }
+
+-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
