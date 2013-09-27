@@ -15,6 +15,7 @@ module Pianola.Geometry (
 
 import Prelude hiding (catch,(.),id)
 import Control.Category
+import Control.Comonad
 
 type Interval = (Int,Int)
 
@@ -80,8 +81,13 @@ class Geometrical g where
     midpoint :: g -> Point2d
     midpoint g = (midX g, midY g)
 
+instance (Comonad c, Geometrical g) => Geometrical (c g) where 
+    nwcorner = nwcorner . extract
+    dimensions = dimensions . extract
+
 -- | True if the second object is roughly at the same height and to the right
 -- of the first object.
 sameLevelRightOf :: (Geometrical g1, Geometrical g2) => g1 -> g2 -> Bool
 sameLevelRightOf ref c =
     inside1d (yband c) (midY ref) && after1d (xband ref) (minX c)
+

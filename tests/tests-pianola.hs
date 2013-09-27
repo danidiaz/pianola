@@ -22,10 +22,10 @@ import Pianola.Swing.Protocol (snapshot)
 import System.Environment
 import System.Exit (exitFailure)
 
-checkStatusBar :: (Monad m, ComponentLike c, Treeish (c m)) => (T.Text -> Bool) -> Pianola m LogEntry (c m) ()
+checkStatusBar :: Monad m => Poker m -> (T.Text -> Bool) -> Pianola m LogEntry GUIComponent ()
 checkStatusBar predicate = do
-    with (descendants >=> hasName (=="status bar")) $ do
-        statusText <- peek text
+    with (descendants >=> forWhich _windowTitle (=="status bar")) $ do
+        statusText <- peek $ the _text
         logmsg $ "status text is: " <> statusText
         unless (predicate statusText) $ do
             logmsg $ "Unexpected text in status bar: " <> statusText

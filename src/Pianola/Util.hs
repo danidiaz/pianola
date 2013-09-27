@@ -5,6 +5,9 @@ module Pianola.Util (
         replusify,
         tomaybet,
         the,
+        forWhich,
+        the',
+        allThe',
         Treeish(..),
         Loggy(..),
         LogEntry(..),
@@ -18,6 +21,7 @@ module Pianola.Util (
 import Prelude hiding (catch,(.),id)
 import Control.Category
 import Data.Tree
+import Data.Foldable (toList)
 import Data.MessagePack
 import Data.Attoparsec.ByteString
 import Control.Monad
@@ -34,8 +38,8 @@ import Pipes
 import Pianola.Internal
 
 -- | Convenience function to transform a list into any 'MonadPlus'.
-replusify:: MonadPlus m => [a] -> m a
-replusify = msum . map return
+replusify:: (Foldable f, MonadPlus m) => f a -> m a
+replusify = msum . map return . toList
 
 -- | Transforms a zero-or-many result into a zero-or-one result.
 tomaybet:: Monad m => LogicT m a -> MaybeT m a
@@ -58,8 +62,21 @@ instance (Comonad c, Treeish (c a)) => Treeish (EnvT e c a) where
     descendants a = replusify . map (EnvT e) . descendants . lower $ a
         where e = ask a 
 
-the ::  (Comonad c, Comonad c') => (a -> c' b) -> c a -> EnvT (c a) c' b
-the f x = EnvT x $ f (extract x)
+-----------------------------------------------------------------------
+
+the :: (Comonad c, Monad m) => (a -> b) -> c a -> m b 
+the f = return . f . extract  
+
+forWhich :: (Comonad c, MonadPlus m) => (a -> b) -> (b -> Bool) -> c a -> m (c a)
+forWhich f p x = guard (p . f $ extract x) >> return x 
+
+the' ::  (Comonad c, Comonad c', Monad m) => (a -> c' b) -> c a -> m (EnvT (c a) c' b)
+the' f x = return . EnvT x $ f (extract x)
+
+allThe' ::  (Comonad c, Comonad c', Foldable f, MonadPlus m) => (a -> f (c' b)) -> c a -> m (EnvT (c a) c' b)
+allThe' f x = replusify . map (EnvT x) . toList $ f (extract x)
+
+-----------------------------------------------------------------------
 
 -- useful msgpack instances
 instance (Unpackable a, Unpackable b) => Unpackable (Either a b) where
