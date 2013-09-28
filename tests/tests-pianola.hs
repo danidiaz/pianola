@@ -23,7 +23,7 @@ import Pianola.Swing.Protocol (snapshot)
 import System.Environment
 import System.Exit (exitFailure)
 
-checkStatusBar :: Monad m => Poker m -> (T.Text -> Bool) -> Pianola m LogEntry GUIComponent ()
+checkStatusBar :: Monad m => Remote m -> (T.Text -> Bool) -> Pianola m LogEntry GUIComponent ()
 checkStatusBar p predicate = do
     with (descendants >=> which _windowTitle (=="status bar")) $ do
         statusText <- peek $ perhaps _text
@@ -33,37 +33,36 @@ checkStatusBar p predicate = do
             pfail
     poke $ clickButtonByText p (=="clear")
 
-checkDialog :: Monad m => Poker m -> Pianola m LogEntry GUIComponent ()
+checkDialog :: Monad m => Remote m -> Pianola m LogEntry GUIComponent ()
 checkDialog p = do
     poke $ clickButtonByText p (=="open dialog")
-    with (the window >=> fils >=> the _contentPane) $ do
+    with (the window >=> descendants1 >=> the _contentPane) $ do
         poke $ clickButtonByText p (=="click this")
         poke $ clickButtonByText p (=="close dialog")
     checkStatusBar p (=="clicked button in dialog")
 
-checkDelayedDialog :: Monad m => Poker m -> Pianola m LogEntry GUIComponent ()
+checkDelayedDialog :: Monad m => Remote m -> Pianola m LogEntry GUIComponent ()
 checkDelayedDialog p = do
     poke $ clickButtonByText p (=="open slow dialog")
     with window $ do
-        pmaybe pfail $ withRetry1s 7 fils $ do       
+        pmaybe pfail $ withRetry1s 7 descendants1 $ do       
             with (the contentPane) $ poke $ clickButtonByText p (=="close dialog")
         logmsg "clicked delayed close button"
-        pmaybe pfail $ retryPeek1s 7 $ missing fils
+        pmaybe pfail $ retryPeek1s 7 $ missing descendants1
     checkStatusBar p (=="Performed delayed close")
 
-expandAndCheckLeafA :: Monad m => Poker m -> Int -> Pianola m LogEntry GUIComponent ()
+expandAndCheckLeafA :: Monad m => Remote m -> Int -> Pianola m LogEntry GUIComponent ()
 expandAndCheckLeafA p depth = do
     with descendants $ do 
         -- poke $ treeCellByText depth (=="leaf a") >=> expand p True
-        poke $ ff (_Treegui.folded) >=>  
-               foldr (>=>) return (repeat depth $ fils) >=>
-               which (the' renderer.the' text._Just) (=="leaf a") >=> expand p True
+        poke $ (ff $ sub $ _Treegui.folded) >=>  descendantsN depth
+               which (the' renderer.folded.text._Just) (=="leaf a") >=> expand p True
     checkStatusBar p (=="leaf a is collapsed: false")
 
 type Test = Pianola Protocol LogEntry (GUI Protocol) ()
 
-testCase:: Poker m -> Test
-testCase p = with (ff $ topLevel . folded) $ do
+testCase:: Remote m -> Test
+testCase p = with (ff $ sub' $ topLevel . folded) $ do
     poke $ toFront p
     with (the contentPane) $ do 
         poke $ descendants >=> which (text._Just) (=="En un lugar de la Mancha") 
@@ -86,14 +85,14 @@ testCase p = with (ff $ topLevel . folded) $ do
         checkStatusBar (=="clicked on popupitem2")
         sleep 1
         logmsg "testing checkbox"
-        poke $ descendants >=> which (text._Just) (=="This is a checkbox") >=> toggle True
+        poke $ descendants >=> which (text._Just) (=="This is a checkbox") >=> toggle p True
         checkStatusBar (=="checkbox is now true")
         logmsg "foo log message"
         with window $ toggleInMenuBar True $ 
             map (==) ["Menu1","SubMenu1","submenuitem2"]
         checkStatusBar (=="checkbox in menu is now true")
         logmsg "getting a screenshot"
-        with window $ logcapture
+        with window $ logcapture p 
         logmsg "now for a second menu"
         autolog $ with window $ selectInMenuBar $ 
             map (==) ["Menu1","SubMenu1","submenuitem1"]
@@ -102,7 +101,7 @@ testCase p = with (ff $ topLevel . folded) $ do
         logmsg "opening a file chooser"
         with (descendants >=> which (text._Just) (=="Open file chooser")) $ do
             poke clickButton
-            with window $ with childWindow $ with contentPane $ do
+            with window $ with descendants1 $ with contentPane $ do
                 poke $ descendants >=> which (text._Just) (=="") >=> setText "/tmp/foofile.txt"   
                 poke $ clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]
         checkStatusBar (T.isInfixOf "foofile")
@@ -116,16 +115,15 @@ testCase p = with (ff $ topLevel . folded) $ do
             sleep 2
             poke $ selectTabByText (=="tab two")  
             sleep 2
-            poke $ tableCellByText 2 (=="7") >=> return._clickCell.fst
+            poke $ tableCellByText 2 (=="7") >=> clickCell p.fst
         checkStatusBar (=="selected index in table: 2")
         with descendants $ do 
             sleep 2
-            poke $ tableCellByText 1 (=="4") >=> return._doubleClickCell.fst
+            poke $ tableCellByText 1 (=="4") >=> doubleClickCell p.fst
             sleep 2
-            poke $ \g -> do    
-                Table {} <- return . cType $ g 
-                fils >=> which (text._Just) (=="4") >=> setText "77" $ g
-        with window $ poke enter
+            poke $ which (componentType._Table) (const True) >=>
+                   descendants1 >=> which (text._Just) (=="4") >=> setText "77" p 
+        with window $ poke $ enter p
         checkStatusBar (=="table value at row 1 col 1 is 77")
         with descendants $ do 
             sleep 2
@@ -143,7 +141,7 @@ testCase p = with (ff $ topLevel . folded) $ do
         poke $ labeledBy (=="label2") >=> setText "hope this works!"
         checkStatusBar (=="hope this works!")
         sleep 2 
-    poke close
+    poke $ close p
 
 main :: IO ()
 main = do

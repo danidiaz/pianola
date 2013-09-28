@@ -129,7 +129,7 @@ instance Unpackable CellInfo where
 --                packed3 ++ [pack b] 
         return $ CellInfo rowid columnid isFromTree renderer -- clickCell doubleClickCell rightClickCell (guard isTreeCell *> pure expandCollapse)
 
-instance Unpackable Tab where
+instance Unpackable TabInfo where
     get = do
         snapid <- get::Parser Int
         componentid <- get::Parser Int
@@ -139,5 +139,5 @@ instance Unpackable Tab where
         selected <- get
 --        let selecttab = makeAction (T.pack "selectTab" ) $
 --                map pack [snapid, componentid, tabid] 
-        return $ Tab text tooltipMaybe selected -- selecttab
+        return $ TabInfo tabid text tooltipMaybe selected -- selecttab
     

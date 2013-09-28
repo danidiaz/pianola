@@ -10,33 +10,34 @@ module Pianola.Swing (
         WindowInfo (..), contentPane,
         Window,
         GUIWindow,
-        ComponentInfo (..), text,
-        ComponentType (..), _Treegui,
+        ComponentInfo (..), text, componentType,
+        ComponentType (..), _List, _Table, _Treegui, 
         Component,
         GUIComponent,
         window,
-        CellInfo (..),
-        renderer,
+        CellInfo (..), renderer,
         ListCell,
         TableCell,
         TreeCell,
-        Tab (..),
+        TabInfo (..),
+        Tab,
 --        mainWindow,
 --        childWindow,
 --        windowTitled,
         clickButtonByText,
         rightClickByText,
+        popupItem,
 --        clickButtonByToolTip,
 --        rightClickByText,
---        popupItem,
---        selectInMenuBar,
---        toggleInMenuBar,
---        selectInComboBox,
+        selectInMenuBar,
+        toggleInMenuBar,
+        selectInComboBox,
 --        selectTabByText, 
 --        selectTabByToolTip,
 --        expand,
 --        labeledBy,
-        Poker(..)
+        logcapture,
+        Remote(..)
     ) where
 
 import Prelude hiding (catch)
@@ -125,8 +126,6 @@ data ComponentType =
     |TabbedPane [Tab]
     |Other T.Text
 
-
-
 data CellInfo = CellInfo 
     { _rowId::Int
     , _columnId::Int
@@ -144,19 +143,22 @@ type TableCell = Identity CellInfo
 
 type TreeCell = Tree CellInfo
 
-data Tab = Tab
-    { _tabText::T.Text
+data TabInfo = TabInfo
+    { _tabId::Int 
+    , _tabText::T.Text
     , _tabToolTip::Maybe T.Text
     , _isTabSelected:: Bool
 --    , _selectTab::Sealed m
     }
+
+type Tab = Identity TabInfo
 
 makeLenses ''GUIInfo
 makeLenses ''WindowInfo
 makeLenses ''ComponentInfo
 makePrisms ''ComponentType
 makeLenses ''CellInfo
-makeLenses ''Tab
+makeLenses ''TabInfo
 
 
 --clickButton:: MonadPlus n => c m -> n (Sealed m)
@@ -166,7 +168,7 @@ makeLenses ''Tab
 --clickButtonByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Glance m l (c m) (Sealed m) 
 --clickButtonByText f = descendants >=> hasText f >=> clickButton
 
-data Poker m = Poker
+data Remote m = Remote
     { clickButton :: MonadPlus n => GUIComponent -> n (Sealed m)
     , expand :: MonadPlus n => TreeCell -> n (Sealed m)
     , toFront :: MonadPlus n => GUIWindow -> n (Sealed m)
@@ -174,13 +176,67 @@ data Poker m = Poker
     , click :: Monad n => GUIComponent -> n (Sealed m)
     , doubleClick :: Monad n => GUIComponent -> n (Sealed m)
     , rightClick :: Monad n => GUIComponent -> n (Sealed m)
+    , toggle:: MonadPlus n => Bool -> GUIComponent -> n (Sealed m)
+    , clickCombo:: MonadPlus n => GUIComponent -> n (Sealed m)
+    , clickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Sealed m)
+    , doubleClickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Sealed m)
+    , escape:: Monad n => GUIWindow -> n (Sealed m)
+    , enter:: Monad n => GUIWindow -> n (Sealed m)
+    , close:: Monad n => GUIWindow -> n (Sealed m)
+    , capture :: Monad n => GUIWindow -> Nullipotent n Image 
     }
 
-clickButtonByText :: Monad m => Poker m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m) 
+clickButtonByText :: Monad m => Remote m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m) 
 clickButtonByText p predicate = descendants >=> which (text._Just) predicate >=> clickButton p
 
-rightClickByText :: Monad m => Poker m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m) 
+rightClickByText :: Monad m => Remote m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m) 
 rightClickByText p predicate = descendants >=> which (text._Just) predicate >=> rightClick p
+
+popupItem :: Monad m => Glance m l GUIWindow GUIComponent
+popupItem w = (sub (popupLayer.folded) >=> descendants $ w) `mplus` 
+              (insidepop w)
+    where insidepop = descendants1 >=> 
+                      sub contentPane >=> 
+                      descendants >=> 
+                      which (componentType._PopupMenu) (const True) >=> 
+                      descendants
+
+selectInMenuBar :: Monad m => Remote m -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
+selectInMenuBar r ps = 
+    let go (firstitem,middleitems,lastitem) = do
+           poke $ sub (menu.folded) >=> descendants >=> which (text._Just) firstitem >=> clickButton r
+           let pairs = zip middleitems (clickButton r <$ middleitems) ++
+                       [(lastitem, clickButton r)]
+           forM_ pairs $ \(txt,action) -> 
+               pmaybe pfail $ retryPoke1s 7 $ 
+                   popupItem >=> which (text._Just) txt >=> action
+        clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ) <*> lastZ l
+    in maybe pfail go (clip ps)
+
+toggleInMenuBar :: Monad m => Remote m -> Bool -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
+toggleInMenuBar r toggleStatus ps = 
+    let go (firstitem,middleitems,lastitem) = do
+           poke $ sub (menu.folded) >=> descendants >=> which (text._Just) firstitem >=> clickButton r
+           let pairs = zip middleitems (clickButton r <$ middleitems) ++
+                       [(lastitem, toggle r toggleStatus)]
+           forM_ pairs $ \(txt,action) -> 
+               pmaybe pfail $ retryPoke1s 7 $ 
+                   popupItem >=> which (text._Just) txt >=> action
+           replicateM_ (length pairs) $ poke $ escape r
+        clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
+    in maybe pfail go (clip ps)
+
+logcapture :: Monad m => Remote r -> Pianola m LogEntry GUIWindow ()
+logcapture r = (peek $ liftN.capture r) >>= logimg
+
+selectInComboBox :: Monad m => Remote m -> (T.Text -> Bool) -> Pianola m l GUIComponent ()
+selectInComboBox r f = do
+        poke $ clickCombo r
+        poke $ return.window >=> 
+               popupItem >=> 
+               sub (componentType._List.folded) >=> 
+               which (renderer.folded.text._Just) f >=> 
+               clickCell r
 
 -- newtype Window m = Window { unWindow :: Tree (WindowInfo m) }
 

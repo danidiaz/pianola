@@ -51,19 +51,22 @@ replusify = msum . map return . toList
 tomaybet:: Monad m => LogicT m a -> MaybeT m a
 tomaybet = MaybeT . liftM replusify . observeManyT 1
 
--- | Class of types whose values have fils of the same type as themselves.
+-- | Class of types whose values have descendants1 of the same type as themselves.
 class Treeish l where
-    -- | Direct descendants.
-    fils :: MonadPlus m => l -> m l
     -- | All direct or indirect descendants, plus the original value.
     descendants :: MonadPlus m => l -> m l
+    -- | Direct descendants.
+    descendants1 :: MonadPlus m => l -> m l
+     
+    descendantsN :: MonadPlus m => Int -> l -> m l
+    descendantsN depth =  foldr (>=>) return (replicate depth $ descendants1)
 
 instance Treeish (Tree a) where
-    fils = replusify . subForest
+    descendants1 = replusify . subForest
     descendants = replusify . flatten . duplicate
 
 instance (Comonad c, Treeish (c a)) => Treeish (EnvT e c a) where
-    fils  a = replusify . map (EnvT e) . fils . lower $ a
+    descendants1  a = replusify . map (EnvT e) . descendants1 . lower $ a
         where e = ask a 
     descendants a = replusify . map (EnvT e) . descendants . lower $ a
         where e = ask a 
