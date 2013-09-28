@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Pianola.Swing (
         GUIInfo (..),
@@ -9,12 +10,16 @@ module Pianola.Swing (
         WindowInfo (..),
         Window,
         GUIWindow,
-        ComponentInfo (..),
-        ComponentType (..),
+        ComponentInfo (..), text,
+        ComponentType (..), _Treegui,
         Component,
         GUIComponent,
         window,
-        Cell (..),
+        CellInfo (..),
+        renderer,
+        ListCell,
+        TableCell,
+        TreeCell,
         Tab (..),
 --        mainWindow,
 --        childWindow,
@@ -38,6 +43,7 @@ import Data.Tree
 import Data.Function
 import Data.Functor.Identity
 import qualified Data.Text as T
+import Control.Lens
 import Control.Error
 import Control.Monad
 import Control.Comonad
@@ -56,6 +62,7 @@ import Control.Monad.Logic
 data GUIInfo = GUIInfo { _snapshotId :: Int
                        , _topLevelWindows :: [Window] 
                        }
+
 
 type GUI = Identity GUIInfo
 
@@ -91,6 +98,7 @@ data ComponentInfo = ComponentInfo
 --    ,  _rightClick::Sealed m
     } 
 
+
 instance Geometrical ComponentInfo where
     nwcorner = _pos
     dimensions = _dim
@@ -109,16 +117,16 @@ data ComponentType =
     |TextField Bool -- (Maybe (T.Text -> Sealed m)) -- BoolTrue if editable
     |Label
     |ComboBox (Maybe Component) -- (Sealed m)
-    |List [Cell]
-    |Table [[Cell]]
-    |Treegui (Forest Cell) 
+    |List [ListCell]
+    |Table [[TableCell]]
+    |Treegui [TreeCell] 
     |PopupMenu  
     |TabbedPane [Tab]
     |Other T.Text
 
-makePrisms ''ComponentType
 
-data Cell = Cell 
+
+data CellInfo = CellInfo 
     { _rowId::Int
     , _columnId::Int
     , _isFromTree::Bool
@@ -129,12 +137,25 @@ data Cell = Cell
 --    , _expand:: Maybe (Bool -> Sealed m)
     }
 
+type ListCell = Identity CellInfo
+
+type TableCell = Identity CellInfo
+
+type TreeCell = Tree CellInfo
+
 data Tab = Tab
     { _tabText::T.Text
     , _tabToolTip::Maybe T.Text
     , _isTabSelected:: Bool
 --    , _selectTab::Sealed m
     }
+
+makeLenses ''GUIInfo
+makeLenses ''WindowInfo
+makeLenses ''ComponentInfo
+makePrisms ''ComponentType
+makeLenses ''CellInfo
+makeLenses ''Tab
 
 
 --clickButton:: MonadPlus n => c m -> n (Sealed m)
@@ -145,12 +166,12 @@ data Tab = Tab
 --clickButtonByText f = descendants >=> hasText f >=> clickButton
 
 data Poker m = Poker
-    { 
-        clickButton :: MonadPlus n => GUIComponent -> n (Sealed m)
+    { clickButton :: MonadPlus n => GUIComponent -> n (Sealed m)
+    , expand :: MonadPlus n => TreeCell -> n (Sealed m)
     }
 
 clickButtonByText :: Monad m => Poker m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m) 
-clickButtonByText p predicate = descendants >=> forWhichAny _text predicate >=> clickButton p
+clickButtonByText p predicate = descendants >=> forWhich (text._Just) predicate >=> clickButton p
 
 -- newtype Window m = Window { unWindow :: Tree (WindowInfo m) }
 
@@ -289,7 +310,7 @@ clickButtonByText p predicate = descendants >=> forWhichAny _text predicate >=> 
 --mainWindow = replusify . _topLevelWindows . runIdentity
 --
 --childWindow :: Glance m l (Window m) (Window m)
---childWindow = children
+--childWindow = children'
 --
 --windowTitled :: (T.Text -> Bool) -> Glance m l (GUI m) (Window m)
 --windowTitled f = mainWindow >=> descendants >=> hasTitle f 
@@ -305,7 +326,7 @@ clickButtonByText p predicate = descendants >=> forWhichAny _text predicate >=> 
 --
 --popupItem :: Monad m => Glance m l (Window m) (Component m)
 --popupItem w = 
---    let insidepop = children >=> contentPane >=> descendants >=> \c -> 
+--    let insidepop = children' >=> contentPane >=> descendants >=> \c -> 
 --            case cType c of
 --                PopupMenu -> descendants c
 --                _ -> mzero

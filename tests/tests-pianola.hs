@@ -8,6 +8,7 @@ import Data.Monoid
 import Data.Tree
 import qualified Data.Text as T
 import Network 
+import Control.Lens
 import Control.Category
 import Control.Monad
 import Control.Error
@@ -35,7 +36,7 @@ checkStatusBar p predicate = do
 checkDialog :: Monad m => Poker m -> Pianola m LogEntry GUIComponent ()
 checkDialog p = do
     poke $ clickButtonByText p (=="open dialog")
-    with (the window >=> children >=> the _contentPane) $ do
+    with (the window >=> children' >=> the _contentPane) $ do
         poke $ clickButtonByText p (=="click this")
         poke $ clickButtonByText p (=="close dialog")
     checkStatusBar p (=="clicked button in dialog")
@@ -44,16 +45,20 @@ checkDelayedDialog :: Monad m => Poker m -> Pianola m LogEntry GUIComponent ()
 checkDelayedDialog p = do
     poke $ clickButtonByText p (=="open slow dialog")
     with window $ do
-        pmaybe pfail $ withRetry1s 7 children $ do       
+        pmaybe pfail $ withRetry1s 7 children' $ do       
             with (the _contentPane) $ poke $ clickButtonByText p (=="close dialog")
         logmsg "clicked delayed close button"
-        pmaybe pfail $ retryPeek1s 7 $ missing children
+        pmaybe pfail $ retryPeek1s 7 $ missing children'
     checkStatusBar p (=="Performed delayed close")
 
 expandAndCheckLeafA :: Monad m => Poker m -> Int -> Pianola m LogEntry GUIComponent ()
 expandAndCheckLeafA p depth = do
     with descendants $ do 
-        poke $ treeCellByText depth (=="leaf a") >=> expand p True
+        -- poke $ treeCellByText depth (=="leaf a") >=> expand p True
+        poke $ fromFold (_Treegui.folded) >=>  
+               foldr (>=>) return (repeat depth $ children') >=>
+               forWhich (extract'.renderer.folded.extract'.text._Just) (=="leaf a") >=> expand p True
+    depth (=="leaf a") >=> expand p True
     checkStatusBar p (=="leaf a is collapsed: false")
 
 type Test = Pianola Protocol LogEntry (GUI Protocol) ()
@@ -120,7 +125,7 @@ testCase = with mainWindow $ do
             sleep 2
             poke $ \g -> do    
                 Table {} <- return . cType $ g 
-                children >=> hasText (=="4") >=> setText "77" $ g
+                children' >=> hasText (=="4") >=> setText "77" $ g
         with window $ poke enter
         checkStatusBar (=="table value at row 1 col 1 is 77")
         with descendants $ do 

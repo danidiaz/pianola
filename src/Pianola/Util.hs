@@ -1,15 +1,16 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Pianola.Util (
         replusify,
         tomaybet,
         perhaps,
+        extract',
+        fromFold,
         the,
-        forWhich,
-        forWhichAny,
         the',
-        allThe',
+        forWhich,
         Treeish(..),
         Loggy(..),
         LogEntry(..),
@@ -26,6 +27,7 @@ import Data.Tree
 import Data.Foldable (toList)
 import Data.MessagePack
 import Data.Attoparsec.ByteString
+import Control.Lens
 import Control.Monad
 import Control.Comonad
 import Control.Comonad.Trans.Class
@@ -47,42 +49,48 @@ replusify = msum . map return . toList
 tomaybet:: Monad m => LogicT m a -> MaybeT m a
 tomaybet = MaybeT . liftM replusify . observeManyT 1
 
--- | Class of types whose values have children of the same type as themselves.
+-- | Class of types whose values have children' of the same type as themselves.
 class Treeish l where
     -- | Direct descendants.
-    children :: MonadPlus m => l -> m l
+    children' :: MonadPlus m => l -> m l
     -- | All direct or indirect descendants, plus the original value.
     descendants :: MonadPlus m => l -> m l
 
 instance Treeish (Tree a) where
-    children = replusify . subForest
+    children' = replusify . subForest
     descendants = replusify . flatten . duplicate
 
 instance (Comonad c, Treeish (c a)) => Treeish (EnvT e c a) where
-    children  a = replusify . map (EnvT e) . children . lower $ a
+    children'  a = replusify . map (EnvT e) . children' . lower $ a
         where e = ask a 
     descendants a = replusify . map (EnvT e) . descendants . lower $ a
         where e = ask a 
 
 -----------------------------------------------------------------------
 
+fromFold :: MonadPlus m => Fold a b -> a -> m b
+fromFold f = replusify . toListOf f
+
 perhaps :: (Foldable f, MonadPlus m) => f a -> m a
 perhaps = replusify
 
-the :: (Comonad c, Monad m) => (a -> b) -> c a -> m b 
-the f = return . f . extract  
+extract' :: Comonad c => IndexPreservingGetter (c a) a
+extract' = to extract
 
-forWhich :: (Comonad c, MonadPlus m) => (a -> b) -> (b -> Bool) -> c a -> m (c a)
-forWhich f p x = guard (p . f $ extract x) >> return x 
+the :: (Comonad c, MonadPlus m) => Fold a b -> c a -> m b 
+the f = replusify . toListOf f . extract  
 
-forWhichAny :: (Comonad c, Foldable f, MonadPlus m) => (a -> f b) -> (b -> Bool) -> c a -> m (c a)
-forWhichAny f p x = guard (or . map p . toList . f $ extract x) >> return x 
+the' ::  (Comonad c, Comonad c', MonadPlus m) => Fold a (c' b) -> c a -> m (EnvT (c a) c' b)
+the' f x = replusify . map (EnvT x) $ toListOf f (extract x)
 
-the' ::  (Comonad c, Comonad c', Monad m) => (a -> c' b) -> c a -> m (EnvT (c a) c' b)
-the' f x = return . EnvT x $ f (extract x)
+forWhich :: (Comonad c, MonadPlus m) => Fold a b -> (b -> Bool) -> c a -> m (c a)
+forWhich f p x = guard (anyOf (to extract . f) p $ x) >> return x 
 
-allThe' ::  (Comonad c, Comonad c', Foldable f, MonadPlus m) => (a -> f (c' b)) -> c a -> m (EnvT (c a) c' b)
-allThe' f x = replusify . map (EnvT x) . toList $ f (extract x)
+--the' ::  (Comonad c, Comonad c', Monad m) => (a -> c' b) -> c a -> m (EnvT (c a) c' b)
+--the' f x = return . EnvT x $ f (extract x)
+
+--allThe' ::  (Comonad c, Comonad c', Foldable f, MonadPlus m) => (a -> f (c' b)) -> c a -> m (EnvT (c a) c' b)
+--allThe' f x = replusify . map (EnvT x) . toList $ f (extract x)
 
 -----------------------------------------------------------------------
 

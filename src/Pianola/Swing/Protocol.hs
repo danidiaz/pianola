@@ -112,7 +112,7 @@ instance Unpackable ComponentType where
             70 -> TabbedPane <$> get
             77 -> Other <$> get
 
-instance Unpackable Cell where
+instance Unpackable CellInfo where
     get = do
         snapid <- get::Parser Int
         componentid <- get::Parser Int
@@ -127,7 +127,7 @@ instance Unpackable Cell where
 --            rightClickCell = makeAction (T.pack "rightClickCell") packed4
 --            expandCollapse b = makeAction (T.pack "expandCollapseCell") $
 --                packed3 ++ [pack b] 
-        return $ Cell rowid columnid isFromTree renderer -- clickCell doubleClickCell rightClickCell (guard isTreeCell *> pure expandCollapse)
+        return $ CellInfo rowid columnid isFromTree renderer -- clickCell doubleClickCell rightClickCell (guard isTreeCell *> pure expandCollapse)
 
 instance Unpackable Tab where
     get = do
