@@ -5,9 +5,9 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Pianola.Swing (
-        GUIInfo (..),
+        GUIInfo (..), topLevel,
         GUI,
-        WindowInfo (..),
+        WindowInfo (..), contentPane,
         Window,
         GUIWindow,
         ComponentInfo (..), text,
@@ -25,6 +25,7 @@ module Pianola.Swing (
 --        childWindow,
 --        windowTitled,
         clickButtonByText,
+        rightClickByText,
 --        clickButtonByToolTip,
 --        rightClickByText,
 --        popupItem,
@@ -60,7 +61,7 @@ import Control.Monad.Logic
 
 
 data GUIInfo = GUIInfo { _snapshotId :: Int
-                       , _topLevelWindows :: [Window] 
+                       , _topLevel :: [Window] 
                        }
 
 
@@ -168,10 +169,18 @@ makeLenses ''Tab
 data Poker m = Poker
     { clickButton :: MonadPlus n => GUIComponent -> n (Sealed m)
     , expand :: MonadPlus n => TreeCell -> n (Sealed m)
+    , toFront :: MonadPlus n => GUIWindow -> n (Sealed m)
+    , setText :: MonadPlus n => T.Text -> GUIComponent -> n (Sealed m)
+    , click :: Monad n => GUIComponent -> n (Sealed m)
+    , doubleClick :: Monad n => GUIComponent -> n (Sealed m)
+    , rightClick :: Monad n => GUIComponent -> n (Sealed m)
     }
 
 clickButtonByText :: Monad m => Poker m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m) 
-clickButtonByText p predicate = descendants >=> forWhich (text._Just) predicate >=> clickButton p
+clickButtonByText p predicate = descendants >=> which (text._Just) predicate >=> clickButton p
+
+rightClickByText :: Monad m => Poker m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m) 
+rightClickByText p predicate = descendants >=> which (text._Just) predicate >=> rightClick p
 
 -- newtype Window m = Window { unWindow :: Tree (WindowInfo m) }
 
@@ -307,10 +316,10 @@ clickButtonByText p predicate = descendants >=> forWhich (text._Just) predicate 
 
 
 --mainWindow :: Glance m l (GUI m) (Window m)
---mainWindow = replusify . _topLevelWindows . runIdentity
+--mainWindow = replusify . _topLevel . runIdentity
 --
 --childWindow :: Glance m l (Window m) (Window m)
---childWindow = children'
+--childWindow = fils
 --
 --windowTitled :: (T.Text -> Bool) -> Glance m l (GUI m) (Window m)
 --windowTitled f = mainWindow >=> descendants >=> hasTitle f 
@@ -326,7 +335,7 @@ clickButtonByText p predicate = descendants >=> forWhich (text._Just) predicate 
 --
 --popupItem :: Monad m => Glance m l (Window m) (Component m)
 --popupItem w = 
---    let insidepop = children' >=> contentPane >=> descendants >=> \c -> 
+--    let insidepop = fils >=> contentPane >=> descendants >=> \c -> 
 --            case cType c of
 --                PopupMenu -> descendants c
 --                _ -> mzero
