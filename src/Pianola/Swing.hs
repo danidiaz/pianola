@@ -32,7 +32,8 @@ module Pianola.Swing (
         selectInMenuBar,
         toggleInMenuBar,
         selectInComboBox,
---        selectTabByText, 
+        selectTabByText, 
+        tableCellByText,
 --        selectTabByToolTip,
 --        expand,
 --        labeledBy,
@@ -59,6 +60,7 @@ import Pianola
 import Pianola.Util
 import Pianola.Geometry
 import Control.Monad.Logic
+import Safe
 
 
 data GUIInfo = GUIInfo { _snapshotId :: Int
@@ -109,8 +111,8 @@ type Component = Tree ComponentInfo
 
 type GUIComponent = EnvT GUIWindow Tree ComponentInfo
 
-window :: GUIComponent -> GUIWindow
-window = ask
+window :: Monad m => GUIComponent -> m GUIWindow
+window = return . ask
 
 data ComponentType =
      Panel
@@ -152,6 +154,7 @@ data TabInfo = TabInfo
     }
 
 type Tab = Identity TabInfo
+type GUITab = EnvT GUIComponent Identity TabInfo
 
 makeLenses ''GUIInfo
 makeLenses ''WindowInfo
@@ -178,6 +181,7 @@ data Remote m = Remote
     , rightClick :: Monad n => GUIComponent -> n (Sealed m)
     , toggle:: MonadPlus n => Bool -> GUIComponent -> n (Sealed m)
     , clickCombo:: MonadPlus n => GUIComponent -> n (Sealed m)
+    , selectTab:: MonadPlus n => GUITab -> n (Sealed m)
     , clickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Sealed m)
     , doubleClickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Sealed m)
     , escape:: Monad n => GUIWindow -> n (Sealed m)
@@ -232,12 +236,21 @@ logcapture r = (peek $ liftN.capture r) >>= logimg
 selectInComboBox :: Monad m => Remote m -> (T.Text -> Bool) -> Pianola m l GUIComponent ()
 selectInComboBox r f = do
         poke $ clickCombo r
-        poke $ return.window >=> 
+        poke $ window >=> 
                popupItem >=> 
                sub (componentType._List.folded) >=> 
                which (renderer.folded.text._Just) f >=> 
                clickCell r
 
+selectTabByText :: Monad m => Remote m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m)
+selectTabByText r f = sub (componentType._TabbedPane.folded) >=> which tabText f >=> selectTab r  
+
+tableCellByText:: MonadPlus n => Int -> (T.Text -> Bool) -> GUIComponent -> n (EnvT GUIComponent Identity CellInfo)
+tableCellByText colIndex f =
+    sub (componentType._Table.folding (`atMay` colIndex).folded) >=>    
+    which (renderer.folded.text._Just) f
+
+--    tableCellByText _ _ _ = mzero
 -- newtype Window m = Window { unWindow :: Tree (WindowInfo m) }
 
 --class Windowed w where

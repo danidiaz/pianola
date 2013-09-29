@@ -115,11 +115,11 @@ testCase p = with (ff $ sub' $ topLevel . folded) $ do
             sleep 2
             poke $ selectTabByText (=="tab two")  
             sleep 2
-            poke $ tableCellByText 2 (=="7") >=> clickCell p.fst
+            poke $ tableCellByText 2 (=="7") >=> clickCell p
         checkStatusBar (=="selected index in table: 2")
         with descendants $ do 
             sleep 2
-            poke $ tableCellByText 1 (=="4") >=> doubleClickCell p.fst
+            poke $ tableCellByText 1 (=="4") >=> doubleClickCell p
             sleep 2
             poke $ which (componentType._Table) (const True) >=>
                    descendants1 >=> which (text._Just) (=="4") >=> setText "77" p 
