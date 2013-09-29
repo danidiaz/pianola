@@ -13,6 +13,7 @@ module Pianola.Util (
         sub,
         sub',
         which,
+        cull',
         Treeish(..),
         Loggy(..),
         LogEntry(..),
@@ -30,6 +31,7 @@ import Data.Foldable (toList)
 import Data.MessagePack
 import Data.Attoparsec.ByteString
 import Control.Lens
+import Control.Arrow
 import Control.Monad
 import Control.Comonad
 import Control.Comonad.Trans.Class
@@ -96,6 +98,9 @@ sub' f = folding $ \x -> map (EnvT x) $ toListOf f (extract x)
 
 which :: (Comonad c, MonadPlus m) => Fold a b -> (b -> Bool) -> c a -> m (c a)
 which f p x = guard (anyOf (to extract . f) p $ x) >> return x 
+
+cull' :: MonadPlus m => (a -> Bool) -> Kleisli m a a
+cull' f = Kleisli $ \x -> guard (f x) >> return x
 
 --sub ::  (Comonad c, Comonad c', Monad m) => (a -> c' b) -> c a -> m (EnvT (c a) c' b)
 --sub f x = return . EnvT x $ f (extract x)

@@ -59,9 +59,7 @@ expandAndCheckLeafA p depth = do
                which (the' renderer.folded.text._Just) (=="leaf a") >=> expand p True
     checkStatusBar p (=="leaf a is collapsed: false")
 
-type Test = Pianola Protocol LogEntry (GUI Protocol) ()
-
-testCase:: Remote m -> Test
+testCase:: Remote m -> Pianola m LogEntry GUI () 
 testCase p = with (ff $ sub' $ topLevel . folded) $ do
     poke $ toFront p
     with (the contentPane) $ do 

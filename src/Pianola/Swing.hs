@@ -36,7 +36,7 @@ module Pianola.Swing (
         tableCellByText,
 --        selectTabByToolTip,
 --        expand,
---        labeledBy,
+        labeledBy,
         logcapture,
         Remote(..)
     ) where
@@ -49,6 +49,7 @@ import qualified Data.Text as T
 import Control.Lens
 import Control.Error
 import Control.Monad
+import Control.Arrow
 import Control.Comonad
 import Control.Applicative
 import Control.Monad.Trans.Class
@@ -250,7 +251,26 @@ tableCellByText colIndex f =
     sub (componentType._Table.folding (`atMay` colIndex).folded) >=>    
     which (renderer.folded.text._Just) f
 
---    tableCellByText _ _ _ = mzero
+labeledBy :: Monad m => (T.Text -> Bool) -> Glance m l GUIComponent GUIComponent
+labeledBy f = 
+    let labellable c = case c of
+            Toggleable {} -> True
+            Button {} -> True
+            TextField {} -> True
+            ComboBox {} -> True
+            List {} -> True
+            Table {} -> True
+            Treegui {} -> True
+            _ -> False
+        firstArrow = Kleisli $ descendants >=>
+                               which (componentType._Label) (\_->True) >=> 
+                               which (text._Just) f    
+        secondArrow = Kleisli $ descendants >=> 
+                                which componentType labellable 
+        candidates = collect $ runKleisli $
+            (firstArrow &&& secondArrow) >>> cull' (uncurry sameLevelRightOf) >>^ snd 
+     in candidates >=> headZ . sortBy (compare `on` minX) 
+
 -- newtype Window m = Window { unWindow :: Tree (WindowInfo m) }
 
 --class Windowed w where
