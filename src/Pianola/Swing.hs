@@ -5,8 +5,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Pianola.Swing (
-        GUIInfo (..), topLevel,
-        GUI,
+        GUI (..), topLevel,
         WindowInfo (..), windowTitle, contentPane,
         Window,
         GUIWindow,
@@ -64,12 +63,9 @@ import Control.Monad.Logic
 import Safe
 
 
-data GUIInfo = GUIInfo { _snapshotId :: Int
-                       , _topLevel :: [Window] 
-                       }
-
-
-type GUI = Identity GUIInfo
+data GUI = GUI { _snapshotId :: Int
+               , _topLevel :: [Window] 
+               }
 
 data WindowInfo = WindowInfo 
     {  _windowId::Int
@@ -157,7 +153,7 @@ data TabInfo = TabInfo
 type Tab = Identity TabInfo
 type GUITab = EnvT GUIComponent Identity TabInfo
 
-makeLenses ''GUIInfo
+makeLenses ''GUI
 makeLenses ''WindowInfo
 makeLenses ''ComponentInfo
 makePrisms ''ComponentType
@@ -198,10 +194,10 @@ rightClickByText :: Monad m => Remote m -> (T.Text -> Bool) -> Glance m l GUICom
 rightClickByText p predicate = descendants >=> which (text._Just) predicate >=> rightClick p
 
 popupItem :: Monad m => Glance m l GUIWindow GUIComponent
-popupItem w = (sub (popupLayer.folded) >=> descendants $ w) `mplus` 
+popupItem w = (decorate (the.popupLayer.folded) >=> descendants $ w) `mplus` 
               (insidepop w)
     where insidepop = descendants1 >=> 
-                      sub contentPane >=> 
+                      decorate (the.contentPane) >=> 
                       descendants >=> 
                       which (componentType._PopupMenu) (const True) >=> 
                       descendants
@@ -209,7 +205,7 @@ popupItem w = (sub (popupLayer.folded) >=> descendants $ w) `mplus`
 selectInMenuBar :: Monad m => Remote m -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
 selectInMenuBar r ps = 
     let go (firstitem,middleitems,lastitem) = do
-           poke $ sub (menu.folded) >=> descendants >=> which (text._Just) firstitem >=> clickButton r
+           poke $ decorate (the.menu.folded) >=> descendants >=> which (text._Just) firstitem >=> clickButton r
            let pairs = zip middleitems (clickButton r <$ middleitems) ++
                        [(lastitem, clickButton r)]
            forM_ pairs $ \(txt,action) -> 
@@ -221,7 +217,7 @@ selectInMenuBar r ps =
 toggleInMenuBar :: Monad m => Remote m -> Bool -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
 toggleInMenuBar r toggleStatus ps = 
     let go (firstitem,middleitems,lastitem) = do
-           poke $ sub (menu.folded) >=> descendants >=> which (text._Just) firstitem >=> clickButton r
+           poke $ decorate (the.menu.folded) >=> descendants >=> which (text._Just) firstitem >=> clickButton r
            let pairs = zip middleitems (clickButton r <$ middleitems) ++
                        [(lastitem, toggle r toggleStatus)]
            forM_ pairs $ \(txt,action) -> 
@@ -239,16 +235,16 @@ selectInComboBox r f = do
         poke $ clickCombo r
         poke $ window >=> 
                popupItem >=> 
-               sub (componentType._List.folded) >=> 
+               decorate (the.componentType._List.folded) >=> 
                which (renderer.folded.text._Just) f >=> 
                clickCell r
 
 selectTabByText :: Monad m => Remote m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m)
-selectTabByText r f = sub (componentType._TabbedPane.folded) >=> which tabText f >=> selectTab r  
+selectTabByText r f = decorate (the.componentType._TabbedPane.folded) >=> which tabText f >=> selectTab r  
 
 tableCellByText:: MonadPlus n => Int -> (T.Text -> Bool) -> GUIComponent -> n (EnvT GUIComponent Identity CellInfo)
 tableCellByText colIndex f =
-    sub (componentType._Table.folding (`atMay` colIndex).folded) >=>    
+    decorate (the.componentType._Table.folding (`atMay` colIndex).folded) >=>    
     which (renderer.folded.text._Just) f
 
 labeledBy :: Monad m => (T.Text -> Bool) -> Glance m l GUIComponent GUIComponent

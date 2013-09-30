@@ -26,7 +26,7 @@ import System.Exit (exitFailure)
 checkStatusBar :: Monad m => Remote m -> (T.Text -> Bool) -> Pianola m LogEntry GUIComponent ()
 checkStatusBar p predicate = do
     with (descendants >=> which (name._Just) (=="status bar")) $ do
-        statusText <- peek $ the (text._Just)
+        statusText <- peek $ fromFold (the.text._Just)
         logmsg $ "status text is: " <> statusText
         unless (predicate statusText) $ do
             logmsg $ "Unexpected text in status bar: " <> statusText
@@ -36,7 +36,7 @@ checkStatusBar p predicate = do
 checkDialog :: Monad m => Remote m -> Pianola m LogEntry GUIComponent ()
 checkDialog p = do
     poke $ clickButtonByText p (=="open dialog")
-    with (window >=> descendants1 >=> sub contentPane) $ do
+    with (window >=> descendants1 >=> decorate (the.contentPane)) $ do
         poke $ clickButtonByText p (=="click this")
         poke $ clickButtonByText p (=="close dialog")
     checkStatusBar p (=="clicked button in dialog")
@@ -46,7 +46,7 @@ checkDelayedDialog p = do
     poke $ clickButtonByText p (=="open slow dialog")
     with window $ do
         pmaybe pfail $ withRetry1s 7 descendants1 $ do       
-            with (sub contentPane) $ poke $ clickButtonByText p (=="close dialog")
+            with (decorate $ the.contentPane) $ poke $ clickButtonByText p (=="close dialog")
         logmsg "clicked delayed close button"
         pmaybe pfail $ retryPeek1s 7 $ missing descendants1
     checkStatusBar p (=="Performed delayed close")
@@ -55,15 +55,15 @@ expandAndCheckLeafA :: Monad m => Remote m -> Int -> Pianola m LogEntry GUICompo
 expandAndCheckLeafA p depth = do
     with descendants $ do 
         -- poke $ treeCellByText depth (=="leaf a") >=> expand p True
-        poke $ (sub $ componentType._Treegui.folded) >=> 
+        poke $ (decorate $ the.componentType._Treegui.folded) >=> 
                descendantsN depth >=>
                which (renderer.folded.text._Just) (=="leaf a") >=> expand p True
     checkStatusBar p (=="leaf a is collapsed: false")
 
 testCase:: Monad m => Remote m -> Pianola m LogEntry GUI () 
-testCase p = with (ff $ sub' $ topLevel . folded) $ do
+testCase p = with (decorate $ topLevel.folded) $ do
     poke $ toFront p
-    with (sub contentPane) $ do 
+    with (decorate $ the.contentPane) $ do 
         poke $ descendants >=> which (text._Just) (=="En un lugar de la Mancha") 
                            >=> setText p "Lorem ipsum dolor sit amet" 
         checkStatusBar p (=="Lorem ipsum dolor sit amet")
@@ -100,7 +100,7 @@ testCase p = with (ff $ sub' $ topLevel . folded) $ do
         logmsg "opening a file chooser"
         with (descendants >=> which (text._Just) (=="Open file chooser")) $ do
             poke $ clickButton p
-            with window $ with descendants1 $ with (sub contentPane) $ do
+            with window $ with descendants1 $ with (decorate $ the.contentPane) $ do
                 poke $ descendants >=> which (text._Just) (=="") >=> setText p "/tmp/foofile.txt"   
                 poke $ clickButtonByText p $ \txt -> or $ map (txt==) ["Open","Abrir"]
         checkStatusBar p (T.isInfixOf "foofile")
@@ -134,7 +134,7 @@ testCase p = with (ff $ sub' $ topLevel . folded) $ do
             poke $ selectTabByText p (=="tab JTree b")  
             logmsg "tab change"
         expandAndCheckLeafA p 0
-    with (sub contentPane) $ do
+    with (decorate $ the.contentPane) $ do
         with descendants $ poke $ selectTabByText p (=="labels")
         sleep 1
         poke $ labeledBy (=="label2") >=> setText p "hope this works!"

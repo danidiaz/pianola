@@ -43,8 +43,8 @@ makeAction method args = Sealed [T.pack "@" <> method] $
 instance Unpackable a => Unpackable (Identity a) where
     get = Identity <$> get
 
-instance Unpackable GUIInfo where
-    get = GUIInfo <$> get <*> get
+instance Unpackable GUI where
+    get = GUI <$> get <*> get
 
 instance Unpackable WindowInfo where
     get = do

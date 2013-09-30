@@ -5,13 +5,13 @@
 module Pianola.Util (
         replusify,
         tomaybet,
-        perhaps,
-        extract',
-        ff,
+--        extract',
+        fromFold,
         the,
-        the',
-        sub,
-        sub',
+        decorate,
+--        the',
+--        sub,
+--        sub',
         which,
         cull',
         Treeish(..),
@@ -75,27 +75,27 @@ instance (Comonad c, Treeish (c a)) => Treeish (EnvT e c a) where
 
 -----------------------------------------------------------------------
 
-ff :: MonadPlus m => Fold a b -> a -> m b
-ff f = replusify . toListOf f
+fromFold :: MonadPlus m => Fold a b -> a -> m b
+fromFold f = replusify . toListOf f
 
-perhaps :: (Foldable f, MonadPlus m) => f a -> m a
-perhaps = replusify
+--extract' :: Comonad c => IndexPreservingGetter (c a) a
+--extract' = to extract
 
-extract' :: Comonad c => IndexPreservingGetter (c a) a
-extract' = to extract
+--the :: (Comonad c, MonadPlus m) => Fold a b -> c a -> m b 
+--the f = replusify . toListOf f . extract  
 
-the :: (Comonad c, MonadPlus m) => Fold a b -> c a -> m b 
-the f = replusify . toListOf f . extract  
+the :: Comonad c => Fold (c a) a
+the = to extract
 
-the' :: Comonad c => Fold a b -> Fold (c a) b
-the' f = to extract.f
+decorate ::  (Comonad c, MonadPlus m) => Fold a (c b) -> a -> m (EnvT a c b)
+decorate f x = replusify . map (EnvT x) $ toListOf f x
 
-sub ::  (Comonad c, Comonad c', MonadPlus m) => Fold a (c' b) -> c a -> m (EnvT (c a) c' b)
-sub f x = replusify . map (EnvT x) $ toListOf f (extract x)
-
-sub' ::  (Comonad c, Comonad c') => Fold a (c' b) -> Fold (c a) (EnvT (c a) c' b)
-sub' f = folding $ \x -> map (EnvT x) $ toListOf f (extract x)
-
+--sub ::  (Comonad c, Comonad c', MonadPlus m) => Fold a (c' b) -> c a -> m (EnvT (c a) c' b)
+--sub f x = replusify . map (EnvT x) $ toListOf f (extract x)
+--
+--sub' ::  (Comonad c, Comonad c') => Fold a (c' b) -> Fold (c a) (EnvT (c a) c' b)
+--sub' f = folding $ \x -> map (EnvT x) $ toListOf f (extract x)
+--
 which :: (Comonad c, MonadPlus m) => Fold a b -> (b -> Bool) -> c a -> m (c a)
 which f p x = guard (anyOf (to extract . f) p $ x) >> return x 
 
