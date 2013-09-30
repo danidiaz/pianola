@@ -13,7 +13,7 @@ module Pianola.Util (
         Loggy(..),
         LogEntry(..),
         Image,
-        Nullipotent(runNullipotent),
+        Query(runQuery),
         Tag,
         Sealed(tags,unseal),
         addTag
@@ -73,38 +73,14 @@ instance (Comonad c, Treeish (c a)) => Treeish (EnvT e c a) where
 fromFold :: MonadPlus m => Fold a b -> a -> m b
 fromFold f = replusify . toListOf f
 
---extract' :: Comonad c => IndexPreservingGetter (c a) a
---extract' = to extract
-
---the :: (Comonad c, MonadPlus m) => Fold a b -> c a -> m b 
---the f = replusify . toListOf f . extract  
-
 the :: Comonad c => Fold (c a) a
 the = to extract
 
 decorate ::  (Comonad c, MonadPlus m) => Fold a (c b) -> a -> m (EnvT a c b)
 decorate f x = replusify . map (EnvT x) $ toListOf f x
 
---sub ::  (Comonad c, Comonad c', MonadPlus m) => Fold a (c' b) -> c a -> m (EnvT (c a) c' b)
---sub f x = replusify . map (EnvT x) $ toListOf f (extract x)
---
---sub' ::  (Comonad c, Comonad c') => Fold a (c' b) -> Fold (c a) (EnvT (c a) c' b)
---sub' f = folding $ \x -> map (EnvT x) $ toListOf f (extract x)
---
 keep :: MonadPlus m => Fold a b -> (b -> Bool) -> a -> m a
 keep f p x = guard (anyOf f p x) >> return x 
-
---which :: (Comonad c, MonadPlus m) => Fold a b -> (b -> Bool) -> c a -> m (c a)
---which f p x = guard (anyOf (to extract . f) p $ x) >> return x 
---
---cull' :: MonadPlus m => (a -> Bool) -> Kleisli m a a
---cull' f = Kleisli $ \x -> guard (f x) >> return x
-
---sub ::  (Comonad c, Comonad c', Monad m) => (a -> c' b) -> c a -> m (EnvT (c a) c' b)
---sub f x = return . EnvT x $ f (extract x)
-
---allThe' ::  (Comonad c, Comonad c', Foldable f, MonadPlus m) => (a -> f (c' b)) -> c a -> m (EnvT (c a) c' b)
---allThe' f x = replusify . map (EnvT x) . toList $ f (extract x)
 
 -----------------------------------------------------------------------
 

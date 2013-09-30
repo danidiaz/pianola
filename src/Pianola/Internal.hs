@@ -8,7 +8,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Pianola.Internal (
-        Nullipotent(..),
+        Query(..),
         Tag,
         Sealed(..),
         addTag
@@ -22,7 +22,7 @@ import qualified Data.Text as T
 -- | Wraps a monad in order to tag those operations which don't actually change
 -- the state of the remote system. For example: taking a screenshot doesn't
 -- change the state of a GUI, as opposed to clicking a button.
-newtype Nullipotent m a = Nullipotent { runNullipotent :: m a }
+newtype Query m a = Query { runQuery :: m a }
    deriving (Eq, Ord, Read, Show, Functor, Foldable, Traversable, Monad)
    
 type Tag = T.Text

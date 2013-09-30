@@ -5,20 +5,22 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Pianola.Swing (
-        GUI (..), topLevel,
-        WindowInfo (..), windowTitle, contentPane,
+        GUI (..), snapshotId, topLevel,
+        WindowInfo (..), windowId,windowTitle,windowDim,menu,popupLayer,contentPane,
         Window,
         GUIWindow,
-        ComponentInfo (..), name, text, componentType,
-        ComponentType (..), _List, _Table, _Treegui, 
+        ComponentInfo (..), componentId,pos,dim,name,tooltip,text,enabled,componentType,
+        ComponentType (..), _Panel,_Toggleable,_Button,_TextField
+                          , _Label,_ComboBox
+                          , _List, _Table, _Treegui,_PopupMenu,_TabbedPane,_Other, 
         Component,
         GUIComponent,
         window,
-        CellInfo (..), renderer,
+        CellInfo (..), rowId,columnId,isFromTree,renderer,
         ListCell,
         TableCell,
         TreeCell,
-        TabInfo (..),
+        TabInfo (..), tabId,tabText,tabToolTip,isTabSelected,
         Tab,
 --        mainWindow,
 --        childWindow,
@@ -74,7 +76,7 @@ data WindowInfo = WindowInfo
     ,  _menu::[Component]
     ,  _popupLayer:: [Component]
     ,  _contentPane::Component
---    ,  _capture::Nullipotent m Image
+--    ,  _capture::Query m Image
 --    ,  _escape::Sealed m
 --    ,  _enter::Sealed m
 --    ,  _close::Sealed m
@@ -184,7 +186,7 @@ data Remote m = Remote
     , escape:: Monad n => GUIWindow -> n (Sealed m)
     , enter:: Monad n => GUIWindow -> n (Sealed m)
     , close:: Monad n => GUIWindow -> n (Sealed m)
-    , capture :: Monad n => GUIWindow -> Nullipotent n Image 
+    , capture :: Monad n => GUIWindow -> Query n Image 
     }
 
 clickButtonByText :: Monad m => Remote m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m) 

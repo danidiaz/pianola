@@ -43,18 +43,18 @@ import Pipes
 
 import Pianola.Util
 
-type Glance m l o a = o -> LogicT (Producer l (Nullipotent m)) a
+type Glance m l o a = o -> LogicT (Producer l (Query m)) a
 
 collect :: (Monad m, MonadPlus n) => Glance m l o a -> Glance m l o (n a)
 collect = fmap $ \x -> lift $ observeAllT x >>= return . replusify
 
-liftN :: Monad m => Glance m l (Nullipotent m a) a
+liftN :: Monad m => Glance m l (Query m a) a
 liftN = lift . lift
 
 missing :: Monad m => Glance m l o a -> Glance m l o () 
 missing = fmap lnot
 
-type ObserverF m l o = Compose ((->) o) (LogicT (Producer l (Nullipotent m)))
+type ObserverF m l o = Compose ((->) o) (LogicT (Producer l (Query m)))
 
 type Observer m l o = Free (ObserverF m l o)
 
@@ -66,7 +66,7 @@ focus prefix v =
 runObserver :: Monad m => m o -> Observer m l o a -> MaybeT (Producer l m) a
 runObserver _ (Pure b) = return b
 runObserver mom (Free f) =
-   let squint = fmap $ hoist (hoist runNullipotent) . tomaybet
+   let squint = fmap $ hoist (hoist runQuery) . tomaybet
    in join $ (lift . lift $ mom) >>= squint (getCompose $ runObserver mom <$> f)
 
 type Delay = Int
