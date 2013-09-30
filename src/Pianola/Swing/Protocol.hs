@@ -1,7 +1,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 module Pianola.Swing.Protocol (
-        snapshot
+        snapshot,
+        remote
     ) where
 
 import Prelude hiding (catch,(.),id)
@@ -31,6 +32,9 @@ iterget = AI.parserToIteratee get
 -- Swing GUI.
 snapshot :: Protocol GUI
 snapshot = call [pack "snapshot"] iterget >>= hoistEither
+
+remote :: Remote Protocol
+remote = undefined
 
 makeAction :: T.Text -> [BL.ByteString] -> Sealed Protocol
 makeAction method args = Sealed [T.pack "@" <> method] $

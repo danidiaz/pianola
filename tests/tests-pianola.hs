@@ -18,15 +18,15 @@ import Pianola
 import Pianola.Util
 import Pianola.Driver
 import Pianola.Swing
-import Pianola.Swing.Protocol (snapshot)
+import Pianola.Swing.Protocol (snapshot,remote)
 
 import System.Environment
 import System.Exit (exitFailure)
 
 checkStatusBar :: Monad m => Remote m -> (T.Text -> Bool) -> Pianola m LogEntry GUIComponent ()
 checkStatusBar p predicate = do
-    with (descendants >=> which _windowTitle (=="status bar")) $ do
-        statusText <- peek $ perhaps _text
+    with (descendants >=> which (name._Just) (=="status bar")) $ do
+        statusText <- peek $ the (text._Just)
         logmsg $ "status text is: " <> statusText
         unless (predicate statusText) $ do
             logmsg $ "Unexpected text in status bar: " <> statusText
@@ -36,7 +36,7 @@ checkStatusBar p predicate = do
 checkDialog :: Monad m => Remote m -> Pianola m LogEntry GUIComponent ()
 checkDialog p = do
     poke $ clickButtonByText p (=="open dialog")
-    with (the window >=> descendants1 >=> the _contentPane) $ do
+    with (window >=> descendants1 >=> sub contentPane) $ do
         poke $ clickButtonByText p (=="click this")
         poke $ clickButtonByText p (=="close dialog")
     checkStatusBar p (=="clicked button in dialog")
@@ -46,7 +46,7 @@ checkDelayedDialog p = do
     poke $ clickButtonByText p (=="open slow dialog")
     with window $ do
         pmaybe pfail $ withRetry1s 7 descendants1 $ do       
-            with (the contentPane) $ poke $ clickButtonByText p (=="close dialog")
+            with (sub contentPane) $ poke $ clickButtonByText p (=="close dialog")
         logmsg "clicked delayed close button"
         pmaybe pfail $ retryPeek1s 7 $ missing descendants1
     checkStatusBar p (=="Performed delayed close")
@@ -55,89 +55,90 @@ expandAndCheckLeafA :: Monad m => Remote m -> Int -> Pianola m LogEntry GUICompo
 expandAndCheckLeafA p depth = do
     with descendants $ do 
         -- poke $ treeCellByText depth (=="leaf a") >=> expand p True
-        poke $ (ff $ sub $ _Treegui.folded) >=>  descendantsN depth
-               which (the' renderer.folded.text._Just) (=="leaf a") >=> expand p True
+        poke $ (sub $ componentType._Treegui.folded) >=> 
+               descendantsN depth >=>
+               which (renderer.folded.text._Just) (=="leaf a") >=> expand p True
     checkStatusBar p (=="leaf a is collapsed: false")
 
-testCase:: Remote m -> Pianola m LogEntry GUI () 
+testCase:: Monad m => Remote m -> Pianola m LogEntry GUI () 
 testCase p = with (ff $ sub' $ topLevel . folded) $ do
     poke $ toFront p
-    with (the contentPane) $ do 
+    with (sub contentPane) $ do 
         poke $ descendants >=> which (text._Just) (=="En un lugar de la Mancha") 
-                           >=> setText "Lorem ipsum dolor sit amet"
-        checkStatusBar (=="Lorem ipsum dolor sit amet")
+                           >=> setText p "Lorem ipsum dolor sit amet" 
+        checkStatusBar p (=="Lorem ipsum dolor sit amet")
         logmsg "testing dialog"
-        checkDialog
+        checkDialog p
         logmsg "dialog again, each action ralentized"
-        ralentize 2 $ checkDialog 
+        ralentize 2 $ checkDialog p
         logmsg "dialog with delayed open and close"
-        checkDelayedDialog    
+        checkDelayedDialog p   
         logmsg "testing right click"
-        poke $ descendants >=> which (text._Just) (=="click dbl click") >=> click
-        checkStatusBar (=="clicked on label")
-        poke $ descendants >=> which (text._Just) (=="click dbl click") >=> doubleClick
-        checkStatusBar (=="double-clicked on label")
-        poke $ rightClickByText (=="This is a label")
+        poke $ descendants >=> which (text._Just) (=="click dbl click") >=> click p
+        checkStatusBar p (=="clicked on label")
+        poke $ descendants >=> which (text._Just) (=="click dbl click") >=> doubleClick p
+        checkStatusBar p (=="double-clicked on label") 
+        poke $ rightClickByText p (=="This is a label")
         pmaybe pfail $ retryPoke1s 4 $ 
-            window >=> popupItem >=> which (text._Just) (=="popupitem2") >=> clickButton  
-        checkStatusBar (=="clicked on popupitem2")
+            window >=> popupItem >=> which (text._Just) (=="popupitem2") >=> clickButton p 
+        checkStatusBar p (=="clicked on popupitem2")
         sleep 1
         logmsg "testing checkbox"
         poke $ descendants >=> which (text._Just) (=="This is a checkbox") >=> toggle p True
-        checkStatusBar (=="checkbox is now true")
+        checkStatusBar p (=="checkbox is now true") 
         logmsg "foo log message"
-        with window $ toggleInMenuBar True $ 
+        with window $ toggleInMenuBar p True $ 
             map (==) ["Menu1","SubMenu1","submenuitem2"]
-        checkStatusBar (=="checkbox in menu is now true")
+        checkStatusBar p (=="checkbox in menu is now true") 
         logmsg "getting a screenshot"
         with window $ logcapture p 
         logmsg "now for a second menu"
-        autolog $ with window $ selectInMenuBar $ 
+        autolog $ with window $ selectInMenuBar p $ 
             map (==) ["Menu1","SubMenu1","submenuitem1"]
-        checkStatusBar (=="clicked on submenuitem1")
+        checkStatusBar p (=="clicked on submenuitem1") 
         sleep 2
         logmsg "opening a file chooser"
         with (descendants >=> which (text._Just) (=="Open file chooser")) $ do
-            poke clickButton
-            with window $ with descendants1 $ with contentPane $ do
-                poke $ descendants >=> which (text._Just) (=="") >=> setText "/tmp/foofile.txt"   
-                poke $ clickButtonByText $ \txt -> or $ map (txt==) ["Open","Abrir"]
-        checkStatusBar (T.isInfixOf "foofile")
+            poke $ clickButton p
+            with window $ with descendants1 $ with (sub contentPane) $ do
+                poke $ descendants >=> which (text._Just) (=="") >=> setText p "/tmp/foofile.txt"   
+                poke $ clickButtonByText p $ \txt -> or $ map (txt==) ["Open","Abrir"]
+        checkStatusBar p (T.isInfixOf "foofile")
         sleep 1
         with descendants $ do 
             logmsg "working with a combo box"
-            selectInComboBox (=="ccc")
+            selectInComboBox p (=="ccc")
             sleep 1
-        checkStatusBar (=="selected in combo: ccc")
+        checkStatusBar p (=="selected in combo: ccc")
         with descendants $ do 
             sleep 2
-            poke $ selectTabByText (=="tab two")  
+            poke $ selectTabByText p (=="tab two")  
             sleep 2
             poke $ tableCellByText 2 (=="7") >=> clickCell p
-        checkStatusBar (=="selected index in table: 2")
+        checkStatusBar p (=="selected index in table: 2")
         with descendants $ do 
             sleep 2
             poke $ tableCellByText 1 (=="4") >=> doubleClickCell p
             sleep 2
             poke $ which (componentType._Table) (const True) >=>
-                   descendants1 >=> which (text._Just) (=="4") >=> setText "77" p 
+                   descendants1 >=> which (text._Just) (=="4") >=> setText p "77"  
         with window $ poke $ enter p
-        checkStatusBar (=="table value at row 1 col 1 is 77")
+        checkStatusBar p (=="table value at row 1 col 1 is 77")
         with descendants $ do 
             sleep 2
-            poke $ selectTabByText (=="tab JTree a")  
+            poke $ selectTabByText p (=="tab JTree a")  
             logmsg "tab change"
-        expandAndCheckLeafA 1
+        expandAndCheckLeafA p 1
         with descendants $ do 
             sleep 2
-            poke $ selectTabByText (=="tab JTree b")  
+            poke $ selectTabByText p (=="tab JTree b")  
             logmsg "tab change"
-        expandAndCheckLeafA 0
-    with contentPane $ do
-        with descendants $ poke $ selectTabByText (=="labels")
+        expandAndCheckLeafA p 0
+    with (sub contentPane) $ do
+        with descendants $ poke $ selectTabByText p (=="labels")
         sleep 1
-        poke $ labeledBy (=="label2") >=> setText "hope this works!"
-        checkStatusBar (=="hope this works!")
+        poke $ labeledBy (=="label2") >=> setText p "hope this works!"
+        checkStatusBar p (=="hope this works!")
         sleep 2 
     poke $ close p
 
@@ -150,7 +151,7 @@ main = do
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
 
-  r <- runEitherT $ drive snapshot endpoint testCase $ screenshotStream "dist/test"
+  r <- runEitherT $ drive snapshot endpoint (testCase remote) $ screenshotStream "dist/test"
   case r of
      Left err -> do
         putStrLn $ "result: " <> show err

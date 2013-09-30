@@ -7,10 +7,10 @@
 module Pianola.Swing (
         GUIInfo (..), topLevel,
         GUI,
-        WindowInfo (..), contentPane,
+        WindowInfo (..), windowTitle, contentPane,
         Window,
         GUIWindow,
-        ComponentInfo (..), text, componentType,
+        ComponentInfo (..), name, text, componentType,
         ComponentType (..), _List, _Table, _Treegui, 
         Component,
         GUIComponent,
@@ -174,7 +174,6 @@ makeLenses ''TabInfo
 
 data Remote m = Remote
     { clickButton :: MonadPlus n => GUIComponent -> n (Sealed m)
-    , expand :: MonadPlus n => TreeCell -> n (Sealed m)
     , toFront :: MonadPlus n => GUIWindow -> n (Sealed m)
     , setText :: MonadPlus n => T.Text -> GUIComponent -> n (Sealed m)
     , click :: Monad n => GUIComponent -> n (Sealed m)
@@ -185,6 +184,7 @@ data Remote m = Remote
     , selectTab:: MonadPlus n => GUITab -> n (Sealed m)
     , clickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Sealed m)
     , doubleClickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Sealed m)
+    , expand :: (Comonad c, MonadPlus n) => Bool -> EnvT GUIComponent c CellInfo -> n (Sealed m)
     , escape:: Monad n => GUIWindow -> n (Sealed m)
     , enter:: Monad n => GUIWindow -> n (Sealed m)
     , close:: Monad n => GUIWindow -> n (Sealed m)
