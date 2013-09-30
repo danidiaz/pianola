@@ -188,10 +188,10 @@ data Remote m = Remote
     }
 
 clickButtonByText :: Monad m => Remote m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m) 
-clickButtonByText p predicate = descendants >=> which (text._Just) predicate >=> clickButton p
+clickButtonByText p predicate = descendants >=> keep (the.text._Just) predicate >=> clickButton p
 
 rightClickByText :: Monad m => Remote m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m) 
-rightClickByText p predicate = descendants >=> which (text._Just) predicate >=> rightClick p
+rightClickByText p predicate = descendants >=> keep (the.text._Just) predicate >=> rightClick p
 
 popupItem :: Monad m => Glance m l GUIWindow GUIComponent
 popupItem w = (decorate (the.popupLayer.folded) >=> descendants $ w) `mplus` 
@@ -199,30 +199,30 @@ popupItem w = (decorate (the.popupLayer.folded) >=> descendants $ w) `mplus`
     where insidepop = descendants1 >=> 
                       decorate (the.contentPane) >=> 
                       descendants >=> 
-                      which (componentType._PopupMenu) (const True) >=> 
+                      keep (the.componentType._PopupMenu) (const True) >=> 
                       descendants
 
 selectInMenuBar :: Monad m => Remote m -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
 selectInMenuBar r ps = 
     let go (firstitem,middleitems,lastitem) = do
-           poke $ decorate (the.menu.folded) >=> descendants >=> which (text._Just) firstitem >=> clickButton r
+           poke $ decorate (the.menu.folded) >=> descendants >=> keep (the.text._Just) firstitem >=> clickButton r
            let pairs = zip middleitems (clickButton r <$ middleitems) ++
                        [(lastitem, clickButton r)]
            forM_ pairs $ \(txt,action) -> 
                pmaybe pfail $ retryPoke1s 7 $ 
-                   popupItem >=> which (text._Just) txt >=> action
+                   popupItem >=> keep (the.text._Just) txt >=> action
         clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ) <*> lastZ l
     in maybe pfail go (clip ps)
 
 toggleInMenuBar :: Monad m => Remote m -> Bool -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
 toggleInMenuBar r toggleStatus ps = 
     let go (firstitem,middleitems,lastitem) = do
-           poke $ decorate (the.menu.folded) >=> descendants >=> which (text._Just) firstitem >=> clickButton r
+           poke $ decorate (the.menu.folded) >=> descendants >=> keep (the.text._Just) firstitem >=> clickButton r
            let pairs = zip middleitems (clickButton r <$ middleitems) ++
                        [(lastitem, toggle r toggleStatus)]
            forM_ pairs $ \(txt,action) -> 
                pmaybe pfail $ retryPoke1s 7 $ 
-                   popupItem >=> which (text._Just) txt >=> action
+                   popupItem >=> keep (the.text._Just) txt >=> action
            replicateM_ (length pairs) $ poke $ escape r
         clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
     in maybe pfail go (clip ps)
@@ -236,16 +236,16 @@ selectInComboBox r f = do
         poke $ window >=> 
                popupItem >=> 
                decorate (the.componentType._List.folded) >=> 
-               which (renderer.folded.text._Just) f >=> 
+               keep (the.renderer.folded.text._Just) f >=> 
                clickCell r
 
 selectTabByText :: Monad m => Remote m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m)
-selectTabByText r f = decorate (the.componentType._TabbedPane.folded) >=> which tabText f >=> selectTab r  
+selectTabByText r f = decorate (the.componentType._TabbedPane.folded) >=> keep (the.tabText) f >=> selectTab r  
 
 tableCellByText:: MonadPlus n => Int -> (T.Text -> Bool) -> GUIComponent -> n (EnvT GUIComponent Identity CellInfo)
 tableCellByText colIndex f =
     decorate (the.componentType._Table.folding (`atMay` colIndex).folded) >=>    
-    which (renderer.folded.text._Just) f
+    keep (the.renderer.folded.text._Just) f
 
 labeledBy :: Monad m => (T.Text -> Bool) -> Glance m l GUIComponent GUIComponent
 labeledBy f = 
@@ -259,12 +259,12 @@ labeledBy f =
             Treegui {} -> True
             _ -> False
         firstArrow = Kleisli $ descendants >=>
-                               which (componentType._Label) (\_->True) >=> 
-                               which (text._Just) f    
+                               keep (the.componentType._Label) (\_->True) >=> 
+                               keep (the.text._Just) f    
         secondArrow = Kleisli $ descendants >=> 
-                                which componentType labellable 
+                                keep (the.componentType) labellable 
         candidates = collect $ runKleisli $
-            (firstArrow &&& secondArrow) >>> cull' (uncurry sameLevelRightOf) >>^ snd 
+            (firstArrow &&& secondArrow) >>> (Kleisli $ keep id (uncurry sameLevelRightOf)) >>^ snd 
      in candidates >=> headZ . sortBy (compare `on` minX) 
 
 -- newtype Window m = Window { unWindow :: Tree (WindowInfo m) }

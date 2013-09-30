@@ -25,7 +25,7 @@ import System.Exit (exitFailure)
 
 checkStatusBar :: Monad m => Remote m -> (T.Text -> Bool) -> Pianola m LogEntry GUIComponent ()
 checkStatusBar p predicate = do
-    with (descendants >=> which (name._Just) (=="status bar")) $ do
+    with (descendants >=> keep (the.name._Just) (=="status bar")) $ do
         statusText <- peek $ fromFold (the.text._Just)
         logmsg $ "status text is: " <> statusText
         unless (predicate statusText) $ do
@@ -57,14 +57,14 @@ expandAndCheckLeafA p depth = do
         -- poke $ treeCellByText depth (=="leaf a") >=> expand p True
         poke $ (decorate $ the.componentType._Treegui.folded) >=> 
                descendantsN depth >=>
-               which (renderer.folded.text._Just) (=="leaf a") >=> expand p True
+               keep (the.renderer.folded.text._Just) (=="leaf a") >=> expand p True
     checkStatusBar p (=="leaf a is collapsed: false")
 
 testCase:: Monad m => Remote m -> Pianola m LogEntry GUI () 
 testCase p = with (decorate $ topLevel.folded) $ do
     poke $ toFront p
     with (decorate $ the.contentPane) $ do 
-        poke $ descendants >=> which (text._Just) (=="En un lugar de la Mancha") 
+        poke $ descendants >=> keep (the.text._Just) (=="En un lugar de la Mancha") 
                            >=> setText p "Lorem ipsum dolor sit amet" 
         checkStatusBar p (=="Lorem ipsum dolor sit amet")
         logmsg "testing dialog"
@@ -74,17 +74,17 @@ testCase p = with (decorate $ topLevel.folded) $ do
         logmsg "dialog with delayed open and close"
         checkDelayedDialog p   
         logmsg "testing right click"
-        poke $ descendants >=> which (text._Just) (=="click dbl click") >=> click p
+        poke $ descendants >=> keep (the.text._Just) (=="click dbl click") >=> click p
         checkStatusBar p (=="clicked on label")
-        poke $ descendants >=> which (text._Just) (=="click dbl click") >=> doubleClick p
+        poke $ descendants >=> keep (the.text._Just) (=="click dbl click") >=> doubleClick p
         checkStatusBar p (=="double-clicked on label") 
         poke $ rightClickByText p (=="This is a label")
         pmaybe pfail $ retryPoke1s 4 $ 
-            window >=> popupItem >=> which (text._Just) (=="popupitem2") >=> clickButton p 
+            window >=> popupItem >=> keep (the.text._Just) (=="popupitem2") >=> clickButton p 
         checkStatusBar p (=="clicked on popupitem2")
         sleep 1
         logmsg "testing checkbox"
-        poke $ descendants >=> which (text._Just) (=="This is a checkbox") >=> toggle p True
+        poke $ descendants >=> keep (the.text._Just) (=="This is a checkbox") >=> toggle p True
         checkStatusBar p (=="checkbox is now true") 
         logmsg "foo log message"
         with window $ toggleInMenuBar p True $ 
@@ -98,10 +98,10 @@ testCase p = with (decorate $ topLevel.folded) $ do
         checkStatusBar p (=="clicked on submenuitem1") 
         sleep 2
         logmsg "opening a file chooser"
-        with (descendants >=> which (text._Just) (=="Open file chooser")) $ do
+        with (descendants >=> keep (the.text._Just) (=="Open file chooser")) $ do
             poke $ clickButton p
             with window $ with descendants1 $ with (decorate $ the.contentPane) $ do
-                poke $ descendants >=> which (text._Just) (=="") >=> setText p "/tmp/foofile.txt"   
+                poke $ descendants >=> keep (the.text._Just) (=="") >=> setText p "/tmp/foofile.txt"   
                 poke $ clickButtonByText p $ \txt -> or $ map (txt==) ["Open","Abrir"]
         checkStatusBar p (T.isInfixOf "foofile")
         sleep 1
@@ -120,8 +120,8 @@ testCase p = with (decorate $ topLevel.folded) $ do
             sleep 2
             poke $ tableCellByText 1 (=="4") >=> doubleClickCell p
             sleep 2
-            poke $ which (componentType._Table) (const True) >=>
-                   descendants1 >=> which (text._Just) (=="4") >=> setText p "77"  
+            poke $ keep (the.componentType._Table) (const True) >=>
+                   descendants1 >=> keep (the.text._Just) (=="4") >=> setText p "77"  
         with window $ poke $ enter p
         checkStatusBar p (=="table value at row 1 col 1 is 77")
         with descendants $ do 

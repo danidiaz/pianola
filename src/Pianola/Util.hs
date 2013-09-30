@@ -5,15 +5,10 @@
 module Pianola.Util (
         replusify,
         tomaybet,
---        extract',
         fromFold,
-        the,
         decorate,
---        the',
---        sub,
---        sub',
-        which,
-        cull',
+        the,
+        keep,
         Treeish(..),
         Loggy(..),
         LogEntry(..),
@@ -96,11 +91,14 @@ decorate f x = replusify . map (EnvT x) $ toListOf f x
 --sub' ::  (Comonad c, Comonad c') => Fold a (c' b) -> Fold (c a) (EnvT (c a) c' b)
 --sub' f = folding $ \x -> map (EnvT x) $ toListOf f (extract x)
 --
-which :: (Comonad c, MonadPlus m) => Fold a b -> (b -> Bool) -> c a -> m (c a)
-which f p x = guard (anyOf (to extract . f) p $ x) >> return x 
+keep :: MonadPlus m => Fold a b -> (b -> Bool) -> a -> m a
+keep f p x = guard (anyOf f p x) >> return x 
 
-cull' :: MonadPlus m => (a -> Bool) -> Kleisli m a a
-cull' f = Kleisli $ \x -> guard (f x) >> return x
+--which :: (Comonad c, MonadPlus m) => Fold a b -> (b -> Bool) -> c a -> m (c a)
+--which f p x = guard (anyOf (to extract . f) p $ x) >> return x 
+--
+--cull' :: MonadPlus m => (a -> Bool) -> Kleisli m a a
+--cull' f = Kleisli $ \x -> guard (f x) >> return x
 
 --sub ::  (Comonad c, Comonad c', Monad m) => (a -> c' b) -> c a -> m (EnvT (c a) c' b)
 --sub f x = return . EnvT x $ f (extract x)
