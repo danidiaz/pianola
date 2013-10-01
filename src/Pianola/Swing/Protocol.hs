@@ -33,8 +33,6 @@ iterget = AI.parserToIteratee get
 snapshot :: Protocol GUI
 snapshot = call [pack "snapshot"] iterget >>= hoistEither
 
-remote :: Remote Protocol
-remote = undefined
 
 makeAction :: T.Text -> [BL.ByteString] -> Sealed Protocol
 makeAction method args = Sealed [T.pack "@" <> method] $
@@ -145,3 +143,40 @@ instance Unpackable TabInfo where
 --                map pack [snapid, componentid, tabid] 
         return $ TabInfo tabid text tooltipMaybe selected -- selecttab
     
+
+remote :: Remote Protocol
+remote = 
+    let clickButton = undefined
+        toFront= undefined
+        setText = undefined
+        click = undefined
+        doubleClick = undefined
+        rightClick = undefined
+        toggle = undefined
+        clickCombo= undefined
+        selectTab= undefined
+        clickCell = undefined
+        doubleClickCell = undefined
+        expand = undefined
+        escape= undefined
+        enter= undefined
+        close= undefined
+        capture= undefined
+    in Remote clickButton 
+              toFront
+              setText
+              click 
+              doubleClick 
+              rightClick 
+              toggle
+              clickCombo
+              selectTab
+              clickCell 
+              doubleClickCell 
+              expand
+              escape
+              enter
+              close
+              capture
+    
+
