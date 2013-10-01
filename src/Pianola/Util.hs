@@ -8,7 +8,7 @@ module Pianola.Util (
         fromFold,
         decorate,
         the,
-        keep,
+        prune,
         Treeish(..),
         Loggy(..),
         LogEntry(..),
@@ -79,8 +79,8 @@ the = to extract
 decorate ::  (Comonad c, MonadPlus m) => Fold a (c b) -> a -> m (EnvT a c b)
 decorate f x = replusify . map (EnvT x) $ toListOf f x
 
-keep :: MonadPlus m => Fold a b -> (b -> Bool) -> a -> m a
-keep f p x = guard (anyOf f p x) >> return x 
+prune :: MonadPlus m => Fold a b -> (b -> Bool) -> a -> m a
+prune f p x = guard (anyOf f p x) >> return x 
 
 -----------------------------------------------------------------------
 

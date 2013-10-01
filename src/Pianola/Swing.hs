@@ -167,7 +167,7 @@ makeLenses ''TabInfo
 --clickButton (cType -> Button a) = return a
 --clickButton _ = mzero
 --
---clickButtonByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Glance m l (c m) (Sealed m) 
+--clickButtonByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Selector m l (c m) (Sealed m) 
 --clickButtonByText f = descendants >=> hasText f >=> clickButton
 
 data Remote m = Remote
@@ -189,42 +189,42 @@ data Remote m = Remote
     , capture :: Monad n => GUIWindow -> Query n Image 
     }
 
-clickButtonByText :: Monad m => Remote m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m) 
-clickButtonByText p predicate = descendants >=> keep (the.text._Just) predicate >=> clickButton p
+clickButtonByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Sealed m) 
+clickButtonByText p predicate = descendants >=> prune (the.text._Just) predicate >=> clickButton p
 
-rightClickByText :: Monad m => Remote m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m) 
-rightClickByText p predicate = descendants >=> keep (the.text._Just) predicate >=> rightClick p
+rightClickByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Sealed m) 
+rightClickByText p predicate = descendants >=> prune (the.text._Just) predicate >=> rightClick p
 
-popupItem :: Monad m => Glance m l GUIWindow GUIComponent
+popupItem :: Monad m => Selector m l GUIWindow GUIComponent
 popupItem w = (decorate (the.popupLayer.folded) >=> descendants $ w) `mplus` 
               (insidepop w)
     where insidepop = descendants1 >=> 
                       decorate (the.contentPane) >=> 
                       descendants >=> 
-                      keep (the.componentType._PopupMenu) (const True) >=> 
+                      prune (the.componentType._PopupMenu) (const True) >=> 
                       descendants
 
 selectInMenuBar :: Monad m => Remote m -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
 selectInMenuBar r ps = 
     let go (firstitem,middleitems,lastitem) = do
-           poke $ decorate (the.menu.folded) >=> descendants >=> keep (the.text._Just) firstitem >=> clickButton r
+           poke $ decorate (the.menu.folded) >=> descendants >=> prune (the.text._Just) firstitem >=> clickButton r
            let pairs = zip middleitems (clickButton r <$ middleitems) ++
                        [(lastitem, clickButton r)]
            forM_ pairs $ \(txt,action) -> 
                pmaybe pfail $ retryPoke1s 7 $ 
-                   popupItem >=> keep (the.text._Just) txt >=> action
+                   popupItem >=> prune (the.text._Just) txt >=> action
         clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ) <*> lastZ l
     in maybe pfail go (clip ps)
 
 toggleInMenuBar :: Monad m => Remote m -> Bool -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
 toggleInMenuBar r toggleStatus ps = 
     let go (firstitem,middleitems,lastitem) = do
-           poke $ decorate (the.menu.folded) >=> descendants >=> keep (the.text._Just) firstitem >=> clickButton r
+           poke $ decorate (the.menu.folded) >=> descendants >=> prune (the.text._Just) firstitem >=> clickButton r
            let pairs = zip middleitems (clickButton r <$ middleitems) ++
                        [(lastitem, toggle r toggleStatus)]
            forM_ pairs $ \(txt,action) -> 
                pmaybe pfail $ retryPoke1s 7 $ 
-                   popupItem >=> keep (the.text._Just) txt >=> action
+                   popupItem >=> prune (the.text._Just) txt >=> action
            replicateM_ (length pairs) $ poke $ escape r
         clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
     in maybe pfail go (clip ps)
@@ -238,18 +238,18 @@ selectInComboBox r f = do
         poke $ window >=> 
                popupItem >=> 
                decorate (the.componentType._List.folded) >=> 
-               keep (the.renderer.folded.text._Just) f >=> 
+               prune (the.renderer.folded.text._Just) f >=> 
                clickCell r
 
-selectTabByText :: Monad m => Remote m -> (T.Text -> Bool) -> Glance m l GUIComponent (Sealed m)
-selectTabByText r f = decorate (the.componentType._TabbedPane.folded) >=> keep (the.tabText) f >=> selectTab r  
+selectTabByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Sealed m)
+selectTabByText r f = decorate (the.componentType._TabbedPane.folded) >=> prune (the.tabText) f >=> selectTab r  
 
 tableCellByText:: MonadPlus n => Int -> (T.Text -> Bool) -> GUIComponent -> n (EnvT GUIComponent Identity CellInfo)
 tableCellByText colIndex f =
     decorate (the.componentType._Table.folding (`atMay` colIndex).folded) >=>    
-    keep (the.renderer.folded.text._Just) f
+    prune (the.renderer.folded.text._Just) f
 
-labeledBy :: Monad m => (T.Text -> Bool) -> Glance m l GUIComponent GUIComponent
+labeledBy :: Monad m => (T.Text -> Bool) -> Selector m l GUIComponent GUIComponent
 labeledBy f = 
     let labellable c = case c of
             Toggleable {} -> True
@@ -261,12 +261,12 @@ labeledBy f =
             Treegui {} -> True
             _ -> False
         firstArrow = Kleisli $ descendants >=>
-                               keep (the.componentType._Label) (\_->True) >=> 
-                               keep (the.text._Just) f    
+                               prune (the.componentType._Label) (\_->True) >=> 
+                               prune (the.text._Just) f    
         secondArrow = Kleisli $ descendants >=> 
-                                keep (the.componentType) labellable 
+                                prune (the.componentType) labellable 
         candidates = collect $ runKleisli $
-            (firstArrow &&& secondArrow) >>> (Kleisli $ keep id (uncurry sameLevelRightOf)) >>^ snd 
+            (firstArrow &&& secondArrow) >>> (Kleisli $ prune id (uncurry sameLevelRightOf)) >>^ snd 
      in candidates >=> headZ . sortBy (compare `on` minX) 
 
 -- newtype Window m = Window { unWindow :: Tree (WindowInfo m) }
@@ -285,13 +285,13 @@ labeledBy f =
 --         guard . f $ _windowTitle . wInfo $ w  
 --         return w
 -- 
---     popupLayer :: Monad m => Glance m l (w m) (Component m)
+--     popupLayer :: Monad m => Selector m l (w m) (Component m)
 --     popupLayer = replusify . _popupLayer . wInfo
 -- 
 --     logcapture :: Monad m => Pianola m LogEntry (w m) ()
 --     logcapture = (peek $ liftN._capture.wInfo) >>= logimg
 -- 
---     contentPane :: Monad m => Glance m l (w m) (ComponentW m)
+--     contentPane :: Monad m => Selector m l (w m) (ComponentW m)
 --     contentPane win = 
 --         let concrete = runIdentity $ window win
 --         in return . ComponentW 
@@ -301,16 +301,16 @@ labeledBy f =
 --                   . wInfo 
 --                   $ win
 --     
---     toFront :: Monad m => Glance m l (w m) (Sealed m)
+--     toFront :: Monad m => Selector m l (w m) (Sealed m)
 --     toFront = return . _toFront . wInfo
 -- 
---     escape :: Monad m => Glance m l (w m) (Sealed m)
+--     escape :: Monad m => Selector m l (w m) (Sealed m)
 --     escape = return . _escape . wInfo
 -- 
---     enter :: Monad m => Glance m l (w m) (Sealed m)
+--     enter :: Monad m => Selector m l (w m) (Sealed m)
 --     enter = return . _enter . wInfo
 -- 
---     close :: Monad m => Glance m l (w m) (Sealed m)
+--     close :: Monad m => Selector m l (w m) (Sealed m)
 --     close = return . _close . wInfo
 -- 
 
@@ -402,25 +402,25 @@ labeledBy f =
 --        _ -> mzero
 
 
---mainWindow :: Glance m l (GUI m) (Window m)
+--mainWindow :: Selector m l (GUI m) (Window m)
 --mainWindow = replusify . _topLevel . runIdentity
 --
---childWindow :: Glance m l (Window m) (Window m)
+--childWindow :: Selector m l (Window m) (Window m)
 --childWindow = fils
 --
---windowTitled :: (T.Text -> Bool) -> Glance m l (GUI m) (Window m)
+--windowTitled :: (T.Text -> Bool) -> Selector m l (GUI m) (Window m)
 --windowTitled f = mainWindow >=> descendants >=> hasTitle f 
 --
---clickButtonByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Glance m l (c m) (Sealed m) 
+--clickButtonByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Selector m l (c m) (Sealed m) 
 --clickButtonByText f = descendants >=> hasText f >=> clickButton
 --
---clickButtonByToolTip :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Glance m l (c m) (Sealed m) 
+--clickButtonByToolTip :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Selector m l (c m) (Sealed m) 
 --clickButtonByToolTip f = descendants >=> hasToolTip f >=> clickButton
 --
---rightClickByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Glance m l (c m) (Sealed m) 
+--rightClickByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Selector m l (c m) (Sealed m) 
 --rightClickByText f = descendants >=> hasText f >=> rightClick
 --
---popupItem :: Monad m => Glance m l (Window m) (Component m)
+--popupItem :: Monad m => Selector m l (Window m) (Component m)
 --popupItem w = 
 --    let insidepop = fils >=> contentPane >=> descendants >=> \c -> 
 --            case cType c of
@@ -459,23 +459,23 @@ labeledBy f =
 --        poke $ clickCombo
 --        poke $ window >=> popupItem >=> listCellByText f >=> return._clickCell
 --
---selectTabByText :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Glance m l (c m) (Sealed m)
+--selectTabByText :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Selector m l (c m) (Sealed m)
 --selectTabByText f =  
 --    tab >=> \aTab -> do    
 --        guard $ f . _tabText $ aTab
 --        return $ _selectTab aTab   
 --
---selectTabByToolTip :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Glance m l (c m) (Sealed m)
+--selectTabByToolTip :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Selector m l (c m) (Sealed m)
 --selectTabByToolTip f =  
 --    tab >=> \aTab -> do    
 --        tooltip <- justZ . _tabToolTip $ aTab
 --        guard $ f tooltip
 --        return $ _selectTab aTab   
 --
---expand :: Monad m => Bool -> Glance m l (Tree (Cell m)) (Sealed m)
+--expand :: Monad m => Bool -> Selector m l (Tree (Cell m)) (Sealed m)
 --expand b cell = (justZ . _expand . rootLabel $ cell) <*> pure b
 --
---labeledBy :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Glance m l (c m) (c m)
+--labeledBy :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Selector m l (c m) (c m)
 --labeledBy f o = do
 --    ref <- descendants o 
 --    Label {} <- return . cType $ ref

@@ -3,7 +3,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Pianola (
-        Glance(..),
+        Selector(..),
         missing,
         collect,
         liftN,
@@ -43,22 +43,22 @@ import Pipes
 
 import Pianola.Util
 
-type Glance m l o a = o -> LogicT (Producer l (Query m)) a
+type Selector m l o a = o -> LogicT (Producer l (Query m)) a
 
-collect :: (Monad m, MonadPlus n) => Glance m l o a -> Glance m l o (n a)
+collect :: (Monad m, MonadPlus n) => Selector m l o a -> Selector m l o (n a)
 collect = fmap $ \x -> lift $ observeAllT x >>= return . replusify
 
-liftN :: Monad m => Glance m l (Query m a) a
+liftN :: Monad m => Selector m l (Query m a) a
 liftN = lift . lift
 
-missing :: Monad m => Glance m l o a -> Glance m l o () 
+missing :: Monad m => Selector m l o a -> Selector m l o () 
 missing = fmap lnot
 
 type ObserverF m l o = Compose ((->) o) (LogicT (Producer l (Query m)))
 
 type Observer m l o = Free (ObserverF m l o)
 
-focus :: Monad m => Glance m l o' o -> Observer m l o a -> Observer m l o' a
+focus :: Monad m => Selector m l o' o -> Observer m l o a -> Observer m l o' a
 focus prefix v =
    let nattrans (Compose k) = Compose $ prefix >=> k
    in hoistFree nattrans v
@@ -84,16 +84,16 @@ pfail = Pianola . lift . lift $ mzero
 pmaybe :: Monad m => Pianola m l o a -> Pianola m l o (Maybe a) -> Pianola m l o a  
 pmaybe f p = p >>= maybe f return 
 
-peek :: Monad m => Glance m l o a -> Pianola m l o a
+peek :: Monad m => Selector m l o a -> Pianola m l o a
 peek = Pianola . lift . lift . lift . lift . liftF . Compose
 
-peekMaybe :: Monad m => Glance m l o a -> Pianola m l o (Maybe a)
+peekMaybe :: Monad m => Selector m l o a -> Pianola m l o (Maybe a)
 peekMaybe = peek . collect
 
-retryPeek1s :: Monad m => Int -> Glance m l o a -> Pianola m l o (Maybe a)
+retryPeek1s :: Monad m => Int -> Selector m l o a -> Pianola m l o (Maybe a)
 retryPeek1s = retryPeek $ sleep 1
 
-retryPeek :: Monad m => Pianola m l o u -> Int -> Glance m l o a -> Pianola m l o (Maybe a)
+retryPeek :: Monad m => Pianola m l o u -> Int -> Selector m l o a -> Pianola m l o (Maybe a)
 retryPeek delay times glance =
     let retryPeek' [] = return Nothing
         retryPeek' (x:xs) = do
@@ -105,20 +105,20 @@ retryPeek delay times glance =
 inject :: Monad m => Sealed m -> Pianola m l o ()
 inject = Pianola . yield
 
-poke :: Monad m => Glance m l o (Sealed m) -> Pianola m l o () 
+poke :: Monad m => Selector m l o (Sealed m) -> Pianola m l o () 
 poke locator = peek locator >>= inject
 
-pokeMaybe :: Monad m => Glance m l o (Sealed m) -> Pianola m l o (Maybe ())
+pokeMaybe :: Monad m => Selector m l o (Sealed m) -> Pianola m l o (Maybe ())
 pokeMaybe locator = do 
     actionMaybe <- peekMaybe locator 
     case actionMaybe of
         Nothing -> return Nothing
         Just action -> inject action >> return (Just ())
 
-retryPoke1s :: Monad m => Int -> Glance m l o (Sealed m)  -> Pianola m l o (Maybe ())
+retryPoke1s :: Monad m => Int -> Selector m l o (Sealed m)  -> Pianola m l o (Maybe ())
 retryPoke1s = retryPoke $ sleep 1
 
-retryPoke :: Monad m => Pianola m l o u -> Int -> Glance m l o (Sealed m)  -> Pianola m l o (Maybe ())
+retryPoke :: Monad m => Pianola m l o u -> Int -> Selector m l o (Sealed m)  -> Pianola m l o (Maybe ())
 retryPoke delay times glance = do
     actionMaybe <- retryPeek delay times glance
     case actionMaybe of
@@ -128,21 +128,21 @@ retryPoke delay times glance = do
 sleep :: Monad m => Delay -> Pianola m l o ()
 sleep = Pianola . lift . yield
 
-with :: Monad m => Glance m l o' o -> Pianola m l o a -> Pianola m l o' a 
+with :: Monad m => Selector m l o' o -> Pianola m l o a -> Pianola m l o' a 
 with prefix pi  =
     Pianola $ hoist (hoist (hoist (hoist $ focus prefix))) $ unPianola pi 
 
-withMaybe :: Monad m => Glance m l o' o -> Pianola m l o a -> Pianola m l o' (Maybe a) 
+withMaybe :: Monad m => Selector m l o' o -> Pianola m l o a -> Pianola m l o' (Maybe a) 
 withMaybe glance pi = do
     r <- peekMaybe glance 
     case r of 
         Nothing -> return Nothing
         Just _ -> with glance pi >>= return . Just
 
-withRetry1s :: Monad m => Int -> Glance m l o' o -> Pianola m l o a -> Pianola m l o' (Maybe a)
+withRetry1s :: Monad m => Int -> Selector m l o' o -> Pianola m l o a -> Pianola m l o' (Maybe a)
 withRetry1s = withRetry $ sleep 1
 
-withRetry :: Monad m => Pianola m l o' u -> Int -> Glance m l o' o -> Pianola m l o a -> Pianola m l o' (Maybe a)
+withRetry :: Monad m => Pianola m l o' u -> Int -> Selector m l o' o -> Pianola m l o a -> Pianola m l o' (Maybe a)
 withRetry delay times glance pi = do
     r <- retryPeek delay times glance 
     case r of 
