@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Pianola.Swing.Protocol (
         snapshot,
@@ -18,6 +19,9 @@ import qualified Data.ByteString.Lazy as BL
 import Control.Category
 import Control.Error
 import Control.Monad
+import Control.Comonad
+import Control.Lens
+import Control.Comonad.Trans.Env
 import Control.Applicative
 
 import Pianola.Util
@@ -31,15 +35,39 @@ iterget = AI.parserToIteratee get
 -- | Monadic action to obtain a local representation of the state of a remote
 -- Swing GUI.
 snapshot :: Protocol GUI
-snapshot = call [pack "snapshot"] iterget >>= hoistEither
+snapshot = call ["snapshot"] iterget >>= hoistEither
 
 
-makeAction :: T.Text -> [BL.ByteString] -> Sealed Protocol
-makeAction method args = Sealed [T.pack "@" <> method] $
-    call (pack method:args) iterget >>= hoistEither
+--makeAction :: T.Text -> [BL.ByteString] -> Sealed Protocol
+--makeAction method args = Sealed [T.pack "@" <> method] $
+--    call (pack method:args) iterget >>= hoistEither
 
-instance Unpackable a => Unpackable (Identity a) where
-    get = Identity <$> get
+makeComponentChange :: MonadPlus n => T.Text -> [BL.ByteString] -> GUIComponent -> n (Sealed Protocol)
+makeComponentChange method args c = return $ Sealed [T.pack "@" <> method] $
+    call (pack method:pack snapshotId':pack componentId':args) iterget >>= hoistEither
+    where componentId' = c^.to extract.componentId
+          snapshotId'  = (ask . ask $ c)^.snapshotId
+
+makeWindowChange :: MonadPlus n => T.Text -> [BL.ByteString] -> GUIWindow -> n (Sealed Protocol)
+makeWindowChange method args w = return $ Sealed [T.pack "@" <> method] $
+    call (pack method:pack snapshotId':pack windowId':args) iterget >>= hoistEither
+    where windowId' = w^.to extract.windowId
+          snapshotId'  = (ask w)^.snapshotId
+
+makeCellChange :: (Comonad c, MonadPlus n) => T.Text -> [BL.ByteString] -> EnvT GUIComponent c CellInfo -> n (Sealed Protocol)
+makeCellChange method args cell = return $ Sealed [T.pack "@" <> method] $
+    call (pack method:pack snapshotId':pack componentId':pack rowId':pack columnId':args) iterget >>= hoistEither
+    where rowId'       = cell^.to extract.rowId 
+          columnId'    = cell^.to extract.columnId 
+          componentId' = (ask $ cell)^.to extract.componentId
+          snapshotId'  = (ask . ask . ask $ cell)^.snapshotId
+
+makeTabChange :: MonadPlus n => T.Text -> [BL.ByteString] -> GUITab -> n (Sealed Protocol)
+makeTabChange method args tab = return $ Sealed [T.pack "@" <> method] $
+    call (pack method:pack snapshotId':pack componentId':pack tabId':args) iterget >>= hoistEither
+    where tabId'       = tab^.to extract.tabId
+          componentId' = (ask $ tab)^.to extract.componentId
+          snapshotId'  = (ask . ask . ask $ tab)^.snapshotId
 
 instance Unpackable GUI where
     get = GUI <$> get <*> get
@@ -146,37 +174,23 @@ instance Unpackable TabInfo where
 
 remote :: Remote Protocol
 remote = 
-    let clickButton = undefined
-        toFront= undefined
-        setText = undefined
-        click = undefined
-        doubleClick = undefined
-        rightClick = undefined
-        toggle = undefined
-        clickCombo= undefined
-        selectTab= undefined
-        clickCell = undefined
-        doubleClickCell = undefined
-        expand = undefined
-        escape= undefined
-        enter= undefined
-        close= undefined
-        capture= undefined
-    in Remote clickButton 
-              toFront
-              setText
-              click 
-              doubleClick 
-              rightClick 
-              toggle
-              clickCombo
-              selectTab
-              clickCell 
-              doubleClickCell 
-              expand
-              escape
-              enter
-              close
+    let capture= undefined
+    in Remote (makeComponentChange "clickButton" [])
+              (makeWindowChange "toFront" []) 
+              (\txt -> makeComponentChange "rightClick" [pack txt]) 
+              (makeComponentChange "click" []) 
+              (makeComponentChange "doubleClick" []) 
+              (makeComponentChange "rightClick" []) 
+              (\b -> makeComponentChange "rightClick" [pack b]) 
+              (makeComponentChange "clickCombo" []) 
+              (makeTabChange "selectTab" []) 
+              (makeCellChange "clickCell" [])
+              (makeCellChange "doubleClickCell" [])
+              (makeCellChange "rightClickCell" [])
+              (\b -> makeCellChange "expandCollapseCell" [pack b])
+              (makeWindowChange "escape" []) 
+              (makeWindowChange "enter" []) 
+              (makeWindowChange "closeWindow" []) 
               capture
     
 

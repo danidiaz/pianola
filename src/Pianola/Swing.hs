@@ -22,6 +22,7 @@ module Pianola.Swing (
         TreeCell,
         TabInfo (..), tabId,tabText,tabToolTip,isTabSelected,
         Tab,
+        GUITab,
 --        mainWindow,
 --        childWindow,
 --        windowTitled,
@@ -174,18 +175,19 @@ data Remote m = Remote
     { clickButton :: MonadPlus n => GUIComponent -> n (Sealed m)
     , toFront :: MonadPlus n => GUIWindow -> n (Sealed m)
     , setText :: MonadPlus n => T.Text -> GUIComponent -> n (Sealed m)
-    , click :: Monad n => GUIComponent -> n (Sealed m)
-    , doubleClick :: Monad n => GUIComponent -> n (Sealed m)
-    , rightClick :: Monad n => GUIComponent -> n (Sealed m)
+    , click :: MonadPlus n => GUIComponent -> n (Sealed m)
+    , doubleClick :: MonadPlus n => GUIComponent -> n (Sealed m)
+    , rightClick :: MonadPlus n => GUIComponent -> n (Sealed m)
     , toggle:: MonadPlus n => Bool -> GUIComponent -> n (Sealed m)
     , clickCombo:: MonadPlus n => GUIComponent -> n (Sealed m)
     , selectTab:: MonadPlus n => GUITab -> n (Sealed m)
     , clickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Sealed m)
     , doubleClickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Sealed m)
+    , rightClickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Sealed m)
     , expand :: (Comonad c, MonadPlus n) => Bool -> EnvT GUIComponent c CellInfo -> n (Sealed m)
-    , escape:: Monad n => GUIWindow -> n (Sealed m)
-    , enter:: Monad n => GUIWindow -> n (Sealed m)
-    , close:: Monad n => GUIWindow -> n (Sealed m)
+    , escape:: MonadPlus n => GUIWindow -> n (Sealed m)
+    , enter:: MonadPlus n => GUIWindow -> n (Sealed m)
+    , close:: MonadPlus n => GUIWindow -> n (Sealed m)
     , capture :: Monad n => GUIWindow -> Query n Image 
     }
 

@@ -155,6 +155,7 @@ public class Driver implements Runnable
             public void unpackInvoke(Unpacker unpacker, Snapshot snapshot) throws IOException  {
                 int componentId = unpacker.readInt();
                 int rowId = unpacker.readInt();
+                int columnId = unpacker.readInt(); // not actually used
                 boolean expand = unpacker.readBoolean();
                 snapshot.expandCollapseCell(componentId,rowId,expand);                
             }  },

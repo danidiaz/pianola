@@ -21,6 +21,7 @@ module Pianola.Util (
 
 import Prelude hiding (catch,(.),id)
 import Control.Category
+import Data.Functor.Identity
 import Data.Tree
 import Data.Foldable (toList)
 import Data.MessagePack
@@ -92,9 +93,11 @@ instance (Unpackable a, Unpackable b) => Unpackable (Either a b) where
             1 -> Left <$> get
             0 -> Right <$> get
 
+instance Unpackable a => Unpackable (Identity a) where
+    get = Identity <$> get
+
 instance Unpackable a => Unpackable (Tree a) where
     get = Node <$> get <*> get
-
 
 -- logging
 type Image = B.ByteString
