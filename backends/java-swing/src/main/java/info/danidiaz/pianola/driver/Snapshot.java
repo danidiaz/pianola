@@ -254,11 +254,7 @@ public class Snapshot {
         } else if (c instanceof JTextField ) {
             packer.write((int)4);
             JTextField textField = (JTextField) c;
-            if (textField.isEditable()) {
-                packer.write((int)componentId);
-            } else {
-                packer.writeNil();
-            }
+            packer.write((boolean)textField.isEditable());
         } else if (c instanceof JLabel) {
             
             packer.write((int)5);
