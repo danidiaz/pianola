@@ -35,7 +35,7 @@ iterget = AI.parserToIteratee get
 -- | Monadic action to obtain a local representation of the state of a remote
 -- Swing GUI.
 snapshot :: Protocol GUI
-snapshot = call ["snapshot"] iterget >>= hoistEither
+snapshot = call [pack ("snapshot"::T.Text)] iterget >>= hoistEither
 
 
 --makeAction :: T.Text -> [BL.ByteString] -> Sealed Protocol
