@@ -54,6 +54,12 @@ makeWindowChange method args w = return $ Sealed [T.pack "@" <> method] $
     where windowId' = w^.to extract.windowId
           snapshotId'  = (ask w)^.snapshotId
 
+makeWindowQuery :: T.Text -> [BL.ByteString] -> GUIWindow -> Query Protocol Image
+makeWindowQuery method args w = Query $
+    call (pack method:pack snapshotId':pack windowId':args) iterget >>= hoistEither
+    where windowId' = w^.to extract.windowId
+          snapshotId' = (ask w)^.snapshotId
+
 makeCellChange :: (Comonad c, MonadPlus n) => T.Text -> [BL.ByteString] -> EnvT GUIComponent c CellInfo -> n (Sealed Protocol)
 makeCellChange method args cell = return $ Sealed [T.pack "@" <> method] $
     call (pack method:pack snapshotId':pack componentId':pack rowId':pack columnId':args) iterget >>= hoistEither
@@ -173,24 +179,22 @@ instance Unpackable TabInfo where
     
 
 remote :: Remote Protocol
-remote = 
-    let capture= undefined
-    in Remote (makeComponentChange "clickButton" [])
-              (makeWindowChange "toFront" []) 
-              (\txt -> makeComponentChange "rightClick" [pack txt]) 
-              (makeComponentChange "click" []) 
-              (makeComponentChange "doubleClick" []) 
-              (makeComponentChange "rightClick" []) 
-              (\b -> makeComponentChange "rightClick" [pack b]) 
-              (makeComponentChange "clickCombo" []) 
-              (makeTabChange "selectTab" []) 
-              (makeCellChange "clickCell" [])
-              (makeCellChange "doubleClickCell" [])
-              (makeCellChange "rightClickCell" [])
-              (\b -> makeCellChange "expandCollapseCell" [pack b])
-              (makeWindowChange "escape" []) 
-              (makeWindowChange "enter" []) 
-              (makeWindowChange "closeWindow" []) 
-              capture
+remote = Remote (makeComponentChange "clickButton" [])
+                (makeWindowChange "toFront" []) 
+                (\txt -> makeComponentChange "rightClick" [pack txt]) 
+                (makeComponentChange "click" []) 
+                (makeComponentChange "doubleClick" []) 
+                (makeComponentChange "rightClick" []) 
+                (\b -> makeComponentChange "rightClick" [pack b]) 
+                (makeComponentChange "clickCombo" []) 
+                (makeTabChange "selectTab" []) 
+                (makeCellChange "clickCell" [])
+                (makeCellChange "doubleClickCell" [])
+                (makeCellChange "rightClickCell" [])
+                (\b -> makeCellChange "expandCollapseCell" [pack b])
+                (makeWindowChange "escape" []) 
+                (makeWindowChange "enter" []) 
+                (makeWindowChange "closeWindow" []) 
+                (makeWindowQuery "getWindowImage" [])
     
 

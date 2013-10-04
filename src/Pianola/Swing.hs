@@ -188,7 +188,7 @@ data Remote m = Remote
     , escape:: MonadPlus n => GUIWindow -> n (Sealed m)
     , enter:: MonadPlus n => GUIWindow -> n (Sealed m)
     , close:: MonadPlus n => GUIWindow -> n (Sealed m)
-    , capture :: Monad n => GUIWindow -> Query n Image 
+    , capture :: GUIWindow -> Query m Image 
     }
 
 clickButtonByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Sealed m) 
@@ -231,7 +231,7 @@ toggleInMenuBar r toggleStatus ps =
         clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
     in maybe pfail go (clip ps)
 
-logcapture :: Monad m => Remote r -> Pianola m LogEntry GUIWindow ()
+logcapture :: Monad m => Remote m -> Pianola m LogEntry GUIWindow ()
 logcapture r = (peek $ liftN.capture r) >>= logimg
 
 selectInComboBox :: Monad m => Remote m -> (T.Text -> Bool) -> Pianola m l GUIComponent ()
