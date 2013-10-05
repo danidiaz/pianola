@@ -37,19 +37,14 @@ iterget = AI.parserToIteratee get
 snapshot :: Protocol GUI
 snapshot = call [pack ("snapshot"::T.Text)] iterget >>= hoistEither
 
-
---makeAction :: T.Text -> [BL.ByteString] -> Sealed Protocol
---makeAction method args = Sealed [T.pack "@" <> method] $
---    call (pack method:args) iterget >>= hoistEither
-
-makeComponentChange :: MonadPlus n => T.Text -> [BL.ByteString] -> GUIComponent -> n (Sealed Protocol)
-makeComponentChange method args c = return $ Sealed [T.pack "@" <> method] $
+makeComponentChange :: MonadPlus n => T.Text -> [BL.ByteString] -> GUIComponent -> n (Change Protocol)
+makeComponentChange method args c = return $ Change [T.pack "@" <> method] $
     call (pack method:pack snapshotId':pack componentId':args) iterget >>= hoistEither
     where componentId' = c^.to extract.componentId
           snapshotId'  = (ask . ask $ c)^.snapshotId
 
-makeWindowChange :: MonadPlus n => T.Text -> [BL.ByteString] -> GUIWindow -> n (Sealed Protocol)
-makeWindowChange method args w = return $ Sealed [T.pack "@" <> method] $
+makeWindowChange :: MonadPlus n => T.Text -> [BL.ByteString] -> GUIWindow -> n (Change Protocol)
+makeWindowChange method args w = return $ Change [T.pack "@" <> method] $
     call (pack method:pack snapshotId':pack windowId':args) iterget >>= hoistEither
     where windowId' = w^.to extract.windowId
           snapshotId'  = (ask w)^.snapshotId
@@ -60,16 +55,16 @@ makeWindowQuery method args w = Query $
     where windowId' = w^.to extract.windowId
           snapshotId' = (ask w)^.snapshotId
 
-makeCellChange :: (Comonad c, MonadPlus n) => T.Text -> [BL.ByteString] -> EnvT GUIComponent c CellInfo -> n (Sealed Protocol)
-makeCellChange method args cell = return $ Sealed [T.pack "@" <> method] $
+makeCellChange :: (Comonad c, MonadPlus n) => T.Text -> [BL.ByteString] -> EnvT GUIComponent c CellInfo -> n (Change Protocol)
+makeCellChange method args cell = return $ Change [T.pack "@" <> method] $
     call (pack method:pack snapshotId':pack componentId':pack rowId':pack columnId':args) iterget >>= hoistEither
     where rowId'       = cell^.to extract.rowId 
           columnId'    = cell^.to extract.columnId 
           componentId' = (ask $ cell)^.to extract.componentId
           snapshotId'  = (ask . ask . ask $ cell)^.snapshotId
 
-makeTabChange :: MonadPlus n => T.Text -> [BL.ByteString] -> GUITab -> n (Sealed Protocol)
-makeTabChange method args tab = return $ Sealed [T.pack "@" <> method] $
+makeTabChange :: MonadPlus n => T.Text -> [BL.ByteString] -> GUITab -> n (Change Protocol)
+makeTabChange method args tab = return $ Change [T.pack "@" <> method] $
     call (pack method:pack snapshotId':pack componentId':pack tabId':args) iterget >>= hoistEither
     where tabId'       = tab^.to extract.tabId
           componentId' = (ask $ tab)^.to extract.componentId
@@ -87,13 +82,6 @@ instance Unpackable WindowInfo where
         v3 <- get
         v4 <- get
         v5 <- get
---        let packedargs = map pack [snapid,wid] 
---            getWindowImage = Nullipotent $
---                call (pack "getWindowImage":packedargs) iterget >>= hoistEither
---            escape = makeAction (T.pack "escape") packedargs 
---            enter = makeAction (T.pack "enter") packedargs 
---            closeWindow = makeAction (T.pack "closeWindow") packedargs 
---            toFront = makeAction (T.pack "toFront") packedargs 
         return (WindowInfo wid v1 v2 v3 v4 v5) 
 
 instance Unpackable ComponentInfo where
@@ -107,9 +95,6 @@ instance Unpackable ComponentInfo where
         v5 <- get
         v6 <- get
         v7 <- get
---        let click = makeAction (T.pack  "click") [pack snapid, pack cid]
---            doubleClick = makeAction (T.pack  "doubleClick") [pack snapid, pack cid]
---            rightClick = makeAction (T.pack  "rightClick") [pack snapid, pack cid]
         return (ComponentInfo cid v1 v2 v3 v4 v5 v6 v7)
 
 instance Unpackable ComponentType where
@@ -121,24 +106,16 @@ instance Unpackable ComponentType where
             2 -> do 
                 v2 <- get::Parser Int
                 v3 <- get
---                let toggle b = makeAction (T.pack "toggle") $
---                        [pack snapid, pack v2, pack b]
                 return $ Toggleable v3 -- toggle
             3 -> do 
                 v2 <- get::Parser Int
---                let click = makeAction (T.pack "clickButton") $
---                        [pack snapid, pack v2]
                 return $ Button -- click
             4 -> do
                 v2 <- get::Parser Bool
---                let setText cid txt = makeAction (T.pack "setTextField") $ 
---                        [pack snapid, pack cid, pack txt] 
                 return . TextField $ v2
             5 -> return Label
             6 -> do
                 cid <- get::Parser (Maybe Int) 
---                let clickCombo = makeAction (T.pack "clickCombo") $
---                        [pack snapid, pack cid] 
                 renderer <- get 
                 return $ ComboBox renderer -- clickCombo
             7 -> List <$> get
@@ -156,13 +133,6 @@ instance Unpackable CellInfo where
         columnid <- get::Parser Int
         renderer <- get
         isFromTree <- get::Parser Bool
---        let packed3 = map pack [snapid, componentid, rowid]
---            packed4 = packed3 ++ [pack columnid]
---            clickCell = makeAction (T.pack "clickCell") packed4
---            doubleClickCell = makeAction (T.pack "doubleClickCell") packed4
---            rightClickCell = makeAction (T.pack "rightClickCell") packed4
---            expandCollapse b = makeAction (T.pack "expandCollapseCell") $
---                packed3 ++ [pack b] 
         return $ CellInfo rowid columnid isFromTree renderer -- clickCell doubleClickCell rightClickCell (guard isTreeCell *> pure expandCollapse)
 
 instance Unpackable TabInfo where
@@ -173,24 +143,28 @@ instance Unpackable TabInfo where
         text <- get
         tooltipMaybe <- get
         selected <- get
---        let selecttab = makeAction (T.pack "selectTab" ) $
---                map pack [snapid, componentid, tabid] 
         return $ TabInfo tabid text tooltipMaybe selected -- selecttab
     
 
 remote :: Remote Protocol
 remote = Remote (prune (the.componentType._Button) (\_->True) >=> 
                  makeComponentChange "clickButton" [])
+
                 (makeWindowChange "toFront" []) 
+
                 (\txt -> prune (the.componentType._TextField) id >=> 
                          makeComponentChange "setTextField" [pack txt])
+
                 (makeComponentChange "click" []) 
                 (makeComponentChange "doubleClick" []) 
                 (makeComponentChange "rightClick" []) 
+
                 (\b -> prune (the.componentType._Toggleable) (\_->True) >=> 
                        makeComponentChange "toggle" [pack b])
+
                 (prune (the.componentType._ComboBox) (\_->True) >=> 
                  makeComponentChange "clickCombo" []) 
+
                 (makeTabChange "selectTab" []) 
                 (makeCellChange "clickCell" [])
                 (makeCellChange "doubleClickCell" [])

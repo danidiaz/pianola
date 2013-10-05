@@ -10,7 +10,7 @@
 module Pianola.Internal (
         Query(..),
         Tag,
-        Sealed(..),
+        Change(..),
         addTag
     ) where
 
@@ -32,11 +32,11 @@ type Tag = T.Text
 --
 -- There may be tags attached that describe the action. Clients should be able
 -- to inspect the tags.
-data Sealed m = Sealed {
+data Change m = Change {
        tags :: [Tag],
        unseal :: m ()
    }
 
-addTag :: Tag -> Sealed m -> Sealed m
-addTag t (Sealed ts a) = Sealed (t:ts) a
+addTag :: Tag -> Change m -> Change m
+addTag t (Change ts a) = Change (t:ts) a
 

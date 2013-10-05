@@ -23,21 +23,14 @@ module Pianola.Swing (
         TabInfo (..), tabId,tabText,tabToolTip,isTabSelected,
         Tab,
         GUITab,
---        mainWindow,
---        childWindow,
---        windowTitled,
         clickButtonByText,
         rightClickByText,
         popupItem,
---        clickButtonByToolTip,
---        rightClickByText,
         selectInMenuBar,
         toggleInMenuBar,
         selectInComboBox,
         selectTabByText, 
         tableCellByText,
---        selectTabByToolTip,
---        expand,
         labeledBy,
         logcapture,
         Remote(..)
@@ -77,11 +70,6 @@ data WindowInfo = WindowInfo
     ,  _menu::[Component]
     ,  _popupLayer:: [Component]
     ,  _contentPane::Component
---    ,  _capture::Query m Image
---    ,  _escape::Sealed m
---    ,  _enter::Sealed m
---    ,  _close::Sealed m
---    ,  _toFront::Sealed m
     } 
 
 type Window = Tree WindowInfo
@@ -97,9 +85,6 @@ data ComponentInfo = ComponentInfo
     ,  _text::Maybe T.Text
     ,  _enabled::Bool
     ,  _componentType::ComponentType
---    ,  _click::Sealed m
---    ,  _doubleClick::Sealed m
---    ,  _rightClick::Sealed m
     } 
 
 
@@ -116,11 +101,11 @@ window = return . ask
 
 data ComponentType =
      Panel
-    |Toggleable Bool -- (Bool -> Sealed m) -- True if toggled
-    |Button -- (Sealed m)
-    |TextField Bool -- (Maybe (T.Text -> Sealed m)) -- BoolTrue if editable
+    |Toggleable Bool 
+    |Button 
+    |TextField Bool 
     |Label
-    |ComboBox (Maybe Component) -- (Sealed m)
+    |ComboBox (Maybe Component) 
     |List [ListCell]
     |Table [[TableCell]]
     |Treegui [TreeCell] 
@@ -133,10 +118,6 @@ data CellInfo = CellInfo
     , _columnId::Int
     , _isFromTree::Bool
     , _renderer::Component 
---    , _clickCell::Sealed 
---    , _doubleClickCell::Sealed 
---    , _rightClickCell::Sealed 
---    , _expand:: Maybe (Bool -> Sealed m)
     }
 
 type ListCell = Identity CellInfo
@@ -150,7 +131,6 @@ data TabInfo = TabInfo
     , _tabText::T.Text
     , _tabToolTip::Maybe T.Text
     , _isTabSelected:: Bool
---    , _selectTab::Sealed m
     }
 
 type Tab = Identity TabInfo
@@ -163,38 +143,30 @@ makePrisms ''ComponentType
 makeLenses ''CellInfo
 makeLenses ''TabInfo
 
-
---clickButton:: MonadPlus n => c m -> n (Sealed m)
---clickButton (cType -> Button a) = return a
---clickButton _ = mzero
---
---clickButtonByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Selector m l (c m) (Sealed m) 
---clickButtonByText f = descendants >=> hasText f >=> clickButton
-
 data Remote m = Remote
-    { clickButton :: MonadPlus n => GUIComponent -> n (Sealed m)
-    , toFront :: MonadPlus n => GUIWindow -> n (Sealed m)
-    , setText :: MonadPlus n => T.Text -> GUIComponent -> n (Sealed m)
-    , click :: MonadPlus n => GUIComponent -> n (Sealed m)
-    , doubleClick :: MonadPlus n => GUIComponent -> n (Sealed m)
-    , rightClick :: MonadPlus n => GUIComponent -> n (Sealed m)
-    , toggle:: MonadPlus n => Bool -> GUIComponent -> n (Sealed m)
-    , clickCombo:: MonadPlus n => GUIComponent -> n (Sealed m)
-    , selectTab:: MonadPlus n => GUITab -> n (Sealed m)
-    , clickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Sealed m)
-    , doubleClickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Sealed m)
-    , rightClickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Sealed m)
-    , expand :: (Comonad c, MonadPlus n) => Bool -> EnvT GUIComponent c CellInfo -> n (Sealed m)
-    , escape:: MonadPlus n => GUIWindow -> n (Sealed m)
-    , enter:: MonadPlus n => GUIWindow -> n (Sealed m)
-    , close:: MonadPlus n => GUIWindow -> n (Sealed m)
+    { clickButton :: MonadPlus n => GUIComponent -> n (Change m)
+    , toFront :: MonadPlus n => GUIWindow -> n (Change m)
+    , setText :: MonadPlus n => T.Text -> GUIComponent -> n (Change m)
+    , click :: MonadPlus n => GUIComponent -> n (Change m)
+    , doubleClick :: MonadPlus n => GUIComponent -> n (Change m)
+    , rightClick :: MonadPlus n => GUIComponent -> n (Change m)
+    , toggle:: MonadPlus n => Bool -> GUIComponent -> n (Change m)
+    , clickCombo:: MonadPlus n => GUIComponent -> n (Change m)
+    , selectTab:: MonadPlus n => GUITab -> n (Change m)
+    , clickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Change m)
+    , doubleClickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Change m)
+    , rightClickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Change m)
+    , expand :: (Comonad c, MonadPlus n) => Bool -> EnvT GUIComponent c CellInfo -> n (Change m)
+    , escape:: MonadPlus n => GUIWindow -> n (Change m)
+    , enter:: MonadPlus n => GUIWindow -> n (Change m)
+    , close:: MonadPlus n => GUIWindow -> n (Change m)
     , capture :: GUIWindow -> Query m Image 
     }
 
-clickButtonByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Sealed m) 
+clickButtonByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Change m) 
 clickButtonByText p predicate = descendants >=> prune (the.text._Just) predicate >=> clickButton p
 
-rightClickByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Sealed m) 
+rightClickByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Change m) 
 rightClickByText p predicate = descendants >=> prune (the.text._Just) predicate >=> rightClick p
 
 popupItem :: Monad m => Selector m l GUIWindow GUIComponent
@@ -232,7 +204,7 @@ toggleInMenuBar r toggleStatus ps =
     in maybe pfail go (clip ps)
 
 logcapture :: Monad m => Remote m -> Pianola m LogEntry GUIWindow ()
-logcapture r = (peek $ liftN.capture r) >>= logimg
+logcapture r = (peek $ liftQ.capture r) >>= logimg
 
 selectInComboBox :: Monad m => Remote m -> (T.Text -> Bool) -> Pianola m l GUIComponent ()
 selectInComboBox r f = do
@@ -243,7 +215,7 @@ selectInComboBox r f = do
                prune (the.renderer.folded.text._Just) f >=> 
                clickCell r
 
-selectTabByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Sealed m)
+selectTabByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Change m)
 selectTabByText r f = decorate (the.componentType._TabbedPane.folded) >=> prune (the.tabText) f >=> selectTab r  
 
 tableCellByText:: MonadPlus n => Int -> (T.Text -> Bool) -> GUIComponent -> n (EnvT GUIComponent Identity CellInfo)
@@ -270,233 +242,4 @@ labeledBy f =
         candidates = collect $ runKleisli $
             (firstArrow &&& secondArrow) >>> (Kleisli $ prune id (uncurry sameLevelRightOf)) >>^ snd 
      in candidates >=> headZ . sortBy (compare `on` minX) 
-
--- newtype Window m = Window { unWindow :: Tree (WindowInfo m) }
-
---class Windowed w where
---    window :: Monad n => w m -> n (Window m)
-
--- class Windowed w => WindowLike w where
---     wInfo :: w m -> WindowInfo m 
--- 
---     title :: (Monad m,Monad n) => (w m) -> n T.Text
---     title = return . _windowTitle . wInfo
--- 
---     hasTitle :: MonadPlus n => (T.Text -> Bool) -> w m -> n (w m)
---     hasTitle f w = do
---         guard . f $ _windowTitle . wInfo $ w  
---         return w
--- 
---     popupLayer :: Monad m => Selector m l (w m) (Component m)
---     popupLayer = replusify . _popupLayer . wInfo
--- 
---     logcapture :: Monad m => Pianola m LogEntry (w m) ()
---     logcapture = (peek $ liftN._capture.wInfo) >>= logimg
--- 
---     contentPane :: Monad m => Selector m l (w m) (ComponentW m)
---     contentPane win = 
---         let concrete = runIdentity $ window win
---         in return . ComponentW 
---                   . EnvT concrete
---                   . unComponent 
---                   . _contentPane   
---                   . wInfo 
---                   $ win
---     
---     toFront :: Monad m => Selector m l (w m) (Sealed m)
---     toFront = return . _toFront . wInfo
--- 
---     escape :: Monad m => Selector m l (w m) (Sealed m)
---     escape = return . _escape . wInfo
--- 
---     enter :: Monad m => Selector m l (w m) (Sealed m)
---     enter = return . _enter . wInfo
--- 
---     close :: Monad m => Selector m l (w m) (Sealed m)
---     close = return . _close . wInfo
--- 
-
---class ComponentLike c where
---    cInfo :: c m -> ComponentInfo m 
---
---    cType :: c m -> ComponentType m 
---    cType = _componentType . cInfo 
---
---    text :: MonadPlus n => c m -> n T.Text
---    text = justZ . _text . cInfo
---
---    hasText:: MonadPlus n => (T.Text -> Bool) -> c m -> n (c m)
---    hasText f c = do
---        t <- text $ c 
---        guard $ f t
---        return c
---
---    tooltip :: MonadPlus n => c m -> n T.Text
---    tooltip = justZ . _tooltip . cInfo
---
---    hasToolTip:: MonadPlus n => (T.Text -> Bool) -> c m -> n (c m)
---    hasToolTip f c = do
---        t <- tooltip $ c 
---        guard $ f t
---        return c
---
---    hasName:: MonadPlus n => (T.Text -> Bool) -> c m -> n (c m)
---    hasName f c = do
---        t <- justZ._name.cInfo $ c 
---        guard $ f t
---        return c
---
---    toggle:: MonadPlus n => Bool -> c m -> n (Sealed m)
---    toggle b (cType -> Toggleable _ f) = return $ f b
---    toggle _ _ = mzero
---
---    click:: Monad n => c m -> n (Sealed m)
---    click = return._click.cInfo
---
---    doubleClick:: Monad n => c m -> n (Sealed m)
---    doubleClick = return._doubleClick.cInfo
---
---    rightClick:: Monad n => c m -> n (Sealed m)
---    rightClick = return._rightClick.cInfo
---
---    clickButton:: MonadPlus n => c m -> n (Sealed m)
---    clickButton (cType -> Button a) = return a
---    clickButton _ = mzero
---
---    clickCombo:: MonadPlus n => c m -> n (Sealed m)
---    clickCombo (cType -> ComboBox _ a) = return a
---    clickCombo _ = mzero
---
---    listCellByText:: MonadPlus n => (T.Text -> Bool) -> c m -> n (Cell m)
---    listCellByText f (cType -> List l) = do 
---        cell <- replusify l
---        let renderer = _renderer cell
---        descendants >=> hasText f $ renderer
---        return cell
---    listCellByText _ _ = mzero
---
---    tableCellByText:: MonadPlus n => Int -> (T.Text -> Bool) -> c m -> n (Cell m,[Cell m])  
---    tableCellByText colIndex f (cType -> Table listOfCols) = do
---        column <- atZ listOfCols colIndex
---        (rowfocus,row) <- replusify $ zip column $ transpose listOfCols  
---        let renderer = _renderer rowfocus
---        descendants >=> hasText f $ renderer
---        return (rowfocus,row)    
---    tableCellByText _ _ _ = mzero
---
---    treeCellByText :: MonadPlus n => Int -> (T.Text -> Bool) -> c m -> n (Tree (Cell m))
---    treeCellByText depth f (cType -> Treegui cellForest) = do
---        tree <- replusify cellForest
---        level <- flip atZ depth . levels . duplicate $ tree
---        subtree <- replusify level
---        let renderer = _renderer . rootLabel $ subtree
---        descendants >=> hasText f $ renderer
---        return subtree
---    treeCellByText _ _ _ = mzero
---
---    tab:: MonadPlus n => c m -> n (Tab m)
---    tab (cType -> TabbedPane p) = replusify p
---    tab _ = mzero
---
---    setText:: MonadPlus n => T.Text -> c m -> n (Sealed m)
---    setText txt c = case (cType c) of
---        TextField (Just f) -> return $ f txt
---        _ -> mzero
-
-
---mainWindow :: Selector m l (GUI m) (Window m)
---mainWindow = replusify . _topLevel . runIdentity
---
---childWindow :: Selector m l (Window m) (Window m)
---childWindow = fils
---
---windowTitled :: (T.Text -> Bool) -> Selector m l (GUI m) (Window m)
---windowTitled f = mainWindow >=> descendants >=> hasTitle f 
---
---clickButtonByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Selector m l (c m) (Sealed m) 
---clickButtonByText f = descendants >=> hasText f >=> clickButton
---
---clickButtonByToolTip :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Selector m l (c m) (Sealed m) 
---clickButtonByToolTip f = descendants >=> hasToolTip f >=> clickButton
---
---rightClickByText :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Selector m l (c m) (Sealed m) 
---rightClickByText f = descendants >=> hasText f >=> rightClick
---
---popupItem :: Monad m => Selector m l (Window m) (Component m)
---popupItem w = 
---    let insidepop = fils >=> contentPane >=> descendants >=> \c -> 
---            case cType c of
---                PopupMenu -> descendants c
---                _ -> mzero
---    in (popupLayer >=> descendants $ w) `mplus` 
---       (insidepop >=> return . Component . lower . unComponentW $ w)
---
---selectInMenuBar :: Monad m => [T.Text -> Bool] -> Pianola m l (Window m) ()
---selectInMenuBar ps = 
---    let go (firstitem,middleitems,lastitem) = do
---           poke $ replusify._menu.wInfo >=> descendants >=> hasText firstitem >=> clickButton
---           let pairs = zip middleitems (clickButton <$ middleitems) ++
---                       [(lastitem, clickButton)]
---           forM_ pairs $ \(txt,action) -> 
---               pmaybe pfail $ retryPoke1s 7 $ 
---                   popupItem >=> hasText txt >=> action
---        clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ) <*> lastZ l
---    in maybe pfail go (clip ps)
---
---toggleInMenuBar :: Monad m => Bool -> [T.Text -> Bool] -> Pianola m l (Window m) ()
---toggleInMenuBar toggleStatus ps = 
---    let go (firstitem,middleitems,lastitem) = do
---           poke $ replusify._menu.wInfo >=> descendants >=> hasText firstitem >=> clickButton
---           let pairs = zip middleitems (clickButton <$ middleitems) ++
---                       [(lastitem, toggle toggleStatus)]
---           forM_ pairs $ \(txt,action) -> 
---               pmaybe pfail $ retryPoke1s 7 $ 
---                   popupItem >=> hasText txt >=> action
---           replicateM_ (length pairs) $ poke escape
---        clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
---    in maybe pfail go (clip ps)
---
---selectInComboBox :: (Monad m, ComponentLike c, Windowed c) => (T.Text -> Bool) -> Pianola m l (c m) ()
---selectInComboBox f = do
---        poke $ clickCombo
---        poke $ window >=> popupItem >=> listCellByText f >=> return._clickCell
---
---selectTabByText :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Selector m l (c m) (Sealed m)
---selectTabByText f =  
---    tab >=> \aTab -> do    
---        guard $ f . _tabText $ aTab
---        return $ _selectTab aTab   
---
---selectTabByToolTip :: (Monad m,ComponentLike c) => (T.Text -> Bool) -> Selector m l (c m) (Sealed m)
---selectTabByToolTip f =  
---    tab >=> \aTab -> do    
---        tooltip <- justZ . _tabToolTip $ aTab
---        guard $ f tooltip
---        return $ _selectTab aTab   
---
---expand :: Monad m => Bool -> Selector m l (Tree (Cell m)) (Sealed m)
---expand b cell = (justZ . _expand . rootLabel $ cell) <*> pure b
---
---labeledBy :: (Monad m,ComponentLike c,Treeish (c m)) => (T.Text -> Bool) -> Selector m l (c m) (c m)
---labeledBy f o = do
---    ref <- descendants o 
---    Label {} <- return . cType $ ref
---    hasText f ref  
---    let 
---        positioned = sameLevelRightOf ref  
---        labellable c = case cType c of
---            Toggleable {} -> True
---            Button {} -> True
---            TextField {} -> True
---            ComboBox {} -> True
---            List {} -> True
---            Table {} -> True
---            Treegui {} -> True
---            _ -> False
---    candidates <- lift . observeAllT $ do
---        c <- descendants o 
---        guard $ labellable c && positioned c
---        return c
---    headZ $ sortBy (compare `on` minX) candidates 
---
 

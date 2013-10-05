@@ -6,7 +6,7 @@ module Pianola (
         Selector(..),
         missing,
         collect,
-        liftN,
+        liftQ,
         Pianola(..),
         Delay,
         pfail,
@@ -48,8 +48,8 @@ type Selector m l o a = o -> LogicT (Producer l (Query m)) a
 collect :: (Monad m, MonadPlus n) => Selector m l o a -> Selector m l o (n a)
 collect = fmap $ \x -> lift $ observeAllT x >>= return . replusify
 
-liftN :: Monad m => Selector m l (Query m a) a
-liftN = lift . lift
+liftQ :: Monad m => Selector m l (Query m a) a
+liftQ = lift . lift
 
 missing :: Monad m => Selector m l o a -> Selector m l o () 
 missing = fmap lnot
@@ -72,7 +72,7 @@ runObserver mom (Free f) =
 type Delay = Int
 
 newtype Pianola m l o a = Pianola 
-    { unPianola :: Producer (Sealed m) (Producer Delay (MaybeT (Producer l (Observer m l o)))) a 
+    { unPianola :: Producer (Change m) (Producer Delay (MaybeT (Producer l (Observer m l o)))) a 
     } deriving (Functor,Monad)
 
 instance Monad m => Loggy (Pianola m LogEntry o) where
@@ -102,23 +102,23 @@ retryPeek delay times glance =
     in retryPeek' $ replicate times glance
 
 
-inject :: Monad m => Sealed m -> Pianola m l o ()
+inject :: Monad m => Change m -> Pianola m l o ()
 inject = Pianola . yield
 
-poke :: Monad m => Selector m l o (Sealed m) -> Pianola m l o () 
+poke :: Monad m => Selector m l o (Change m) -> Pianola m l o () 
 poke locator = peek locator >>= inject
 
-pokeMaybe :: Monad m => Selector m l o (Sealed m) -> Pianola m l o (Maybe ())
+pokeMaybe :: Monad m => Selector m l o (Change m) -> Pianola m l o (Maybe ())
 pokeMaybe locator = do 
     actionMaybe <- peekMaybe locator 
     case actionMaybe of
         Nothing -> return Nothing
         Just action -> inject action >> return (Just ())
 
-retryPoke1s :: Monad m => Int -> Selector m l o (Sealed m)  -> Pianola m l o (Maybe ())
+retryPoke1s :: Monad m => Int -> Selector m l o (Change m)  -> Pianola m l o (Maybe ())
 retryPoke1s = retryPoke $ sleep 1
 
-retryPoke :: Monad m => Pianola m l o u -> Int -> Selector m l o (Sealed m)  -> Pianola m l o (Maybe ())
+retryPoke :: Monad m => Pianola m l o u -> Int -> Selector m l o (Change m)  -> Pianola m l o (Maybe ())
 retryPoke delay times glance = do
     actionMaybe <- retryPeek delay times glance
     case actionMaybe of

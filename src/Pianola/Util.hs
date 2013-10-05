@@ -15,7 +15,7 @@ module Pianola.Util (
         Image,
         Query(runQuery),
         Tag,
-        Sealed(tags,unseal),
+        Change(tags,unseal),
         addTag
     ) where
 
