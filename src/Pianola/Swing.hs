@@ -141,83 +141,85 @@ makeLenses ''CellInfo
 makeLenses ''TabInfo
 
 data Remote m = Remote
-    { clickButton :: MonadPlus n => GUIComponent -> n (Change m)
-    , toFront :: MonadPlus n => GUIWindow -> n (Change m)
-    , setText :: MonadPlus n => T.Text -> GUIComponent -> n (Change m)
-    , click :: MonadPlus n => GUIComponent -> n (Change m)
-    , doubleClick :: MonadPlus n => GUIComponent -> n (Change m)
-    , rightClick :: MonadPlus n => GUIComponent -> n (Change m)
-    , toggle:: MonadPlus n => Bool -> GUIComponent -> n (Change m)
-    , clickCombo:: MonadPlus n => GUIComponent -> n (Change m)
-    , selectTab:: MonadPlus n => GUITab -> n (Change m)
-    , clickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Change m)
-    , doubleClickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Change m)
-    , rightClickCell :: (Comonad c, MonadPlus n) => EnvT GUIComponent c CellInfo -> n (Change m)
-    , expand :: (Comonad c, MonadPlus n) => Bool -> EnvT GUIComponent c CellInfo -> n (Change m)
-    , escape:: MonadPlus n => GUIWindow -> n (Change m)
-    , enter:: MonadPlus n => GUIWindow -> n (Change m)
-    , close:: MonadPlus n => GUIWindow -> n (Change m)
+    { clickButton :: MonadPlus n => Kleisli n GUIComponent (Change m)
+    , toFront ::     MonadPlus n => Kleisli n GUIWindow    (Change m)
+    , setText ::     MonadPlus n => T.Text -> 
+                                    Kleisli n GUIComponent (Change m)
+    , click ::       MonadPlus n => Kleisli n GUIComponent (Change m)
+    , doubleClick :: MonadPlus n => Kleisli n GUIComponent (Change m)
+    , rightClick ::  MonadPlus n => Kleisli n GUIComponent (Change m)
+    , toggle::       MonadPlus n => Bool -> 
+                                    Kleisli n GUIComponent (Change m)
+    , clickCombo::   MonadPlus n => Kleisli n GUIComponent (Change m)
+    , selectTab::    MonadPlus n => Kleisli n GUITab (Change m)
+    , clickCell ::       (Comonad c, MonadPlus n) => Kleisli n (EnvT GUIComponent c CellInfo) (Change m)
+    , doubleClickCell :: (Comonad c, MonadPlus n) => Kleisli n (EnvT GUIComponent c CellInfo) (Change m)
+    , rightClickCell ::  (Comonad c, MonadPlus n) => Kleisli n (EnvT GUIComponent c CellInfo) (Change m)
+    , expand ::          (Comonad c, MonadPlus n) => Bool -> 
+                                                     Kleisli n (EnvT GUIComponent c CellInfo) (Change m)
+    , escape::       MonadPlus n => Kleisli n GUIWindow (Change m)
+    , enter::        MonadPlus n => Kleisli n GUIWindow (Change m)
+    , close::        MonadPlus n => Kleisli n GUIWindow (Change m)
     , capture :: GUIWindow -> Query m Image 
     }
 
 clickButtonByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Change m) 
-clickButtonByText p predicate = descendants >=> prune (the.text._Just) predicate >=> clickButton p
+clickButtonByText p predicate = descendants >>> prune (the.text._Just) predicate >>> clickButton p
 
 rightClickByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Change m) 
-rightClickByText p predicate = descendants >=> prune (the.text._Just) predicate >=> rightClick p
+rightClickByText p predicate = descendants >>> prune (the.text._Just) predicate >>> rightClick p
 
 popupItem :: Monad m => Selector m l GUIWindow GUIComponent
-popupItem w = (decorate (the.popupLayer.folded) >=> descendants $ w) `mplus` 
-              (insidepop w)
-    where insidepop = descendants1 >=> 
-                      decorate (the.contentPane) >=> 
-                      descendants >=> 
-                      prune (the.componentType._PopupMenu) (const True) >=> 
+popupItem = (decorate (the.popupLayer.folded) >>> descendants) <+> insidepop
+    where insidepop = descendants1 >>> 
+                      decorate (the.contentPane) >>> 
+                      descendants >>> 
+                      prune (the.componentType._PopupMenu) (const True) >>> 
                       descendants
 
 selectInMenuBar :: Monad m => Remote m -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
 selectInMenuBar r ps = 
     let go (firstitem,middleitems,lastitem) = do
-           poke $ decorate (the.menu.folded) >=> descendants >=> prune (the.text._Just) firstitem >=> clickButton r
+           poke $ decorate (the.menu.folded) >>> descendants >>> prune (the.text._Just) firstitem >>> clickButton r
            let pairs = zip middleitems (clickButton r <$ middleitems) ++
                        [(lastitem, clickButton r)]
            forM_ pairs $ \(txt,action) -> 
                pmaybe pfail $ retryPoke1s 7 $ 
-                   popupItem >=> prune (the.text._Just) txt >=> action
+                   popupItem >>> prune (the.text._Just) txt >>> action
         clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ) <*> lastZ l
     in maybe pfail go (clip ps)
 
 toggleInMenuBar :: Monad m => Remote m -> Bool -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
 toggleInMenuBar r toggleStatus ps = 
     let go (firstitem,middleitems,lastitem) = do
-           poke $ decorate (the.menu.folded) >=> descendants >=> prune (the.text._Just) firstitem >=> clickButton r
+           poke $ decorate (the.menu.folded) >>> descendants >>> prune (the.text._Just) firstitem >>> clickButton r
            let pairs = zip middleitems (clickButton r <$ middleitems) ++
                        [(lastitem, toggle r toggleStatus)]
            forM_ pairs $ \(txt,action) -> 
                pmaybe pfail $ retryPoke1s 7 $ 
-                   popupItem >=> prune (the.text._Just) txt >=> action
+                   popupItem >>> prune (the.text._Just) txt >>> action
            replicateM_ (length pairs) $ poke $ escape r
         clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
     in maybe pfail go (clip ps)
 
 logcapture :: Monad m => Remote m -> Pianola m LogEntry GUIWindow ()
-logcapture r = (peek $ liftQ.capture r) >>= logimg
+logcapture r = (peek $ arr (capture r) >>> liftQ) >>= logimg
 
 selectInComboBox :: Monad m => Remote m -> (T.Text -> Bool) -> Pianola m l GUIComponent ()
 selectInComboBox r f = do
         poke $ clickCombo r
-        poke $ context >=> 
-               popupItem >=> 
-               decorate (the.componentType._List.folded) >=> 
-               prune (the.renderer.folded.text._Just) f >=> 
+        poke $ context >>> 
+               popupItem >>> 
+               decorate (the.componentType._List.folded) >>> 
+               prune (the.renderer.folded.text._Just) f >>> 
                clickCell r
 
 selectTabByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Change m)
-selectTabByText r f = decorate (the.componentType._TabbedPane.folded) >=> prune (the.tabText) f >=> selectTab r  
+selectTabByText r f = decorate (the.componentType._TabbedPane.folded) >>> prune (the.tabText) f >>> selectTab r  
 
-tableCellByText:: MonadPlus n => Int -> (T.Text -> Bool) -> GUIComponent -> n (EnvT GUIComponent Identity CellInfo)
+tableCellByText:: MonadPlus n => Int -> (T.Text -> Bool) -> Kleisli n GUIComponent (EnvT GUIComponent Identity CellInfo)
 tableCellByText colIndex f =
-    decorate (the.componentType._Table.folding (`atMay` colIndex).folded) >=>    
+    decorate (the.componentType._Table.folding (`atMay` colIndex).folded) >>>    
     prune (the.renderer.folded.text._Just) f
 
 labeledBy :: Monad m => (T.Text -> Bool) -> Selector m l GUIComponent GUIComponent
@@ -231,12 +233,12 @@ labeledBy f =
             Table {} -> True
             Treegui {} -> True
             _ -> False
-        firstArrow = Kleisli $ descendants >=>
-                               prune (the.componentType._Label) (\_->True) >=> 
-                               prune (the.text._Just) f    
-        secondArrow = Kleisli $ descendants >=> 
-                                prune (the.componentType) labellable 
-        candidates = collect $ runKleisli $
-            (firstArrow &&& secondArrow) >>> (Kleisli $ prune id (uncurry sameLevelRightOf)) >>^ snd 
-     in candidates >=> headZ . sortBy (compare `on` minX) 
+        firstArrow = descendants >>>
+                     prune (the.componentType._Label) (\_->True) >>> 
+                     prune (the.text._Just) f    
+        secondArrow = descendants >>> 
+                      prune (the.componentType) labellable 
+        candidates = collect $ 
+            (firstArrow &&& secondArrow) >>> prune id (uncurry sameLevelRightOf) >>^ snd 
+     in candidates >>> Kleisli (headZ . sortBy (compare `on` minX))
 
