@@ -75,7 +75,6 @@ instance Unpackable GUI where
 
 instance Unpackable WindowInfo where
     get = do
-        snapid <- get::Parser Int
         wid <- get::Parser Int
         v1 <- get
         v2 <- get
@@ -86,7 +85,6 @@ instance Unpackable WindowInfo where
 
 instance Unpackable ComponentInfo where
     get = do
-        snapid <- get::Parser Int
         cid <- get::Parser Int
         v1 <- get
         v2 <- get
@@ -99,7 +97,6 @@ instance Unpackable ComponentInfo where
 
 instance Unpackable ComponentType where
     get = do
-        snapid <- get::Parser Int
         typeTag <- get::Parser Int
         case typeTag of
             1 -> return Panel
@@ -127,8 +124,6 @@ instance Unpackable ComponentType where
 
 instance Unpackable CellInfo where
     get = do
-        snapid <- get::Parser Int
-        componentid <- get::Parser Int
         rowid <- get::Parser Int
         columnid <- get::Parser Int
         renderer <- get
@@ -137,8 +132,6 @@ instance Unpackable CellInfo where
 
 instance Unpackable TabInfo where
     get = do
-        snapid <- get::Parser Int
-        componentid <- get::Parser Int
         tabid <- get::Parser Int
         text <- get
         tooltipMaybe <- get

@@ -61,7 +61,7 @@ public class Snapshot {
         this.imageBin = pianola==null ? new ImageBin() : pianola.obtainImageBin();
         this.releaseIsPopupTrigger = releaseIsPopupTrigger;
     }
-    public void buildAndWrite(final int snapid, final Packer packer) throws IOException {
+    public void buildAndWrite(final Packer packer) throws IOException {
         
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -70,7 +70,7 @@ public class Snapshot {
                 public void run() {
                     try {
                         Window warray[] = Window.getOwnerlessWindows();
-                        writeWindowArray(snapid, packer, warray);
+                        writeWindowArray(packer, warray);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -95,18 +95,18 @@ public class Snapshot {
         return visibleCount;
     }
     
-    private void writeWindowArray(int snapid, Packer packer, Window warray[]) throws IOException {
+    private void writeWindowArray(Packer packer, Window warray[]) throws IOException {
         packer.writeArrayBegin(countShowing(warray));
         for (int i=0;i<warray.length;i++) {
             Window w = warray[i];
             if (w.isShowing()) {
-                writeWindow(snapid, packer,w);
+                writeWindow(packer,w);
             }        
         }
         packer.writeArrayEnd();
     }
     
-    private void writeWindow(int snapid, Packer packer, Window w) throws IOException {
+    private void writeWindow(Packer packer, Window w) throws IOException {
         
         int windowId = windowArray.size();
         windowArray.add(w);
@@ -114,7 +114,6 @@ public class Snapshot {
         w.paint(image.getGraphics());
         windowImageMap.put(w, image);
         
-        packer.write((int)snapid);
         packer.write((int)windowId);
         
         String title = "";
@@ -132,17 +131,17 @@ public class Snapshot {
         }
         packer.writeArrayEnd();
         
-        writeMenuBar(snapid, packer, w);
+        writeMenuBar(packer, w);
         
-        writePopupLayer(snapid,packer,w);
+        writePopupLayer(packer,w);
                         
         RootPaneContainer rpc = (RootPaneContainer)w;
-        writeComponent(snapid, packer, (Component) rpc.getContentPane(),w);                                                               
+        writeComponent(packer, (Component) rpc.getContentPane(),w);                                                               
         
-        writeWindowArray(snapid, packer, w.getOwnedWindows());
+        writeWindowArray(packer, w.getOwnedWindows());
     }
     
-    private void writeMenuBar(int snapid, Packer packer, Window w) throws IOException {        
+    private void writeMenuBar(Packer packer, Window w) throws IOException {        
         JMenuBar menubar = null;
         if (w instanceof JFrame) {
             menubar = ((JFrame)w).getJMenuBar();
@@ -155,14 +154,14 @@ public class Snapshot {
         } else {
             packer.writeArrayBegin(menubar.getMenuCount());
             for (int i=0; i<menubar.getMenuCount();i++) {
-                writeComponent(snapid, packer,menubar.getMenu(i),w);
+                writeComponent(packer,menubar.getMenu(i),w);
             }
             packer.writeArrayEnd();
 
         }                
     }
     
-    private void writePopupLayer(int snapid, Packer packer, Window w) throws IOException {
+    private void writePopupLayer(Packer packer, Window w) throws IOException {
         Component[] popupLayerArray = new Component[] {};
         if (w instanceof JFrame) {
             popupLayerArray = ((JFrame)w).getLayeredPane().getComponentsInLayer(JLayeredPane.POPUP_LAYER);
@@ -173,18 +172,17 @@ public class Snapshot {
         for (int i=0;i<popupLayerArray.length;i++) {
             Component c = (Component) popupLayerArray[i];
             if (c.isShowing()) {
-                writeComponent(snapid, packer, c, w);    
+                writeComponent(packer, c, w);    
             }
         }
         packer.writeArrayEnd();
     }
         
-    private void writeComponent(int snapid, Packer packer, Component c, Component coordBase) throws IOException {
+    private void writeComponent(Packer packer, Component c, Component coordBase) throws IOException {
         
         int componentId = componentArray.size();
         componentArray.add(c);
         
-        packer.write((int)snapid);
         packer.write((int)componentId);
         
         packer.writeArrayBegin(2);
@@ -218,7 +216,7 @@ public class Snapshot {
 
         packer.write(c.isEnabled());        
         
-        writeComponentType(snapid, packer, componentId, c, coordBase);
+        writeComponentType(packer, componentId, c, coordBase);
         
         Component children[] = new Component[]{};
         if (c instanceof Container) {            
@@ -228,20 +226,18 @@ public class Snapshot {
         packer.writeArrayBegin(countShowing(children));
         for (int i=0;i<children.length;i++) {
             if (children[i].isShowing()) {                                
-                writeComponent(snapid, packer, (Component)children[i],coordBase);
+                writeComponent(packer, (Component)children[i],coordBase);
             }
         }
         packer.writeArrayEnd();
     }
     
-    private void writeComponentType( int snapid, Packer packer, 
+    private void writeComponentType(Packer packer, 
                 int componentId,
                 Component c, 
                 Component coordBase 
             ) throws IOException 
     {
-        packer.write((int)snapid);
-        
         if (c instanceof JPanel) {
             packer.write((int)1);
         } else if (c instanceof JToggleButton || c instanceof JCheckBoxMenuItem || c instanceof JRadioButtonMenuItem) {
@@ -277,7 +273,7 @@ public class Snapshot {
                                 false, 
                                 false
                             );
-                writeComponent(snapid, packer, cell, coordBase);
+                writeComponent(packer, cell, coordBase);
             }                          
                        
         } else if (c instanceof JList) {
@@ -288,9 +284,7 @@ public class Snapshot {
             packer.writeArrayBegin((int)list.getModel().getSize());
             for (int rowid=0; rowid<list.getModel().getSize(); rowid++) {
                 
-                writeCell(  snapid, 
-                            packer, 
-                            componentId, 
+                writeCell(  packer, 
                             rowid, 0, 
                             (Component)renderer.getListCellRendererComponent(list, 
                                     list.getModel().getElementAt(rowid), 
@@ -318,9 +312,7 @@ public class Snapshot {
                     
                     TableCellRenderer renderer = table.getCellRenderer(i, j);                    
                     writeCell(  
-                            snapid, 
                             packer, 
-                            componentId, 
                             i, j, 
                             (Component)renderer.getTableCellRendererComponent(table, 
                                     model.getValueAt(i, j),  
@@ -356,9 +348,7 @@ public class Snapshot {
                 }                
                 
                 writeCell(  
-                        snapid, 
                         packer, 
-                        componentId, 
                         rowid, 0, 
                         (Component)renderer.getTreeCellRendererComponent(
                                 tree,
@@ -394,8 +384,6 @@ public class Snapshot {
             JTabbedPane tpane = (JTabbedPane)c;
             packer.writeArrayBegin(tpane.getTabCount());
             for (int i=0; i<tpane.getTabCount();i++) {
-                packer.write((int)snapid);
-                packer.write((int)componentId);
                 packer.write((int)i);
                 packer.write(tpane.getTitleAt(i));
                 writePotentiallyNullString(packer,tpane.getToolTipTextAt(i));
@@ -408,9 +396,8 @@ public class Snapshot {
         }
     }
     
-    private void writeCell(int snapid, 
+    private void writeCell(
                 Packer packer, 
-                int componentid, 
                 int rowid, 
                 int colid, 
                 Component rendererc, 
@@ -418,11 +405,9 @@ public class Snapshot {
                 boolean belongsToJTree 
             ) throws IOException 
     {
-        packer.write((int)snapid);
-        packer.write((int)componentid);
         packer.write((int)rowid);
         packer.write((int)colid);
-        writeComponent(snapid, packer, rendererc, coordBase);
+        writeComponent(packer, rendererc, coordBase);
         packer.write((boolean)belongsToJTree);
     }
     
