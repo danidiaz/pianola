@@ -17,6 +17,7 @@ import qualified Data.Attoparsec.Iteratee as AI
 import qualified Data.ByteString as B 
 import qualified Data.ByteString.Lazy as BL
 import Control.Category
+import Control.Arrow
 import Control.Error
 import Control.Monad
 import Control.Comonad
@@ -37,17 +38,19 @@ iterget = AI.parserToIteratee get
 snapshot :: Protocol GUI
 snapshot = call [pack ("snapshot"::T.Text)] iterget >>= hoistEither
 
-makeComponentChange :: MonadPlus n => T.Text -> [BL.ByteString] -> GUIComponent -> n (Change Protocol)
-makeComponentChange method args c = return $ Change [T.pack "@" <> method] $
-    call (pack method:pack snapshotId':pack componentId':args) iterget >>= hoistEither
-    where componentId' = c^.to extract.componentId
-          snapshotId'  = (ask . ask $ c)^.snapshotId
+makeComponentChange :: MonadPlus n => T.Text -> [BL.ByteString] -> Kleisli n GUIComponent (Change Protocol)
+makeComponentChange method args = Kleisli $ \c -> 
+        let componentId' = c^.to extract.componentId
+            snapshotId'  = (ask . ask $ c)^.snapshotId
+        in  return $ Change [T.pack "@" <> method] $
+                call (pack method:pack snapshotId':pack componentId':args) iterget >>= hoistEither
 
-makeWindowChange :: MonadPlus n => T.Text -> [BL.ByteString] -> GUIWindow -> n (Change Protocol)
-makeWindowChange method args w = return $ Change [T.pack "@" <> method] $
-    call (pack method:pack snapshotId':pack windowId':args) iterget >>= hoistEither
-    where windowId' = w^.to extract.windowId
-          snapshotId'  = (ask w)^.snapshotId
+makeWindowChange :: MonadPlus n => T.Text -> [BL.ByteString] -> Kleisli n GUIWindow (Change Protocol)
+makeWindowChange method args = Kleisli $ \w -> 
+        let windowId' = w^.to extract.windowId
+            snapshotId'  = (ask w)^.snapshotId
+        in  return $ Change [T.pack "@" <> method] $
+                call (pack method:pack snapshotId':pack windowId':args) iterget >>= hoistEither
 
 makeWindowQuery :: T.Text -> [BL.ByteString] -> GUIWindow -> Query Protocol Image
 makeWindowQuery method args w = Query $
@@ -55,20 +58,22 @@ makeWindowQuery method args w = Query $
     where windowId' = w^.to extract.windowId
           snapshotId' = (ask w)^.snapshotId
 
-makeCellChange :: (Comonad c, MonadPlus n) => T.Text -> [BL.ByteString] -> EnvT GUIComponent c CellInfo -> n (Change Protocol)
-makeCellChange method args cell = return $ Change [T.pack "@" <> method] $
-    call (pack method:pack snapshotId':pack componentId':pack rowId':pack columnId':args) iterget >>= hoistEither
-    where rowId'       = cell^.to extract.rowId 
-          columnId'    = cell^.to extract.columnId 
-          componentId' = (ask $ cell)^.to extract.componentId
-          snapshotId'  = (ask . ask . ask $ cell)^.snapshotId
+makeCellChange :: (Comonad c, MonadPlus n) => T.Text -> [BL.ByteString] -> Kleisli n (EnvT GUIComponent c CellInfo) (Change Protocol)
+makeCellChange method args = Kleisli $ \cell -> 
+        let rowId'       = cell^.to extract.rowId 
+            columnId'    = cell^.to extract.columnId 
+            componentId' = (ask $ cell)^.to extract.componentId
+            snapshotId'  = (ask . ask . ask $ cell)^.snapshotId
+        in return $ Change [T.pack "@" <> method] $
+                call (pack method:pack snapshotId':pack componentId':pack rowId':pack columnId':args) iterget >>= hoistEither
 
-makeTabChange :: MonadPlus n => T.Text -> [BL.ByteString] -> GUITab -> n (Change Protocol)
-makeTabChange method args tab = return $ Change [T.pack "@" <> method] $
-    call (pack method:pack snapshotId':pack componentId':pack tabId':args) iterget >>= hoistEither
-    where tabId'       = tab^.to extract.tabId
-          componentId' = (ask $ tab)^.to extract.componentId
-          snapshotId'  = (ask . ask . ask $ tab)^.snapshotId
+makeTabChange :: MonadPlus n => T.Text -> [BL.ByteString] -> Kleisli n GUITab (Change Protocol)
+makeTabChange method args = Kleisli $ \tab -> 
+        let tabId'       = tab^.to extract.tabId
+            componentId' = (ask $ tab)^.to extract.componentId
+            snapshotId'  = (ask . ask . ask $ tab)^.snapshotId
+        in  return $ Change [T.pack "@" <> method] $
+                call (pack method:pack snapshotId':pack componentId':pack tabId':args) iterget >>= hoistEither
 
 instance Unpackable GUI where
     get = GUI <$> get 
@@ -116,22 +121,22 @@ instance Unpackable TabInfo where
     get = TabInfo <$> get <*> get <*> get <*> get 
 
 remote :: Remote Protocol
-remote = Remote (prune (the.componentType._Button) (\_->True) >=> 
+remote = Remote (prune (the.componentType._Button) (\_->True) >>> 
                  makeComponentChange "clickButton" [])
 
                 (makeWindowChange "toFront" []) 
 
-                (\txt -> prune (the.componentType._TextField) id >=> 
+                (\txt -> prune (the.componentType._TextField) id >>> 
                          makeComponentChange "setTextField" [pack txt])
 
                 (makeComponentChange "click" []) 
                 (makeComponentChange "doubleClick" []) 
                 (makeComponentChange "rightClick" []) 
 
-                (\b -> prune (the.componentType._Toggleable) (\_->True) >=> 
+                (\b -> prune (the.componentType._Toggleable) (\_->True) >>> 
                        makeComponentChange "toggle" [pack b])
 
-                (prune (the.componentType._ComboBox) (\_->True) >=> 
+                (prune (the.componentType._ComboBox) (\_->True) >>> 
                  makeComponentChange "clickCombo" []) 
 
                 (makeTabChange "selectTab" []) 
