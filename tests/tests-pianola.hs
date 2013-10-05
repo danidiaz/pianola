@@ -36,7 +36,7 @@ checkStatusBar p predicate = do
 checkDialog :: Monad m => Remote m -> Pianola m LogEntry GUIComponent ()
 checkDialog p = do
     poke $ clickButtonByText p (=="open dialog")
-    with (window >=> descendants1 >=> decorate (the.contentPane)) $ do
+    with (context >=> descendants1 >=> decorate (the.contentPane)) $ do
         poke $ clickButtonByText p (=="click this")
         poke $ clickButtonByText p (=="close dialog")
     checkStatusBar p (=="clicked button in dialog")
@@ -44,7 +44,7 @@ checkDialog p = do
 checkDelayedDialog :: Monad m => Remote m -> Pianola m LogEntry GUIComponent ()
 checkDelayedDialog p = do
     poke $ clickButtonByText p (=="open slow dialog")
-    with window $ do
+    with context $ do
         pmaybe pfail $ withRetry1s 7 descendants1 $ do       
             with (decorate $ the.contentPane) $ poke $ clickButtonByText p (=="close dialog")
         logmsg "clicked delayed close button"
@@ -80,27 +80,27 @@ testCase p = with (decorate $ topLevel.folded) $ do
         checkStatusBar p (=="double-clicked on label") 
         poke $ rightClickByText p (=="This is a label")
         pmaybe pfail $ retryPoke1s 4 $ 
-            window >=> popupItem >=> prune (the.text._Just) (=="popupitem2") >=> clickButton p 
+            context >=> popupItem >=> prune (the.text._Just) (=="popupitem2") >=> clickButton p 
         checkStatusBar p (=="clicked on popupitem2")
         sleep 1
         logmsg "testing checkbox"
         poke $ descendants >=> prune (the.text._Just) (=="This is a checkbox") >=> toggle p True
         checkStatusBar p (=="checkbox is now true") 
         logmsg "foo log message"
-        with window $ toggleInMenuBar p True $ 
+        with context $ toggleInMenuBar p True $ 
             map (==) ["Menu1","SubMenu1","submenuitem2"]
         checkStatusBar p (=="checkbox in menu is now true") 
         logmsg "getting a screenshot"
-        with window $ logcapture p 
+        with context $ logcapture p 
         logmsg "now for a second menu"
-        autolog $ with window $ selectInMenuBar p $ 
+        autolog $ with context $ selectInMenuBar p $ 
             map (==) ["Menu1","SubMenu1","submenuitem1"]
         checkStatusBar p (=="clicked on submenuitem1") 
         sleep 2
         logmsg "opening a file chooser"
         with (descendants >=> prune (the.text._Just) (=="Open file chooser")) $ do
             poke $ clickButton p
-            with window $ with descendants1 $ with (decorate $ the.contentPane) $ do
+            with context $ with descendants1 $ with (decorate $ the.contentPane) $ do
                 poke $ descendants >=> prune (the.text._Just) (=="") >=> setText p "/tmp/foofile.txt"   
                 poke $ clickButtonByText p $ \txt -> or $ map (txt==) ["Open","Abrir"]
         checkStatusBar p (T.isInfixOf "foofile")
@@ -122,7 +122,7 @@ testCase p = with (decorate $ topLevel.folded) $ do
             sleep 2
             poke $ prune (the.componentType._Table) (const True) >=>
                    descendants1 >=> prune (the.text._Just) (=="4") >=> setText p "77"  
-        with window $ poke $ enter p
+        with context $ poke $ enter p
         checkStatusBar p (=="table value at row 1 col 1 is 77")
         with descendants $ do 
             sleep 2

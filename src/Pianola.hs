@@ -5,6 +5,7 @@
 module Pianola (
         Selector(..),
         missing,
+        context,
         collect,
         liftQ,
         Pianola(..),
@@ -39,6 +40,8 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.Free
 import Control.Monad.Logic
+import Control.Comonad
+import Control.Comonad.Trans.Env    
 import Pipes
 
 import Pianola.Util
@@ -53,6 +56,10 @@ liftQ = lift . lift
 
 missing :: Monad m => Selector m l o a -> Selector m l o () 
 missing = fmap lnot
+
+-- arr ask would do the same job, if working with arrows...
+context :: (Comonad c, Monad m) => EnvT e c a -> m e
+context = return . ask
 
 type ObserverF m l o = Compose ((->) o) (LogicT (Producer l (Query m)))
 

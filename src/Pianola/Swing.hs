@@ -15,7 +15,6 @@ module Pianola.Swing (
                           , _List, _Table, _Treegui,_PopupMenu,_TabbedPane,_Other, 
         Component,
         GUIComponent,
-        window,
         CellInfo (..), rowId,columnId,isFromTree,renderer,
         ListCell,
         TableCell,
@@ -95,9 +94,6 @@ instance Geometrical ComponentInfo where
 type Component = Tree ComponentInfo
 
 type GUIComponent = EnvT GUIWindow Tree ComponentInfo
-
-window :: Monad m => GUIComponent -> m GUIWindow
-window = return . ask
 
 data ComponentType =
      Panel
@@ -209,7 +205,7 @@ logcapture r = (peek $ liftQ.capture r) >>= logimg
 selectInComboBox :: Monad m => Remote m -> (T.Text -> Bool) -> Pianola m l GUIComponent ()
 selectInComboBox r f = do
         poke $ clickCombo r
-        poke $ window >=> 
+        poke $ context >=> 
                popupItem >=> 
                decorate (the.componentType._List.folded) >=> 
                prune (the.renderer.folded.text._Just) f >=> 
