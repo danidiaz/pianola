@@ -101,18 +101,15 @@ instance Unpackable ComponentType where
         case typeTag of
             1 -> return Panel
             2 -> do 
-                v2 <- get::Parser Int
                 v3 <- get
                 return $ Toggleable v3 -- toggle
             3 -> do 
-                v2 <- get::Parser Int
                 return $ Button -- click
             4 -> do
                 v2 <- get::Parser Bool
                 return . TextField $ v2
             5 -> return Label
             6 -> do
-                cid <- get::Parser (Maybe Int) 
                 renderer <- get 
                 return $ ComboBox renderer -- clickCombo
             7 -> List <$> get

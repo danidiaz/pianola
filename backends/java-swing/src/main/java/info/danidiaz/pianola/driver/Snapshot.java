@@ -216,7 +216,7 @@ public class Snapshot {
 
         packer.write(c.isEnabled());        
         
-        writeComponentType(packer, componentId, c, coordBase);
+        writeComponentType(packer, c, coordBase);
         
         Component children[] = new Component[]{};
         if (c instanceof Container) {            
@@ -233,7 +233,6 @@ public class Snapshot {
     }
     
     private void writeComponentType(Packer packer, 
-                int componentId,
                 Component c, 
                 Component coordBase 
             ) throws IOException 
@@ -242,23 +241,17 @@ public class Snapshot {
             packer.write((int)1);
         } else if (c instanceof JToggleButton || c instanceof JCheckBoxMenuItem || c instanceof JRadioButtonMenuItem) {
             packer.write((int)2);
-            packer.write((int)componentId);
             packer.write(((AbstractButton)c).isSelected());                 
         } else if (c instanceof AbstractButton) { // normal button, not toggle button
             packer.write((int)3);
-            packer.write((int)componentId);
         } else if (c instanceof JTextField ) {
             packer.write((int)4);
             JTextField textField = (JTextField) c;
             packer.write((boolean)textField.isEditable());
         } else if (c instanceof JLabel) {
-            
             packer.write((int)5);
-            
         } else if (c instanceof JComboBox) {
-            
             packer.write((int)6);
-            packer.write((int)componentId);
 
             JComboBox comboBox = (JComboBox)c;
             ListCellRenderer renderer = comboBox.getRenderer();
