@@ -20,9 +20,14 @@ import Control.Exception
 import Control.Monad.Logic
 import Control.Monad.Free
 import Data.Functor.Identity
+import qualified Data.ByteString as B 
 import qualified Data.ByteString.Lazy as BL
 import Control.Monad.Reader
 import Pianola.Protocol
+import Data.MessagePack
+
+iterget :: (Monad m, Unpackable a) => I.Iteratee B.ByteString m a 
+iterget = AI.parserToIteratee get
 
 data RunInIOError = CommError IOException 
                   | ParseError T.Text
@@ -35,7 +40,8 @@ data Endpoint = Endpoint {
 
 runFree:: (MonadIO m, MonadReader r m) => (r -> Endpoint) -> Free ProtocolF a -> EitherT RunInIOError m a  
 runFree lens ( Free (Compose (b,i)) ) = do
-    let iterIO = I.ilift (return . runIdentity) i
+    --let iterIO = I.ilift (return . runIdentity) i
+    let iterIO = AI.parserToIteratee i
 
         rpcCall :: Endpoint -> (Handle -> IO b) -> IO b
         rpcCall endpoint what2do = withSocketsDo $ do

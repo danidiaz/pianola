@@ -26,7 +26,7 @@ import Control.Monad.Free
 -- is a list of bytestrings (the arguments of the call) and the second is a
 -- pure 'Iteratee' that consumes the bytes sent from the server and returns the
 -- response of the call.
-type ProtocolF = Compose ((,) [BL.ByteString]) (I.Iteratee B.ByteString Identity) 
+type ProtocolF = Compose ((,) [BL.ByteString]) Parser
 
 -- | A monad to represent interactions with a remote server. A free monad over
 -- a RPC call functor, augmented with some error conditions.
@@ -34,7 +34,7 @@ type Protocol = EitherT ServerError (Free ProtocolF)
 
 -- | Constructs a RPC call from a packed list of arguments and a pure
 -- 'Iteratee' to consume the response.
-call :: [BL.ByteString] -> (I.Iteratee B.ByteString Identity x) -> Protocol x
+call :: [BL.ByteString] -> Parser x -> Protocol x
 call bs i = lift . liftF $ Compose (bs,i)
 
 data ServerError = 
