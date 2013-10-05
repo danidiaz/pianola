@@ -52,36 +52,36 @@ tomaybet = MaybeT . liftM replusify . observeManyT 1
 -- | Class of types whose values have descendants1 of the same type as themselves.
 class Treeish l where
     -- | All direct or indirect descendants, plus the original value.
-    descendants :: MonadPlus m => l -> m l
+    descendants :: MonadPlus m => Kleisli m l l
     -- | Direct descendants.
-    descendants1 :: MonadPlus m => l -> m l
+    descendants1 :: MonadPlus m => Kleisli m l l
      
-    descendantsN :: MonadPlus m => Int -> l -> m l
-    descendantsN depth =  foldr (>=>) return (replicate depth $ descendants1)
+    descendantsN :: MonadPlus m => Int -> Kleisli m l l
+    descendantsN depth =  foldr (>>>) returnA (replicate depth $ descendants1)
 
 instance Treeish (Tree a) where
-    descendants1 = replusify . subForest
-    descendants = replusify . flatten . duplicate
+    descendants1 = Kleisli $ replusify . subForest
+    descendants = Kleisli $ replusify . flatten . duplicate
 
 instance (Comonad c, Treeish (c a)) => Treeish (EnvT e c a) where
-    descendants1  a = replusify . map (EnvT e) . descendants1 . lower $ a
-        where e = ask a 
-    descendants a = replusify . map (EnvT e) . descendants . lower $ a
-        where e = ask a 
+    descendants1 = Kleisli $ \a -> let e = ask a 
+                                   in replusify . map (EnvT e) . (runKleisli descendants1) . lower $ a
+    descendants = Kleisli $ \a -> let e = ask a 
+                                  in replusify . map (EnvT e) . (runKleisli descendants) . lower $ a
 
 -----------------------------------------------------------------------
 
-fromFold :: MonadPlus m => Fold a b -> a -> m b
-fromFold f = replusify . toListOf f
+fromFold :: MonadPlus m => Fold a b -> Kleisli m a b
+fromFold f = Kleisli $ replusify . toListOf f
 
 the :: Comonad c => Fold (c a) a
 the = to extract
 
-decorate ::  (Comonad c, MonadPlus m) => Fold a (c b) -> a -> m (EnvT a c b)
-decorate f x = replusify . map (EnvT x) $ toListOf f x
+decorate ::  (Comonad c, MonadPlus m) => Fold a (c b) -> Kleisli m a (EnvT a c b)
+decorate f = Kleisli $ \x -> replusify . map (EnvT x) $ toListOf f x
 
-prune :: MonadPlus m => Fold a b -> (b -> Bool) -> a -> m a
-prune f p x = guard (anyOf f p x) >> return x 
+prune :: MonadPlus m => Fold a b -> (b -> Bool) -> Kleisli m a a
+prune f p = Kleisli $ \x -> guard (anyOf f p x) >> return x 
 
 -----------------------------------------------------------------------
 

@@ -5,6 +5,7 @@
 module Pianola (
         Selector(..),
         missing,
+        winnow,
         context,
         collect,
         liftQ,
@@ -35,6 +36,7 @@ import Prelude hiding (catch,(.))
 import Data.Functor.Compose
 import Data.Monoid
 import Control.Category
+import Control.Arrow
 import Control.Error
 import Control.Applicative
 import Control.Monad
@@ -46,35 +48,41 @@ import Pipes
 
 import Pianola.Util
 
-type Selector m l o a = o -> LogicT (Producer l (Query m)) a
+--type Selector m l o a = o -> LogicT (Producer l (Query m)) a
+type Selector m l o a = Kleisli (LogicT (Producer l (Query m))) o a
 
 collect :: (Monad m, MonadPlus n) => Selector m l o a -> Selector m l o (n a)
-collect = fmap $ \x -> lift $ observeAllT x >>= return . replusify
+collect k = Kleisli $ (fmap $ \x -> lift $ observeAllT x >>= return . replusify) 
+                    $ runKleisli k
 
 liftQ :: Monad m => Selector m l (Query m a) a
-liftQ = lift . lift
+liftQ = Kleisli $ lift . lift
 
 missing :: Monad m => Selector m l o a -> Selector m l o () 
-missing = fmap lnot
+missing k = Kleisli $ fmap lnot $ runKleisli k
+
+winnow :: Monad m => Selector m l o a -> Selector m l o a
+winnow k = Kleisli $ fmap once $ runKleisli k
 
 -- arr ask would do the same job, if working with arrows...
-context :: (Comonad c, Monad m) => EnvT e c a -> m e
-context = return . ask
+context :: (Comonad c, Monad m) => Kleisli m (EnvT e c a) e
+context = arr ask
 
-type ObserverF m l o = Compose ((->) o) (LogicT (Producer l (Query m)))
+--type ObserverF m l o = Compose ((->) o) (LogicT (Producer l (Query m)))
+type ObserverF m l o = WrappedArrow (Kleisli (LogicT (Producer l (Query m)))) o
 
 type Observer m l o = Free (ObserverF m l o)
 
 focus :: Monad m => Selector m l o' o -> Observer m l o a -> Observer m l o' a
 focus prefix v =
-   let nattrans (Compose k) = Compose $ prefix >=> k
-   in hoistFree nattrans v
+   let nattrans (WrapArrow k) = WrapArrow $ prefix >>> k
+   in  hoistFree nattrans v
 
 runObserver :: Monad m => m o -> Observer m l o a -> MaybeT (Producer l m) a
 runObserver _ (Pure b) = return b
 runObserver mom (Free f) =
    let squint = fmap $ hoist (hoist runQuery) . tomaybet
-   in join $ (lift . lift $ mom) >>= squint (getCompose $ runObserver mom <$> f)
+   in join $ (lift . lift $ mom) >>= squint (runKleisli . unwrapArrow $ runObserver mom <$> f)
 
 type Delay = Int
 
@@ -92,7 +100,7 @@ pmaybe :: Monad m => Pianola m l o a -> Pianola m l o (Maybe a) -> Pianola m l o
 pmaybe f p = p >>= maybe f return 
 
 peek :: Monad m => Selector m l o a -> Pianola m l o a
-peek = Pianola . lift . lift . lift . lift . liftF . Compose
+peek = Pianola . lift . lift . lift . lift . liftF . WrapArrow
 
 peekMaybe :: Monad m => Selector m l o a -> Pianola m l o (Maybe a)
 peekMaybe = peek . collect

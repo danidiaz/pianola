@@ -41,6 +41,7 @@ import Data.Function
 import Data.Functor.Identity
 import qualified Data.Text as T
 import Control.Lens
+import Control.Arrow
 import Control.Error
 import Control.Monad
 import Control.Arrow
