@@ -179,14 +179,18 @@ instance Unpackable TabInfo where
     
 
 remote :: Remote Protocol
-remote = Remote (makeComponentChange "clickButton" [])
+remote = Remote (prune (the.componentType._Button) (\_->True) >=> 
+                 makeComponentChange "clickButton" [])
                 (makeWindowChange "toFront" []) 
-                (\txt -> makeComponentChange "setTextField" [pack txt]) 
+                (\txt -> prune (the.componentType._TextField) id >=> 
+                         makeComponentChange "setTextField" [pack txt])
                 (makeComponentChange "click" []) 
                 (makeComponentChange "doubleClick" []) 
                 (makeComponentChange "rightClick" []) 
-                (\b -> makeComponentChange "toggle" [pack b]) 
-                (makeComponentChange "clickCombo" []) 
+                (\b -> prune (the.componentType._Toggleable) (\_->True) >=> 
+                       makeComponentChange "toggle" [pack b])
+                (prune (the.componentType._ComboBox) (\_->True) >=> 
+                 makeComponentChange "clickCombo" []) 
                 (makeTabChange "selectTab" []) 
                 (makeCellChange "clickCell" [])
                 (makeCellChange "doubleClickCell" [])

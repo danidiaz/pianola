@@ -116,7 +116,7 @@ window = return . ask
 
 data ComponentType =
      Panel
-    |Toggleable Bool -- (Bool -> Sealed m)
+    |Toggleable Bool -- (Bool -> Sealed m) -- True if toggled
     |Button -- (Sealed m)
     |TextField Bool -- (Maybe (T.Text -> Sealed m)) -- BoolTrue if editable
     |Label
