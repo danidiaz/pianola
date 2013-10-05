@@ -71,70 +71,49 @@ makeTabChange method args tab = return $ Change [T.pack "@" <> method] $
           snapshotId'  = (ask . ask . ask $ tab)^.snapshotId
 
 instance Unpackable GUI where
-    get = GUI <$> get <*> get
+    get = GUI <$> get 
+              <*> get
 
 instance Unpackable WindowInfo where
-    get = do
-        wid <- get::Parser Int
-        v1 <- get
-        v2 <- get
-        v3 <- get
-        v4 <- get
-        v5 <- get
-        return (WindowInfo wid v1 v2 v3 v4 v5) 
+    get = WindowInfo <$> get 
+                     <*> get 
+                     <*> get    
+                     <*> get 
+                     <*> get 
+                     <*> get 
 
 instance Unpackable ComponentInfo where
-    get = do
-        cid <- get::Parser Int
-        v1 <- get
-        v2 <- get
-        v3 <- get
-        v4 <- get
-        v5 <- get
-        v6 <- get
-        v7 <- get
-        return (ComponentInfo cid v1 v2 v3 v4 v5 v6 v7)
+    get = ComponentInfo <$> get 
+                        <*> get 
+                        <*> get 
+                        <*> get 
+                        <*> get 
+                        <*> get 
+                        <*> get 
+                        <*> get
 
 instance Unpackable ComponentType where
     get = do
         typeTag <- get::Parser Int
         case typeTag of
-            1 -> return Panel
-            2 -> do 
-                v3 <- get
-                return $ Toggleable v3 -- toggle
-            3 -> do 
-                return $ Button -- click
-            4 -> do
-                v2 <- get::Parser Bool
-                return . TextField $ v2
-            5 -> return Label
-            6 -> do
-                renderer <- get 
-                return $ ComboBox renderer -- clickCombo
+            1 -> pure Panel
+            2 -> Toggleable <$> get
+            3 -> pure Button
+            4 -> TextField <$> get
+            5 -> pure Label
+            6 -> ComboBox <$> get
             7 -> List <$> get
             8 -> Table <$> get
             9 -> Treegui <$> get
-            50 -> return PopupMenu
+            50 -> pure PopupMenu
             70 -> TabbedPane <$> get
             77 -> Other <$> get
 
 instance Unpackable CellInfo where
-    get = do
-        rowid <- get::Parser Int
-        columnid <- get::Parser Int
-        renderer <- get
-        isFromTree <- get::Parser Bool
-        return $ CellInfo rowid columnid isFromTree renderer -- clickCell doubleClickCell rightClickCell (guard isTreeCell *> pure expandCollapse)
+    get = CellInfo <$> get <*> get <*> get <*> get 
 
 instance Unpackable TabInfo where
-    get = do
-        tabid <- get::Parser Int
-        text <- get
-        tooltipMaybe <- get
-        selected <- get
-        return $ TabInfo tabid text tooltipMaybe selected -- selecttab
-    
+    get = TabInfo <$> get <*> get <*> get <*> get 
 
 remote :: Remote Protocol
 remote = Remote (prune (the.componentType._Button) (\_->True) >=> 

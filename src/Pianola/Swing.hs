@@ -116,8 +116,8 @@ data ComponentType =
 data CellInfo = CellInfo 
     { _rowId::Int
     , _columnId::Int
-    , _isFromTree::Bool
     , _renderer::Component 
+    , _isFromTree::Bool
     }
 
 type ListCell = Identity CellInfo
