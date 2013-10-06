@@ -14,6 +14,7 @@ import qualified Data.Text as T
 --import qualified Data.Attoparsec.Iteratee as AI 
 import Network 
 import Data.Functor.Compose
+import Data.Bifunctor
 import Control.Category
 import Control.Error
 import Control.Exception
@@ -56,7 +57,7 @@ runFree lens ( Free (Compose (b,parser)) ) = do
         ioErrHandler = \(ex :: IOException) -> return . Left . CommError $ ex
         parseErrHandler = ParseError . T.pack . show
     nextFree <- EitherT . liftIO $ 
-            catches (fmap (either (Left . parseErrHandler) (Right . snd)) $ rpcCall endp $ doStuff) 
+            catches (fmap (bimap parseErrHandler snd) $ rpcCall endp $ doStuff) 
             [Handler ioErrHandler]
     runFree lens nextFree 
 runFree _ ( Pure a ) = return a 
