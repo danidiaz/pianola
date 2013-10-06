@@ -17,7 +17,6 @@ import qualified Data.ByteString as B
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Control.Category
-import Control.Error
 import Control.Exception
 import Control.Monad.State.Class
 import Control.Monad.Logic
@@ -28,6 +27,8 @@ import Pianola.Util
 import Pianola.Protocol
 import Pianola.Protocol.IO
 import Pipes
+import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Either
 
 import System.FilePath
 

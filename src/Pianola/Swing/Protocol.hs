@@ -16,13 +16,12 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import Control.Category
 import Control.Arrow
-import Control.Error
 import Control.Monad
 import Control.Comonad
 import Control.Lens
 import Control.Comonad.Trans.Env
 import Control.Applicative
-
+import Control.Monad.Trans.Either
 import Pianola.Util
 import Pianola.Internal
 import Pianola.Protocol

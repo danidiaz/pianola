@@ -46,7 +46,6 @@ Library
         network >= 2.4,
         logict >= 0.5,
         safe >= 0.3.3,
-        errors >= 1.3,
         either >= 3.4,
         pipes >= 4.0,
         pipes-attoparsec >= 0.3.0,

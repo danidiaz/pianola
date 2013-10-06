@@ -18,8 +18,8 @@ import Data.Functor.Identity
 import Data.Functor.Compose
 import Control.Category
 import Control.Applicative
-import Control.Error
 import Control.Monad.Trans
+import Control.Monad.Trans.Either
 import Control.Monad.Free
 
 -- | A 'Functor' which models a RPC call as a pair in which the first component

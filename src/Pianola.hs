@@ -37,11 +37,11 @@ import Data.Functor.Compose
 import Data.Monoid
 import Control.Category
 import Control.Arrow
-import Control.Error
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Free
 import Control.Monad.Logic
+import Control.Monad.Trans.Maybe
 import Control.Comonad
 import Control.Comonad.Trans.Env    
 import Pipes
@@ -187,7 +187,7 @@ autolog (Pianola p) =
 
 play :: Monad m => m o -> Pianola m l o a -> Producer Delay (MaybeT (Producer l m)) a
 play mom pi =
-    let smashMaybe m = runMaybeT m >>= lift . hoistMaybe
+    let smashMaybe m = runMaybeT m >>= lift . MaybeT . return
         smashProducer = forever $
                 await >>= lift . lift . yield
         smash mp = runEffect $ smashMaybe mp >-> smashProducer

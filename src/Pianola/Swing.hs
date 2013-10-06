@@ -42,7 +42,6 @@ import Data.Functor.Identity
 import qualified Data.Text as T
 import Control.Lens
 import Control.Arrow
-import Control.Error
 import Control.Monad
 import Control.Arrow
 import Control.Comonad
@@ -177,6 +176,9 @@ popupItem = (decorate (the.popupLayer.folded) >>> descendants) <+> insidepop
                       prune (the.componentType._PopupMenu) (const True) >>> 
                       descendants
 
+clip :: [a] -> Maybe (a,[a],a)
+clip l = (,,) <$> headMay l <*> (initMay >=> tailMay $ l) <*> lastMay l
+
 selectInMenuBar :: Monad m => Remote m -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
 selectInMenuBar r ps = 
     let go (firstitem,middleitems,lastitem) = do
@@ -186,7 +188,6 @@ selectInMenuBar r ps =
            forM_ pairs $ \(txt,action) -> 
                pmaybe pfail $ retryPoke1s 7 $ 
                    popupItem >>> prune (the.text._Just) txt >>> action
-        clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ) <*> lastZ l
     in maybe pfail go (clip ps)
 
 toggleInMenuBar :: Monad m => Remote m -> Bool -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
@@ -199,7 +200,6 @@ toggleInMenuBar r toggleStatus ps =
                pmaybe pfail $ retryPoke1s 7 $ 
                    popupItem >>> prune (the.text._Just) txt >>> action
            replicateM_ (length pairs) $ poke $ escape r
-        clip l = (,,) <$> headZ l <*> (initZ l >>= tailZ)  <*> lastZ l
     in maybe pfail go (clip ps)
 
 logcapture :: Monad m => Remote m -> Pianola m LogEntry GUIWindow ()
@@ -240,5 +240,5 @@ labeledBy f =
                       prune (the.componentType) labellable 
         candidates = collect $ 
             (firstArrow &&& secondArrow) >>> prune id (uncurry sameLevelRightOf) >>^ snd 
-     in candidates >>> Kleisli (headZ . sortBy (compare `on` minX))
+     in candidates >>> Kleisli (replusify . headMay . sortBy (compare `on` minX))
 

@@ -9,14 +9,10 @@ module Pianola.Protocol.IO (
 import Prelude hiding (catch,(.))
 import System.IO
 import qualified Data.Text as T
---import qualified Data.Iteratee as I
---import qualified Data.Iteratee.IO.Handle as IH
---import qualified Data.Attoparsec.Iteratee as AI 
 import Network 
 import Data.Functor.Compose
 import Data.Bifunctor
 import Control.Category
-import Control.Error
 import Control.Exception
 import Control.Monad.Logic
 import Control.Monad.Free
@@ -29,6 +25,7 @@ import Pianola.Protocol
 import Data.MessagePack
 import Pipes.ByteString
 import Pipes.Attoparsec
+import Control.Monad.Trans.Either
 
 data RunInIOError = CommError IOException 
                   | ParseError T.Text
