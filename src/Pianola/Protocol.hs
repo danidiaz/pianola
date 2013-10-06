@@ -10,7 +10,7 @@ module Pianola.Protocol (
 import Prelude hiding (catch,(.),id)
 import Data.MessagePack
 import Data.Attoparsec.ByteString
-import qualified Data.Iteratee as I
+--import qualified Data.Iteratee as I
 import qualified Data.Text as T
 import qualified Data.ByteString as B 
 import qualified Data.ByteString.Lazy as BL

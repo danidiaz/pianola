@@ -133,12 +133,12 @@ data TabInfo = TabInfo
 type Tab = Identity TabInfo
 type GUITab = EnvT GUIComponent Identity TabInfo
 
-makeLenses ''GUI
-makeLenses ''WindowInfo
-makeLenses ''ComponentInfo
-makePrisms ''ComponentType
-makeLenses ''CellInfo
-makeLenses ''TabInfo
+$(makeLenses ''GUI)
+$(makeLenses ''WindowInfo)
+$(makeLenses ''ComponentInfo)
+$(makePrisms ''ComponentType)
+$(makeLenses ''CellInfo)
+$(makeLenses ''TabInfo)
 
 data Remote m = Remote
     { clickButton :: MonadPlus n => Kleisli n GUIComponent (Change m)
