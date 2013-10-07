@@ -25,18 +25,22 @@ import Pianola.Protocol
 import Data.MessagePack
 import Pipes.ByteString
 import Pipes.Attoparsec
-import Control.Monad.Trans.Either
+import Control.Monad.Error
 
 data RunInIOError = CommError IOException 
                   | ParseError T.Text
                   deriving Show
+
+-- Spurious error instance. would putting and error here be too awful?
+instance Error RunInIOError where
+    noMsg = ParseError T.empty
 
 data Endpoint = Endpoint {
         hostName::HostName,
         portID::PortID
     }
 
-runFree:: (MonadIO m, MonadReader r m) => (r -> Endpoint) -> Free ProtocolF a -> EitherT RunInIOError m a  
+runFree:: (MonadIO m, MonadReader r m) => (r -> Endpoint) -> Free ProtocolF a -> ErrorT RunInIOError m a  
 runFree lens ( Free (Compose (b,parser)) ) = do
     --let iterIO = I.ilift (return . runIdentity) i
     endp <- lift $ asks lens
@@ -53,7 +57,7 @@ runFree lens ( Free (Compose (b,parser)) ) = do
 
         ioErrHandler = \(ex :: IOException) -> return . Left . CommError $ ex
         parseErrHandler = ParseError . T.pack . show
-    nextFree <- EitherT . liftIO $ 
+    nextFree <- ErrorT . liftIO $ 
             catches (fmap (bimap parseErrHandler snd) $ rpcCall endp $ doStuff) 
             [Handler ioErrHandler]
     runFree lens nextFree 
@@ -63,5 +67,5 @@ runFree _ ( Pure a ) = return a
 -- 'Endpoint' value which identifies the server. An accessor function must be
 -- provided to extract the Endpoint from the base monad's environment, which
 -- may be more general. 
-runProtocol :: (MonadIO m, MonadReader r m) => (r -> Endpoint) -> Protocol a -> EitherT ServerError (EitherT RunInIOError m) a  
-runProtocol lens = EitherT . runFree lens . runEitherT
+runProtocol :: (MonadIO m, MonadReader r m) => (r -> Endpoint) -> Protocol a -> ErrorT ServerError (ErrorT RunInIOError m) a  
+runProtocol lens = ErrorT . runFree lens . runErrorT

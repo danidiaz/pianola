@@ -19,7 +19,7 @@ import Data.Functor.Compose
 import Control.Category
 import Control.Applicative
 import Control.Monad.Trans
-import Control.Monad.Trans.Either
+import Control.Monad.Error
 import Control.Monad.Free
 
 -- | A 'Functor' which models a RPC call as a pair in which the first component
@@ -30,7 +30,7 @@ type ProtocolF = Compose ((,) [BL.ByteString]) Parser
 
 -- | A monad to represent interactions with a remote server. A free monad over
 -- a RPC call functor, augmented with some error conditions.
-type Protocol = EitherT ServerError (Free ProtocolF)
+type Protocol = ErrorT ServerError (Free ProtocolF)
 
 -- | Constructs a RPC call from a packed list of arguments and a pure
 -- 'Iteratee' to consume the response.
@@ -43,6 +43,10 @@ data ServerError =
                    -- | Server couldn't perform the requested operation.
                  | ServerError T.Text
                  deriving Show
+
+-- Spurious Error instance 
+instance Error ServerError where
+    noMsg = SnapshotError 0 0
 
 instance Unpackable (ServerError) where
     get = do

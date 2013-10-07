@@ -28,7 +28,7 @@ import Pianola.Protocol
 import Pianola.Protocol.IO
 import Pipes
 import Control.Monad.Trans.Maybe
-import Control.Monad.Trans.Either
+import Control.Monad.Error
 
 import System.FilePath
 
@@ -80,6 +80,10 @@ data DriverError =
     |PianolaFailure
     deriving Show
 
+-- Spurious instance of error
+instance Error DriverError where
+    noMsg = PianolaFailure 
+
 -- | Runs a pianola computation. Receives as argument a monadic action to
 -- obtain snapshots of type /o/ of a remote system, a connection endpoint to
 -- the remote system, a 'Pianola' computation with context of type /o/ and
@@ -88,7 +92,7 @@ data DriverError =
 -- computation may fail with an error of type 'DriverError'. 
 --
 -- See also 'Pianola.Model.Swing.Driver.simpleSwingDriver'.
-drive :: Protocol o -> Endpoint -> Pianola Protocol LogEntry o a -> Stream FilePath -> EitherT DriverError IO a
+drive :: Protocol o -> Endpoint -> Pianola Protocol LogEntry o a -> Stream FilePath -> ErrorT DriverError IO a
 drive snapshot endpoint pianola namestream = do
     let played = play snapshot pianola
         -- the lift makes a hole for an (EitherT DriverIOError...)
@@ -97,21 +101,21 @@ drive snapshot endpoint pianola namestream = do
 
         filegen = state $ \stream -> (head stream, tail stream) 
 
-        logless = runEffect $ logprod >-> logger left filegen
+        logless = runEffect $ logprod >-> logger throwError filegen
 
-        errpeeled = runEitherT . runEitherT . runEitherT $ logless
+        errpeeled = runErrorT . runErrorT . runErrorT $ logless
     (result,_,())  <- lift $ runRWST errpeeled endpoint namestream
     case result of 
-        Left e -> left $ case e of 
+        Left e -> throwError $ case e of 
                    CommError ioerr -> PianolaIOError ioerr
                    ParseError perr -> PianolaParseError perr
         Right s -> case s of
-            Left e -> left $ case e of 
+            Left e -> throwError $ case e of 
                    SnapshotError u v -> PianolaSnapshotError u v
                    ServerError txt -> PianolaServerError txt
             Right r2 -> case r2 of 
-                Left e -> left $ DriverIOError e
+                Left e -> throwError $ DriverIOError e
                 Right r3 -> case r3 of
-                    Nothing -> left PianolaFailure
+                    Nothing -> throwError PianolaFailure
                     Just a  -> return a
 

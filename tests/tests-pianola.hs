@@ -11,7 +11,7 @@ import Network
 import Control.Lens
 import Control.Category
 import Control.Monad
-import Control.Error
+import Control.Monad.Error
 import Control.Applicative
 
 import Pianola
@@ -151,7 +151,7 @@ main = do
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
 
-  r <- runEitherT $ drive snapshot endpoint (testCase remote) $ screenshotStream "dist/test"
+  r <- runErrorT $ drive snapshot endpoint (testCase remote) $ screenshotStream "dist/test"
   case r of
      Left err -> do
         putStrLn $ "result: " <> show err
