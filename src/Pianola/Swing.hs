@@ -217,28 +217,30 @@ popupItem = (decorate (the.popupLayer.folded) >>> descendants) <+> insidepop
 clip :: [a] -> Maybe (a,[a],a)
 clip l = (,,) <$> headMay l <*> (initMay >=> tailMay $ l) <*> lastMay l
 
+menuBarOp :: Monad m => Selector m l GUIComponent (Change m) 
+                     -> Selector m l GUIComponent (Change m) 
+                     -> (T.Text->Bool, [T.Text -> Bool], T.Text->Bool ) 
+                     -> Pianola m l GUIWindow ()
+menuBarOp middleAction lastAction (firstitem,middleitems,lastitem) = do
+       poke $ decorate (the.menu.folded) >>> 
+              descendants >>> 
+              prune (the.text._Just) firstitem >>> 
+              middleAction 
+       let pairs = zip middleitems (repeat middleAction) ++ [(lastitem, lastAction)]
+       forM_ pairs $ \(txt,action) -> 
+           throwIfZero "Menu select: can't find item." $ retryPoke1s 7 $ 
+               popupItem >>> prune (the.text._Just) txt >>> action
+
 selectInMenuBar :: Monad m => Remote m -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
-selectInMenuBar r ps = 
-    let go (firstitem,middleitems,lastitem) = do
-           poke $ decorate (the.menu.folded) >>> descendants >>> prune (the.text._Just) firstitem >>> clickButton r
-           let pairs = zip middleitems (clickButton r <$ middleitems) ++
-                       [(lastitem, clickButton r)]
-           forM_ pairs $ \(txt,action) -> 
-               throwIfZero "Menu select: can't find item." $ retryPoke1s 7 $ 
-                   popupItem >>> prune (the.text._Just) txt >>> action
-    in maybe (throwError "Menu select: top level option and at least one suboption required.") go (clip ps)
+selectInMenuBar remote ps = case clip ps of 
+          Nothing -> throwError "Menu select: top level option and at least one suboption required."  
+          Just items -> menuBarOp (clickButton remote) (clickButton remote) items
 
 toggleInMenuBar :: Monad m => Remote m -> Bool -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
-toggleInMenuBar r toggleStatus ps = 
-    let go (firstitem,middleitems,lastitem) = do
-           poke $ decorate (the.menu.folded) >>> descendants >>> prune (the.text._Just) firstitem >>> clickButton r
-           let pairs = zip middleitems (clickButton r <$ middleitems) ++
-                       [(lastitem, toggle r toggleStatus)]
-           forM_ pairs $ \(txt,action) -> 
-               throwIfZero "Menu select: can't find item." $ retryPoke1s 7 $ 
-                   popupItem >>> prune (the.text._Just) txt >>> action
-           replicateM_ (length pairs) $ poke $ escape r
-    in maybe (throwError "Menu select: top level option and at least one suboption required.") go (clip ps)
+toggleInMenuBar remote toggleStatus ps = case clip ps of 
+        Nothing -> throwError "Menu select: top level option and at least one suboption required."
+        Just items@(_,b,_) -> do menuBarOp (clickButton remote) (toggle remote toggleStatus) items
+                                 replicateM_ (length b + 1) $ poke $ escape remote
 
 logcapture :: Monad m => Remote m -> Pianola m LogEntry GUIWindow ()
 logcapture r = (peek $ arr (capture r) >>> liftQ) >>= logimg
