@@ -77,12 +77,12 @@ data DriverError =
     -- doesn't support the operation or because of an internal error.)
     |PianolaServerError T.Text
     -- | Failure from a call to 'pfail' or from a 'Glance' without results. 
-    |PianolaFailure
+    |PianolaFailure String
     deriving Show
 
 -- Spurious instance of error
 instance Error DriverError where
-    noMsg = PianolaFailure 
+    noMsg = PianolaFailure ""
 
 -- | Runs a pianola computation. Receives as argument a monadic action to
 -- obtain snapshots of type /o/ of a remote system, a connection endpoint to
@@ -97,7 +97,7 @@ drive snapshot endpoint pianola namestream = do
     let played = play snapshot pianola
         -- the lift makes a hole for an (EitherT DriverIOError...)
         rebased = hoist (hoist (hoist $ lift . runProtocol id)) $ played
-        logprod = runMaybeT $ runEffect $ rebased >-> delayer
+        logprod = runErrorT $ runEffect $ rebased >-> delayer
 
         filegen = state $ \stream -> (head stream, tail stream) 
 
@@ -116,6 +116,6 @@ drive snapshot endpoint pianola namestream = do
             Right r2 -> case r2 of 
                 Left e -> throwError $ DriverIOError e
                 Right r3 -> case r3 of
-                    Nothing -> throwError PianolaFailure
-                    Just a  -> return a
+                    Left msg -> throwError $ PianolaFailure msg
+                    Right a  -> return a
 

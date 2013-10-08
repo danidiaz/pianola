@@ -29,8 +29,7 @@ checkStatusBar p predicate = do
         statusText <- peek $ fromFold (the.text._Just)
         logmsg $ "status text is: " <> statusText
         unless (predicate statusText) $ do
-            logmsg $ "Unexpected text in status bar: " <> statusText
-            pfail
+            throwError $ "Unexpected text in status bar: " <> show statusText
     poke $ clickButtonByText p (=="clear")
 
 checkDialog :: Monad m => Remote m -> Pianola m LogEntry GUIComponent ()
@@ -45,10 +44,10 @@ checkDelayedDialog :: Monad m => Remote m -> Pianola m LogEntry GUIComponent ()
 checkDelayedDialog p = do
     poke $ clickButtonByText p (=="open slow dialog")
     with context $ do
-        pmaybe pfail $ withRetry1s 7 descendants1 $ do       
+        throwIfZero "No dialog appeared." $ withRetry1s 7 descendants1 $ do       
             with (decorate $ the.contentPane) $ poke $ clickButtonByText p (=="close dialog")
         logmsg "clicked delayed close button"
-        pmaybe pfail $ retryPeek1s 7 $ missing descendants1
+        throwIfZero "Dialog did not dissapear." $ retryPeek1s 7 $ missing descendants1
     checkStatusBar p (=="Performed delayed close")
 
 expandAndCheckLeafA :: Monad m => Remote m -> Int -> Pianola m LogEntry GUIComponent ()
@@ -79,7 +78,7 @@ testCase p = with (decorate $ topLevel.folded) $ do
         poke $ descendants >>> prune (the.text._Just) (=="click dbl click") >>> doubleClick p
         checkStatusBar p (=="double-clicked on label") 
         poke $ rightClickByText p (=="This is a label")
-        pmaybe pfail $ retryPoke1s 4 $ 
+        throwIfZero "Did not dinf popupitem2" $ retryPoke1s 4 $ 
             context >>> popupItem >>> prune (the.text._Just) (=="popupitem2") >>> clickButton p 
         checkStatusBar p (=="clicked on popupitem2")
         sleep 1

@@ -11,8 +11,8 @@ module Pianola (
         liftQ,
         Pianola(..),
         Delay,
-        pfail,
-        pmaybe,
+        --pfail,
+        --pmaybe,
         peek,
         peekMaybe,
         retryPeek1s,
@@ -41,6 +41,8 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.Free
 import Control.Monad.Logic
+import Control.Monad.Error
+import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
 import Control.Comonad
 import Control.Comonad.Trans.Env    
@@ -78,26 +80,28 @@ focus prefix v =
    let nattrans (WrapArrow k) = WrapArrow $ prefix >>> k
    in  hoistFree nattrans v
 
-runObserver :: Monad m => m o -> Observer m l o a -> MaybeT (Producer l m) a
+runObserver :: Monad m => m o -> Observer m l o a -> ErrorT String (Producer l m) a
 runObserver _ (Pure b) = return b
 runObserver mom (Free f) =
-   let squint = fmap $ hoist (hoist runQuery) . tomaybet
+   let  tomaybet = MaybeT . liftM replusify . observeManyT 1
+        toerrort = ErrorT . liftM (maybe (Left "# Selector without results.") Right) . runMaybeT
+        squint = fmap $ hoist (hoist runQuery) . toerrort . tomaybet
    in join $ (lift . lift $ mom) >>= squint (runKleisli . unwrapArrow $ runObserver mom <$> f)
 
 type Delay = Int
 
 newtype Pianola m l o a = Pianola 
-    { unPianola :: Producer (Change m) (Producer Delay (MaybeT (Producer l (Observer m l o)))) a 
-    } deriving (Functor,Monad)
+    { unPianola :: Producer (Change m) (Producer Delay (ErrorT String (Producer l (Observer m l o)))) a 
+    } deriving (Functor,Monad,MonadError String)
 
 instance Monad m => Loggy (Pianola m LogEntry o) where
     logentry = Pianola . lift . lift . lift . logentry
 
-pfail :: Monad m => Pianola m l o a
-pfail = Pianola . lift . lift $ mzero
+-- pfail :: Monad m => Pianola m l o a
+-- pfail = Pianola . lift . lift $ mzero
 
-pmaybe :: Monad m => Pianola m l o a -> Pianola m l o (Maybe a) -> Pianola m l o a  
-pmaybe f p = p >>= maybe f return 
+-- pmaybe :: Monad m => Pianola m l o a -> Pianola m l o (Maybe a) -> Pianola m l o a  
+-- pmaybe f p = p >>= maybe f return 
 
 peek :: Monad m => Selector m l o a -> Pianola m l o a
 peek = Pianola . lift . lift . lift . lift . liftF . WrapArrow
@@ -185,9 +189,9 @@ autolog (Pianola p) =
             "### Executed action with tags:" <> mconcat ( map (" "<>) . tags $ s ) 
     in Pianola $ p >-> logger
 
-play :: Monad m => m o -> Pianola m l o a -> Producer Delay (MaybeT (Producer l m)) a
+play :: Monad m => m o -> Pianola m l o a -> Producer Delay (ErrorT String (Producer l m)) a
 play mom pi =
-    let smashMaybe m = runMaybeT m >>= lift . MaybeT . return
+    let smashMaybe m = runErrorT m >>= lift . ErrorT . return
         smashProducer = forever $
                 await >>= lift . lift . yield
         smash mp = runEffect $ smashMaybe mp >-> smashProducer

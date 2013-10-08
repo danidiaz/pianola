@@ -3,8 +3,9 @@
 {-# LANGUAGE RankNTypes #-}
 
 module Pianola.Util (
+        throwIfZero,
         replusify,
-        tomaybet,
+--        tomaybet,
         fromFold,
         decorate,
         the,
@@ -35,19 +36,20 @@ import Control.Comonad.Trans.Env
 import Control.Applicative
 import Control.Monad.Trans.Maybe
 import Control.Monad.Logic
+import Control.Monad.Error
 import qualified Data.Text as T
 import qualified Data.ByteString as B
 import Pipes
 
 import Pianola.Internal
 
+--
+throwIfZero :: MonadError e m => e -> m (Maybe a) -> m a 
+throwIfZero e m = m >>= maybe (throwError e) return
+
 -- | Convenience function to transform a list into any 'MonadPlus'.
 replusify:: (Foldable f, MonadPlus m) => f a -> m a
 replusify = msum . map return . toList
-
--- | Transforms a zero-or-many result into a zero-or-one result.
-tomaybet:: Monad m => LogicT m a -> MaybeT m a
-tomaybet = MaybeT . liftM replusify . observeManyT 1
 
 -- | Class of types whose values have descendants1 of the same type as themselves.
 class Treeish l where

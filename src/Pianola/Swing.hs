@@ -46,6 +46,7 @@ import Control.Monad
 import Control.Arrow
 import Control.Comonad
 import Control.Applicative
+import Control.Monad.Error
 import Control.Monad.Trans.Class
 import Control.Comonad.Trans.Class
 import Control.Comonad.Trans.Env    
@@ -186,9 +187,9 @@ selectInMenuBar r ps =
            let pairs = zip middleitems (clickButton r <$ middleitems) ++
                        [(lastitem, clickButton r)]
            forM_ pairs $ \(txt,action) -> 
-               pmaybe pfail $ retryPoke1s 7 $ 
+               throwIfZero "Menu select: can't find item." $ retryPoke1s 7 $ 
                    popupItem >>> prune (the.text._Just) txt >>> action
-    in maybe pfail go (clip ps)
+    in maybe (throwError "Menu select: top level option and at least one suboption required.") go (clip ps)
 
 toggleInMenuBar :: Monad m => Remote m -> Bool -> [T.Text -> Bool] -> Pianola m l GUIWindow ()
 toggleInMenuBar r toggleStatus ps = 
@@ -197,10 +198,10 @@ toggleInMenuBar r toggleStatus ps =
            let pairs = zip middleitems (clickButton r <$ middleitems) ++
                        [(lastitem, toggle r toggleStatus)]
            forM_ pairs $ \(txt,action) -> 
-               pmaybe pfail $ retryPoke1s 7 $ 
+               throwIfZero "Menu select: can't find item." $ retryPoke1s 7 $ 
                    popupItem >>> prune (the.text._Just) txt >>> action
            replicateM_ (length pairs) $ poke $ escape r
-    in maybe pfail go (clip ps)
+    in maybe (throwError "Menu select: top level option and at least one suboption required.") go (clip ps)
 
 logcapture :: Monad m => Remote m -> Pianola m LogEntry GUIWindow ()
 logcapture r = (peek $ arr (capture r) >>> liftQ) >>= logimg
