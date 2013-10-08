@@ -116,13 +116,13 @@ instance Unpackable TabInfo where
     get = TabInfo <$> get <*> get <*> get <*> get 
 
 remote :: Remote Protocol
-remote = Remote (prune (the.componentType._Button) (\_->True) >>> 
-                 makeComponentChange "clickButton" [])
+remote = Remote (makeWindowChange "toFront" []) 
 
-                (makeWindowChange "toFront" []) 
 
-                (\txt -> prune (the.componentType._TextField) id >>> 
-                         makeComponentChange "setTextField" [pack txt])
+                (makeWindowChange "escape" []) 
+                (makeWindowChange "enter" []) 
+                (makeWindowChange "closeWindow" []) 
+                (makeWindowQuery "getWindowImage" [])
 
                 (makeComponentChange "click" []) 
                 (makeComponentChange "doubleClick" []) 
@@ -131,17 +131,19 @@ remote = Remote (prune (the.componentType._Button) (\_->True) >>>
                 (\b -> prune (the.componentType._Toggleable) (\_->True) >>> 
                        makeComponentChange "toggle" [pack b])
 
+                (prune (the.componentType._Button) (\_->True) >>> 
+                 makeComponentChange "clickButton" [])
+
                 (prune (the.componentType._ComboBox) (\_->True) >>> 
                  makeComponentChange "clickCombo" []) 
+
+                (\txt -> prune (the.componentType._TextField) id >>> 
+                         makeComponentChange "setTextField" [pack txt])
 
                 (makeTabChange "selectTab" []) 
                 (makeCellChange "clickCell" [])
                 (makeCellChange "doubleClickCell" [])
                 (makeCellChange "rightClickCell" [])
                 (\b -> makeCellChange "expandCollapseCell" [pack b])
-                (makeWindowChange "escape" []) 
-                (makeWindowChange "enter" []) 
-                (makeWindowChange "closeWindow" []) 
-                (makeWindowQuery "getWindowImage" [])
     
 

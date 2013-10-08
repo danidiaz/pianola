@@ -5,21 +5,55 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Pianola.Swing (
-        GUI (..), snapshotId, topLevel,
-        WindowInfo (..), windowId,windowTitle,windowDim,menu,popupLayer,contentPane,
+        GUI (..), 
+            snapshotId, 
+            topLevel,
+        WindowInfo (..), 
+            windowId,
+            windowTitle,
+            windowDim,
+            menu,
+            popupLayer,
+            contentPane,
         Window,
         GUIWindow,
-        ComponentInfo (..), componentId,pos,dim,name,tooltip,text,enabled,componentType,
-        ComponentType (..), _Panel,_Toggleable,_Button,_TextField
-                          , _Label,_ComboBox
-                          , _List, _Table, _Treegui,_PopupMenu,_TabbedPane,_Other, 
+        ComponentInfo (..), 
+            componentId,
+            pos,
+            dim,
+            name,
+            tooltip,
+            text,
+            enabled,
+            componentType,
+        ComponentType (..), 
+            _Panel,
+            _Toggleable,
+            _Button,
+            _TextField,
+            _Label,
+            _ComboBox,
+            _List, 
+            _Table, 
+            _Treegui,
+            _PopupMenu,
+            _TabbedPane,
+            _Other, 
         Component,
         GUIComponent,
-        CellInfo (..), rowId,columnId,isFromTree,renderer,
+        CellInfo (..), 
+            rowId,
+            columnId,
+            isFromTree,
+            renderer,
         ListCell,
         TableCell,
         TreeCell,
-        TabInfo (..), tabId,tabText,tabToolTip,isTabSelected,
+        TabInfo (..), 
+            tabId,
+            tabText,
+            tabToolTip,
+            isTabSelected,
         Tab,
         GUITab,
         clickButtonByText,
@@ -141,26 +175,29 @@ $(makeLenses ''CellInfo)
 $(makeLenses ''TabInfo)
 
 data Remote m = Remote
-    { clickButton :: MonadPlus n => Kleisli n GUIComponent (Change m)
-    , toFront ::     MonadPlus n => Kleisli n GUIWindow    (Change m)
-    , setText ::     MonadPlus n => T.Text -> 
-                                    Kleisli n GUIComponent (Change m)
+    { toFront ::     MonadPlus n => Kleisli n GUIWindow (Change m)
+    , escape::       MonadPlus n => Kleisli n GUIWindow (Change m)
+    , enter::        MonadPlus n => Kleisli n GUIWindow (Change m)
+    , close::        MonadPlus n => Kleisli n GUIWindow (Change m)
+    , capture ::                    GUIWindow -> 
+                                    Query m Image 
+    
     , click ::       MonadPlus n => Kleisli n GUIComponent (Change m)
     , doubleClick :: MonadPlus n => Kleisli n GUIComponent (Change m)
     , rightClick ::  MonadPlus n => Kleisli n GUIComponent (Change m)
     , toggle::       MonadPlus n => Bool -> 
                                     Kleisli n GUIComponent (Change m)
+    , clickButton :: MonadPlus n => Kleisli n GUIComponent (Change m)
     , clickCombo::   MonadPlus n => Kleisli n GUIComponent (Change m)
+    , setText ::     MonadPlus n => T.Text -> 
+                                    Kleisli n GUIComponent (Change m)
     , selectTab::    MonadPlus n => Kleisli n GUITab (Change m)
+
     , clickCell ::       (Comonad c, MonadPlus n) => Kleisli n (EnvT GUIComponent c CellInfo) (Change m)
     , doubleClickCell :: (Comonad c, MonadPlus n) => Kleisli n (EnvT GUIComponent c CellInfo) (Change m)
     , rightClickCell ::  (Comonad c, MonadPlus n) => Kleisli n (EnvT GUIComponent c CellInfo) (Change m)
     , expand ::          (Comonad c, MonadPlus n) => Bool -> 
                                                      Kleisli n (EnvT GUIComponent c CellInfo) (Change m)
-    , escape::       MonadPlus n => Kleisli n GUIWindow (Change m)
-    , enter::        MonadPlus n => Kleisli n GUIWindow (Change m)
-    , close::        MonadPlus n => Kleisli n GUIWindow (Change m)
-    , capture :: GUIWindow -> Query m Image 
     }
 
 clickButtonByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Change m) 
@@ -234,12 +271,12 @@ labeledBy f =
             Table {} -> True
             Treegui {} -> True
             _ -> False
-        firstArrow = descendants >>>
+        labelArrow = descendants >>>
                      prune (the.componentType._Label) (\_->True) >>> 
                      prune (the.text._Just) f    
-        secondArrow = descendants >>> 
+        candidatesArrow = descendants >>> 
                       prune (the.componentType) labellable 
         candidates = collect $ 
-            (firstArrow &&& secondArrow) >>> prune id (uncurry sameLevelRightOf) >>^ snd 
+            (labelArrow &&& candidatesArrow) >>> prune id (uncurry sameLevelRightOf) >>^ snd 
      in candidates >>> Kleisli (replusify . headMay . sortBy (compare `on` minX))
 
