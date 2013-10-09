@@ -38,7 +38,6 @@ module Pianola.Tutorial (
 ) where 
 
 import Prelude hiding (catch,(.),id,head,repeat,tail,map,iterate)
-import Data.Stream.Infinite
 import Pianola
 import Pianola.Util
 import Pianola.Protocol

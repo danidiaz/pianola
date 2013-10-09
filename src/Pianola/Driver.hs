@@ -12,14 +12,17 @@ module Pianola.Driver (
 ) where 
 
 import Prelude hiding (catch,(.),id,head,repeat,tail,map,iterate)
-import Data.Stream.Infinite
+--import Data.Stream.Infinite
+import Data.Functor.Identity
 import qualified Data.ByteString as B
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Control.Category
+import Control.Comonad
 import Control.Exception
 import Control.Monad.State.Class
 import Control.Monad.Logic
+import Control.Comonad.Cofree
 import Control.Concurrent (threadDelay)
 import Control.Monad.RWS.Strict
 import Pianola
@@ -48,18 +51,18 @@ logger errHandler filegen = forever $ do
 -- | A more general version of 'screenshotStream', which allows the client to
 -- specify the prefix before the file number, the amount of padding for the
 -- file number, and the suffix after the file number.
-filePathStream :: String -> Int -> String -> FilePath -> Stream FilePath
+filePathStream :: String -> Int -> String -> FilePath -> Cofree Identity FilePath
 filePathStream extension padding prefix folder = 
      let pad i c str = replicate (max 0 (i - length str)) c ++ str
          pathFromNumber =  combine folder 
                          . (\s -> prefix ++ s ++ extSeparator:extension) 
                          . pad padding '0' 
                          . show 
-     in map pathFromNumber $ iterate succ 1 
+     in unfold (\n -> (pathFromNumber n, Identity $ succ n)) 1 
 
 -- | Returns an infinite stream of filenames for storing screenshots, located
 -- in the directory supplied as a parameter.
-screenshotStream :: FilePath -> Stream FilePath
+screenshotStream :: FilePath -> Cofree Identity FilePath
 screenshotStream = filePathStream  "png" 3 "pianola-capture-" 
 
 -- | Possible failure outcomes when running a pianola computation.
@@ -92,14 +95,14 @@ instance Error DriverError where
 -- computation may fail with an error of type 'DriverError'. 
 --
 -- See also 'Pianola.Model.Swing.Driver.simpleSwingDriver'.
-drive :: Protocol o -> Endpoint -> Pianola Protocol LogEntry o a -> Stream FilePath -> ErrorT DriverError IO a
+drive :: Protocol o -> Endpoint -> Pianola Protocol LogEntry o a -> Cofree Identity FilePath -> ErrorT DriverError IO a
 drive snapshot endpoint pianola namestream = do
     let played = play snapshot pianola
         -- the lift makes a hole for an (EitherT DriverIOError...)
         rebased = hoist (hoist (hoist $ lift . runProtocol id)) $ played
         logprod = runErrorT $ runEffect $ rebased >-> delayer
 
-        filegen = state $ \stream -> (head stream, tail stream) 
+        filegen = state $ \stream -> (extract stream, runIdentity . unwrap $ stream) 
 
         logless = runEffect $ logprod >-> logger throwError filegen
 
