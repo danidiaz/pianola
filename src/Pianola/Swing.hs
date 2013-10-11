@@ -242,8 +242,8 @@ toggleInMenuBar remote toggleStatus ps = case clip ps of
         Just items@(_,b,_) -> do menuBarOp (clickButton remote) (toggle remote toggleStatus) items
                                  replicateM_ (length b + 1) $ poke $ escape remote
 
-logcapture :: Monad m => Remote m -> Pianola m LogEntry GUIWindow ()
-logcapture r = (peek $ arr (capture r) >>> liftQ) >>= logimg
+logcapture :: Monad m => Remote m -> T.Text -> Pianola m LogEntry GUIWindow ()
+logcapture r caption = (peek $ arr (capture r) >>> liftQ) >>= logimg caption
 
 selectInComboBox :: Monad m => Remote m -> (T.Text -> Bool) -> Pianola m l GUIComponent ()
 selectInComboBox r f = do

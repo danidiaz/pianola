@@ -11,8 +11,6 @@ module Pianola (
         liftQ,
         Pianola(..),
         Delay,
-        --pfail,
-        --pmaybe,
         peek,
         peekMaybe,
         retryPeek1s,
@@ -96,12 +94,6 @@ newtype Pianola m l o a = Pianola
 
 instance Monad m => Loggy (Pianola m LogEntry o) where
     logentry = Pianola . lift . lift . lift . logentry
-
--- pfail :: Monad m => Pianola m l o a
--- pfail = Pianola . lift . lift $ mzero
-
--- pmaybe :: Monad m => Pianola m l o a -> Pianola m l o (Maybe a) -> Pianola m l o a  
--- pmaybe f p = p >>= maybe f return 
 
 peek :: Monad m => Selector m l o a -> Pianola m l o a
 peek = Pianola . lift . lift . lift . lift . liftF . WrapArrow

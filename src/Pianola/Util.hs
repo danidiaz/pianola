@@ -5,7 +5,6 @@
 module Pianola.Util (
         throwIfZero,
         replusify,
---        tomaybet,
         fromFold,
         decorate,
         the,
@@ -107,18 +106,14 @@ type Image = B.ByteString
 class Functor l => Loggy l where
     logentry::LogEntry -> l ()
 
-    logmsg::T.Text -> l ()
+    logmsg:: T.Text -> l ()
     logmsg = logentry . TextEntry
 
-    logimg::Image -> l ()
-    logimg = logentry . ImageEntry
-
-    -- | Logs a message and returns the second argument unchanged.
-    logmsgK::T.Text -> a -> l a
-    logmsgK msg = (<$ logmsg msg) 
+    logimg :: T.Text -> Image -> l ()
+    logimg caption image = logentry $ ImageEntry caption image
 
 data LogEntry = TextEntry T.Text 
-                |ImageEntry Image
+                |ImageEntry T.Text Image 
 
 instance Monad m => Loggy (Producer LogEntry m) where
     logentry = yield

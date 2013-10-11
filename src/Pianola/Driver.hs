@@ -43,7 +43,8 @@ logger errHandler filegen = forever $ do
       entry <- await
       case entry of  
           TextEntry txt -> lift . convertErr . liftIO . try $ TIO.putStrLn txt
-          ImageEntry image -> do
+          ImageEntry txt image -> do
+               lift . convertErr . liftIO . try $ TIO.putStrLn $ "CAPTION: " <> txt
                file <- lift filegen
                lift . convertErr . liftIO . try $ B.writeFile file image
    where convertErr x = x >>= either errHandler return 
