@@ -16,7 +16,9 @@ module Pianola.Util (
         Query(runQuery),
         Tag,
         Change(tags,unseal),
-        addTag
+        addTag,
+        jsonToText,
+        logJSON
     ) where
 
 import Prelude hiding (catch,(.),id)
@@ -36,8 +38,11 @@ import Control.Applicative
 import Control.Monad.Trans.Maybe
 import Control.Monad.Logic
 import Control.Monad.Error
+import Data.Aeson
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as E
 import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as BL
 import Pipes
 
 import Pianola.Internal
@@ -85,21 +90,6 @@ prune :: MonadPlus m => Fold a b -> (b -> Bool) -> Kleisli m a a
 prune f p = Kleisli $ \x -> guard (anyOf f p x) >> return x 
 
 -----------------------------------------------------------------------
-
--- useful msgpack instances
-instance (Unpackable a, Unpackable b) => Unpackable (Either a b) where
-    get = do
-        tag <- get::Parser Int
-        case tag of
-            1 -> Left <$> get
-            0 -> Right <$> get
-
-instance Unpackable a => Unpackable (Identity a) where
-    get = Identity <$> get
-
-instance Unpackable a => Unpackable (Tree a) where
-    get = Node <$> get <*> get
-
 -- logging
 type Image = B.ByteString
 
@@ -123,4 +113,13 @@ instance (Monad l, Loggy l) => Loggy (LogicT l) where
 
 instance (Monad l, Loggy l) => Loggy (MaybeT l) where
     logentry = lift . logentry
+
+-----------------------------------------------------------------------
+--
+jsonToText :: ToJSON c => c -> T.Text
+jsonToText = E.decodeUtf8 . BL.toStrict . encode . toJSON   
+
+logJSON :: (Monad m,Loggy m,ToJSON c) => Kleisli m c ()
+logJSON = Kleisli $ logmsg . jsonToText
+
 

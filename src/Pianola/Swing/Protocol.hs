@@ -70,50 +70,6 @@ makeTabChange method args = Kleisli $ \tab ->
         in  return $ Change [T.pack "@" <> method] $
                 call (pack method:pack snapshotId':pack componentId':pack tabId':args) get >>= ErrorT . return
 
-instance Unpackable GUI where
-    get = GUI <$> get 
-              <*> get
-
-instance Unpackable WindowInfo where
-    get = WindowInfo <$> get 
-                     <*> get 
-                     <*> get    
-                     <*> get 
-                     <*> get 
-                     <*> get 
-
-instance Unpackable ComponentInfo where
-    get = ComponentInfo <$> get 
-                        <*> get 
-                        <*> get 
-                        <*> get 
-                        <*> get 
-                        <*> get 
-                        <*> get 
-                        <*> get
-
-instance Unpackable ComponentType where
-    get = do
-        typeTag <- get::Parser Int
-        case typeTag of
-            1 -> pure Panel
-            2 -> Toggleable <$> get
-            3 -> pure Button
-            4 -> TextField <$> get
-            5 -> pure Label
-            6 -> ComboBox <$> get
-            7 -> List <$> get
-            8 -> Table <$> get
-            9 -> Treegui <$> get
-            50 -> pure PopupMenu
-            70 -> TabbedPane <$> get
-            77 -> Other <$> get
-
-instance Unpackable CellInfo where
-    get = CellInfo <$> get <*> get <*> get <*> get 
-
-instance Unpackable TabInfo where
-    get = TabInfo <$> get <*> get <*> get <*> get 
 
 remote :: Remote Protocol
 remote = Remote (makeWindowChange "toFront" []) 

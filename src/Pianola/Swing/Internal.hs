@@ -27,6 +27,8 @@ import Data.Functor.Identity
 import Control.Monad.Logic
 import Data.Aeson
 import Data.Aeson.TH
+import Data.MessagePack
+import Data.Attoparsec.ByteString
 
 import Pianola.Internal (Query,Change)
 import Pianola.Orphans
@@ -34,6 +36,10 @@ import Pianola.Orphans
 data GUI = GUI { _snapshotId :: Int
                , _topLevel :: [Window] 
                }
+
+instance Unpackable GUI where
+    get = GUI <$> get 
+              <*> get
 
 data WindowInfo = WindowInfo 
     {  _windowId::Int
@@ -43,6 +49,14 @@ data WindowInfo = WindowInfo
     ,  _popupLayer:: [Component]
     ,  _contentPane::Component
     } 
+
+instance Unpackable WindowInfo where
+    get = WindowInfo <$> get 
+                     <*> get 
+                     <*> get    
+                     <*> get 
+                     <*> get 
+                     <*> get 
 
 type Window = Tree WindowInfo
 
@@ -58,6 +72,16 @@ data ComponentInfo = ComponentInfo
     ,  _enabled::Bool
     ,  _componentType::ComponentType
     } 
+
+instance Unpackable ComponentInfo where
+    get = ComponentInfo <$> get 
+                        <*> get 
+                        <*> get 
+                        <*> get 
+                        <*> get 
+                        <*> get 
+                        <*> get 
+                        <*> get
 
 type Component = Tree ComponentInfo
 
@@ -77,12 +101,32 @@ data ComponentType =
     |TabbedPane [Tab]
     |Other T.Text
 
+instance Unpackable ComponentType where
+    get = do
+        typeTag <- get::Parser Int
+        case typeTag of
+            1 -> pure Panel
+            2 -> Toggleable <$> get
+            3 -> pure Button
+            4 -> TextField <$> get
+            5 -> pure Label
+            6 -> ComboBox <$> get
+            7 -> List <$> get
+            8 -> Table <$> get
+            9 -> Treegui <$> get
+            50 -> pure PopupMenu
+            70 -> TabbedPane <$> get
+            77 -> Other <$> get
+
 data CellInfo = CellInfo 
     { _rowId::Int
     , _columnId::Int
     , _renderer::Component 
     , _isFromTree::Bool
     }
+
+instance Unpackable CellInfo where
+    get = CellInfo <$> get <*> get <*> get <*> get 
 
 type ListCell = Identity CellInfo
 
@@ -97,7 +141,11 @@ data TabInfo = TabInfo
     , _isTabSelected:: Bool
     }
 
+instance Unpackable TabInfo where
+    get = TabInfo <$> get <*> get <*> get <*> get 
+
 type Tab = Identity TabInfo
+
 type GUITab = EnvT GUIComponent Identity TabInfo
 
 $(makeLenses ''GUI)

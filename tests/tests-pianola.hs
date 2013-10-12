@@ -10,9 +10,11 @@ import qualified Data.Text as T
 import Network 
 import Control.Lens
 import Control.Category
+import Control.Arrow
 import Control.Monad
 import Control.Monad.Error
 import Control.Applicative
+import Control.Comonad.Trans.Class
 
 import Pianola
 import Pianola.Util
@@ -90,7 +92,7 @@ testCase p = with (decorate $ topLevel.folded) $ do
             map (==) ["Menu1","SubMenu1","submenuitem2"]
         checkStatusBar p (=="checkbox in menu is now true") 
         logmsg "getting a screenshot"
-        with context $ logcapture p "screenshot caption"
+        with context $ logCapture p "screenshot caption"
         logmsg "now for a second menu"
         autolog $ with context $ selectInMenuBar p $ 
             map (==) ["Menu1","SubMenu1","submenuitem1"]
@@ -139,6 +141,7 @@ testCase p = with (decorate $ topLevel.folded) $ do
         poke $ labeledBy (=="label2") >>> setText p "hope this works!"
         checkStatusBar p (=="hope this works!")
         sleep 2 
+    peek $ lower ^>> logJSON
     poke $ close p
 
 main :: IO ()

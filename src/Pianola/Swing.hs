@@ -15,7 +15,7 @@ module Pianola.Swing (
         selectTabByText, 
         tableCellByText,
         labeledBy,
-        logcapture
+        logCapture
     ) where
 
 import Prelude hiding (catch)
@@ -89,8 +89,11 @@ toggleInMenuBar remote toggleStatus ps = case clip ps of
         Just items@(_,b,_) -> do menuBarOp (clickButton remote) (toggle remote toggleStatus) items
                                  replicateM_ (length b + 1) $ poke $ escape remote
 
-logcapture :: Monad m => Remote m -> T.Text -> Pianola m LogEntry GUIWindow ()
-logcapture r caption = (peek $ arr (capture r) >>> liftQ) >>= logimg caption
+logCapture :: Monad m => Remote m -> T.Text -> Pianola m LogEntry GUIWindow ()
+logCapture r caption = (peek $ arr (capture r) >>> liftQ) >>= logimg caption
+
+--logJSON :: (Monad m,Loggy m,ToJSON c) => Kleisli m c ()
+--logJSON = Kleisli $ logmsg . jsonToText
 
 selectInComboBox :: Monad m => Remote m -> (T.Text -> Bool) -> Pianola m l GUIComponent ()
 selectInComboBox r f = do
