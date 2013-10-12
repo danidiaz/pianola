@@ -25,8 +25,11 @@ import Control.Comonad.Trans.Env
 import Data.List
 import Data.Functor.Identity
 import Control.Monad.Logic
+import Data.Aeson
+import Data.Aeson.TH
 
 import Pianola.Internal (Query,Change)
+import Pianola.Orphans
 
 data GUI = GUI { _snapshotId :: Int
                , _topLevel :: [Window] 
@@ -103,6 +106,13 @@ $(makeLenses ''ComponentInfo)
 $(makePrisms ''ComponentType)
 $(makeLenses ''CellInfo)
 $(makeLenses ''TabInfo)
+
+$(deriveJSON defaultOptions ''GUI)
+$(deriveJSON defaultOptions ''WindowInfo)
+$(deriveJSON defaultOptions ''ComponentInfo)
+$(deriveJSON defaultOptions ''ComponentType)
+$(deriveJSON defaultOptions ''TabInfo)
+$(deriveJSON defaultOptions ''CellInfo)
 
 data Remote m = Remote
     { toFront ::     MonadPlus n => Kleisli n GUIWindow (Change m)

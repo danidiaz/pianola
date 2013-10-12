@@ -25,6 +25,7 @@ Library
     hs-source-dirs: src
     exposed-modules: 
         Pianola
+        Pianola.Orphans
         Pianola.Internal
         Pianola.Geometry
         Pianola.Player
@@ -56,7 +57,8 @@ Library
         comonad-transformers >= 3.0, 
         transformers >= 0.2,
         mtl >= 2.1,
-        lens >= 3.9.1
+        lens >= 3.9.1,
+        aeson >= 0.6.2.0
     default-language: Haskell2010
  
 Test-suite test-pianola
@@ -72,7 +74,8 @@ Test-suite test-pianola
         transformers >= 0.2,
         pianola,
         mtl >= 2.1,
-        lens >= 3.9.1
+        lens >= 3.9.1,
+        aeson >= 0.6.2.0
     default-language: Haskell2010
 
 Source-repository head
