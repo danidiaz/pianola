@@ -28,7 +28,7 @@ Library
         Pianola.Internal
         Pianola.Util
         Pianola.Geometry
-        Pianola.Driver
+        Pianola.Player
         Pianola.Tutorial
         Pianola.Protocol
         Pianola.Protocol.IO

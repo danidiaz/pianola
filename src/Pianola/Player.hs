@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Pianola.Driver (
-    drive,
-    DriverError(..),
+module Pianola.Player (
+    play,
+    PlayerError(..),
     filePathStream,
     screenshotStream,
     module Pianola,
@@ -67,9 +67,9 @@ screenshotStream :: FilePath -> Cofree Identity FilePath
 screenshotStream = filePathStream  "png" 3 "pianola-capture-" 
 
 -- | Possible failure outcomes when running a pianola computation.
-data DriverError =
+data PlayerError =
     -- | Local exception while storing screenshots or log messages.  
-     DriverIOError IOException
+     PlayerIOError IOException
     -- | Exception when connecting the remote system.
     |PianolaIOError IOException 
     -- | Remote system returns unparseable data. 
@@ -85,7 +85,7 @@ data DriverError =
     deriving Show
 
 -- Spurious instance of error
-instance Error DriverError where
+instance Error PlayerError where
     noMsg = PianolaFailure ""
 
 -- | Runs a pianola computation. Receives as argument a monadic action to
@@ -93,14 +93,14 @@ instance Error DriverError where
 -- the remote system, a 'Pianola' computation with context of type /o/ and
 -- return value of type /a/, and an infinite stream of filenames to store the
 -- screenshots. Textual log messages are written to standard output. The
--- computation may fail with an error of type 'DriverError'. 
+-- computation may fail with an error of type 'PlayerError'. 
 --
--- See also 'Pianola.Model.Swing.Driver.simpleSwingDriver'.
-drive :: Protocol o -> Endpoint -> Pianola Protocol LogEntry o a -> Cofree Identity FilePath -> ErrorT DriverError IO a
-drive snapshot endpoint pianola namestream = do
-    let played = play snapshot pianola
-        -- the lift makes a hole for an (EitherT DriverIOError...)
-        rebased = hoist (hoist (hoist $ lift . runProtocol id)) $ played
+-- See also 'Pianola.Model.Swing.Player.simpleSwingPlayer'.
+play :: Protocol o -> Endpoint -> Pianola Protocol LogEntry o a -> Cofree Identity FilePath -> ErrorT PlayerError IO a
+play snapshot endpoint pianola namestream = do
+    let feeded = feed snapshot pianola
+        -- the lift makes a hole for an (EitherT PlayerIOError...)
+        rebased = hoist (hoist (hoist $ lift . runProtocol id)) $ feeded
         logprod = runErrorT $ runEffect $ rebased >-> delayer
 
         filegen = state $ \stream -> (extract stream, runIdentity . unwrap $ stream) 
@@ -118,7 +118,7 @@ drive snapshot endpoint pianola namestream = do
                    SnapshotError u v -> PianolaSnapshotError u v
                    ServerError txt -> PianolaServerError txt
             Right r2 -> case r2 of 
-                Left e -> throwError $ DriverIOError e
+                Left e -> throwError $ PlayerIOError e
                 Right r3 -> case r3 of
                     Left msg -> throwError $ PianolaFailure msg
                     Right a  -> return a

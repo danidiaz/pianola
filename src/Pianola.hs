@@ -27,7 +27,7 @@ module Pianola (
         ralentize,
         ralentizeByTag,
         autolog,
-        play
+        feed
     ) where
 
 import Prelude hiding (catch,(.))
@@ -181,8 +181,8 @@ autolog (Pianola p) =
             "### Executed action with tags:" <> mconcat ( map (" "<>) . tags $ s ) 
     in Pianola $ p >-> logger
 
-play :: Monad m => m o -> Pianola m l o a -> Producer Delay (ErrorT String (Producer l m)) a
-play mom pi =
+feed :: Monad m => m o -> Pianola m l o a -> Producer Delay (ErrorT String (Producer l m)) a
+feed mom pi =
     let smashMaybe m = runErrorT m >>= lift . ErrorT . return
         smashProducer = forever $
                 await >>= lift . lift . yield

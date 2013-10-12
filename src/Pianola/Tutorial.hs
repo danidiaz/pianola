@@ -42,7 +42,7 @@ import Pianola
 import Pianola.Util
 import Pianola.Protocol
 import Pianola.Protocol.IO
-import Pianola.Driver
+import Pianola.Player
 import Pianola.Swing
 
 {- $setup

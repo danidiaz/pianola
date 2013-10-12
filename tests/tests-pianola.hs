@@ -16,7 +16,7 @@ import Control.Applicative
 
 import Pianola
 import Pianola.Util
-import Pianola.Driver
+import Pianola.Player
 import Pianola.Swing
 import Pianola.Swing.Protocol (snapshot,remote)
 
@@ -150,7 +150,7 @@ main = do
       port = PortNumber . fromIntegral $ 26060
       endpoint = Endpoint addr port
 
-  r <- runErrorT $ drive snapshot endpoint (testCase remote) $ screenshotStream "dist/test"
+  r <- runErrorT $ play snapshot endpoint (testCase remote) $ screenshotStream "dist/test"
   case r of
      Left err -> do
         putStrLn $ "result: " <> show err
