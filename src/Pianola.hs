@@ -52,8 +52,8 @@ import Pianola.Util
 type Selector m l o a = Kleisli (LogicT (Producer l (Query m))) o a
 
 collect :: (Monad m, MonadPlus n) => Selector m l o a -> Selector m l o (n a)
-collect k = Kleisli $ (fmap $ \x -> lift $ observeAllT x >>= return . replusify) 
-                    $ runKleisli k
+collect = Kleisli . fmap f . runKleisli
+    where f x = lift $ observeAllT x >>= return . replusify
 
 liftQ :: Monad m => Selector m l (Query m a) a
 liftQ = Kleisli $ lift . lift
@@ -84,7 +84,7 @@ runObserver mom (Free f) =
    let  tomaybet = MaybeT . liftM replusify . observeManyT 1
         toerrort = ErrorT . liftM (maybe (Left "# Selector without results.") Right) . runMaybeT
         squint = fmap $ hoist (hoist runQuery) . toerrort . tomaybet
-   in join $ (lift . lift $ mom) >>= squint (runKleisli . unwrapArrow $ runObserver mom <$> f)
+   in join $ (lift . lift $ mom) >>= (squint . runKleisli . unwrapArrow $ runObserver mom <$> f)
 
 type Delay = Int
 

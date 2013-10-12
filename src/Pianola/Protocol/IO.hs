@@ -12,6 +12,7 @@ import qualified Data.Text as T
 import Network 
 import Data.Functor.Compose
 import Data.Bifunctor
+import Control.Applicative
 import Control.Category
 import Control.Exception
 import Control.Monad.Logic
@@ -42,15 +43,14 @@ data Endpoint = Endpoint {
 
 runFree:: (MonadIO m, MonadReader r m) => (r -> Endpoint) -> Free ProtocolF a -> ErrorT RunInIOError m a  
 runFree lens ( Free (Compose (b,parser)) ) = do
-    --let iterIO = I.ilift (return . runIdentity) i
-    endp <- lift $ asks lens
+    endpoint <- lift $ asks lens
     let rpcCall :: Endpoint -> (Handle -> IO b) -> IO b
-        rpcCall endpoint what2do = withSocketsDo $ do
-              bracket (connectTo (hostName endpoint) (portID endpoint))
+        rpcCall endpointoint what2do = withSocketsDo $ do
+              bracket (connectTo (hostName endpointoint) (portID endpointoint))
                       hClose
                       what2do
         
-        doStuff h = do
+        handler h = do
             mapM_ (BL.hPutStr h) b
             hFlush h
             evalStateT (parse parser) (fromHandle h)
@@ -58,8 +58,8 @@ runFree lens ( Free (Compose (b,parser)) ) = do
         ioErrHandler = \(ex :: IOException) -> return . Left . CommError $ ex
         parseErrHandler = ParseError . T.pack . show
     nextFree <- ErrorT . liftIO $ 
-            catches (fmap (bimap parseErrHandler snd) $ rpcCall endp $ doStuff) 
-            [Handler ioErrHandler]
+            catches (bimap parseErrHandler snd <$> rpcCall endpoint handler) 
+                    [Handler ioErrHandler]
     runFree lens nextFree 
 runFree _ ( Pure a ) = return a 
 
