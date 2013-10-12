@@ -43,10 +43,6 @@ import Pianola.Util
 import Pianola.Geometry
 import Pianola.Swing.Internal
 
-instance Geometrical ComponentInfo where
-    nwcorner = _pos
-    dimensions = _dim
-
 clickButtonByText :: Monad m => Remote m -> (T.Text -> Bool) -> Selector m l GUIComponent (Change m) 
 clickButtonByText p predicate = descendants >>> prune (the.text._Just) predicate >>> clickButton p
 

@@ -31,6 +31,7 @@ import Data.MessagePack
 import Data.Attoparsec.ByteString
 
 import Pianola.Internal (Query,Change)
+import Pianola.Geometry
 import Pianola.Orphans
 
 data GUI = GUI { _snapshotId :: Int
@@ -72,6 +73,10 @@ data ComponentInfo = ComponentInfo
     ,  _enabled::Bool
     ,  _componentType::ComponentType
     } 
+
+instance Geometrical ComponentInfo where
+    nwcorner = _pos
+    dimensions = _dim
 
 instance Unpackable ComponentInfo where
     get = ComponentInfo <$> get 
