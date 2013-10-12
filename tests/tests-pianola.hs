@@ -92,7 +92,7 @@ testCase p = with (decorate $ topLevel.folded) $ do
             map (==) ["Menu1","SubMenu1","submenuitem2"]
         checkStatusBar p (=="checkbox in menu is now true") 
         logmsg "getting a screenshot"
-        with context $ logCapture p "screenshot caption"
+        with context $ peek $ logCapture p "screenshot caption"
         logmsg "now for a second menu"
         autolog $ with context $ selectInMenuBar p $ 
             map (==) ["Menu1","SubMenu1","submenuitem1"]
