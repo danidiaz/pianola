@@ -26,14 +26,15 @@ Library
     exposed-modules: 
         Pianola
         Pianola.Internal
-        Pianola.Util
         Pianola.Geometry
         Pianola.Player
-        Pianola.Tutorial
         Pianola.Protocol
         Pianola.Protocol.IO
         Pianola.Swing
+        Pianola.Swing.Internal
         Pianola.Swing.Protocol
+        Pianola.Util
+        Pianola.Tutorial
     other-modules: 
     build-depends:         
         base >= 4.4 && < 5,    
