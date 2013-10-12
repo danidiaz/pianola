@@ -25,7 +25,7 @@ import Control.Monad.Error
 import Pianola.Util
 import Pianola.Internal
 import Pianola.Protocol
-import Pianola.Swing
+import Pianola.Swing.Internal
 
 
 -- | Monadic action to obtain a local representation of the state of a remote
@@ -117,7 +117,6 @@ instance Unpackable TabInfo where
 
 remote :: Remote Protocol
 remote = Remote (makeWindowChange "toFront" []) 
-
 
                 (makeWindowChange "escape" []) 
                 (makeWindowChange "enter" []) 
