@@ -126,6 +126,13 @@ public class Snapshot {
         packer.write(title);
         packer.writeArrayBegin(2);
         {
+            Point loc = w.getLocationOnScreen();
+            packer.write((int)loc.getX());
+            packer.write((int)loc.getY());
+        }
+        packer.writeArrayEnd();
+        packer.writeArrayBegin(2);
+        {
             packer.write((int)w.getHeight());
             packer.write((int)w.getWidth());
         }
@@ -136,7 +143,7 @@ public class Snapshot {
         writePopupLayer(packer,w);
                         
         RootPaneContainer rpc = (RootPaneContainer)w;
-        writeComponent(packer, (Component) rpc.getContentPane(),w);                                                               
+        writeComponent(packer, (Component) rpc.getContentPane(), w, false);                                                               
         
         writeWindowArray(packer, w.getOwnedWindows());
     }
@@ -154,7 +161,7 @@ public class Snapshot {
         } else {
             packer.writeArrayBegin(menubar.getMenuCount());
             for (int i=0; i<menubar.getMenuCount();i++) {
-                writeComponent(packer,menubar.getMenu(i),w);
+                writeComponent(packer,menubar.getMenu(i), w, false);
             }
             packer.writeArrayEnd();
 
@@ -172,13 +179,13 @@ public class Snapshot {
         for (int i=0;i<popupLayerArray.length;i++) {
             Component c = (Component) popupLayerArray[i];
             if (c.isShowing()) {
-                writeComponent(packer, c, w);    
+                writeComponent(packer, c, w, false);    
             }
         }
         packer.writeArrayEnd();
     }
         
-    private void writeComponent(Packer packer, Component c, Component coordBase) throws IOException {
+    private void writeComponent(Packer packer, Component c, Component coordBase, boolean isRenderer) throws IOException {
         
         int componentId = componentArray.size();
         componentArray.add(c);
@@ -187,9 +194,14 @@ public class Snapshot {
         
         packer.writeArrayBegin(2);
         {
-            Point posInWindow = SwingUtilities.convertPoint(c, c.getX(), c.getY(), coordBase);
-            packer.write((int)posInWindow.getX());
-            packer.write((int)posInWindow.getY());
+            if (isRenderer) { // getLocationOnScreen does not work on renderers.
+                packer.write((int)0);
+                packer.write((int)0);
+            } else {
+                Point loc = c.getLocationOnScreen();
+                packer.write((int)loc.getX());
+                packer.write((int)loc.getY());
+            } 
         }
         packer.writeArrayEnd();
         
@@ -226,7 +238,7 @@ public class Snapshot {
         packer.writeArrayBegin(countShowing(children));
         for (int i=0;i<children.length;i++) {
             if (children[i].isShowing()) {                                
-                writeComponent(packer, (Component)children[i],coordBase);
+                writeComponent(packer, (Component)children[i],coordBase,isRenderer);
             }
         }
         packer.writeArrayEnd();
@@ -266,7 +278,7 @@ public class Snapshot {
                                 false, 
                                 false
                             );
-                writeComponent(packer, cell, coordBase);
+                writeComponent(packer, cell, coordBase,true);
             }                          
                        
         } else if (c instanceof JList) {
@@ -400,7 +412,7 @@ public class Snapshot {
     {
         packer.write((int)rowid);
         packer.write((int)colid);
-        writeComponent(packer, rendererc, coordBase);
+        writeComponent(packer, rendererc, coordBase, true);
         packer.write((boolean)belongsToJTree);
     }
     

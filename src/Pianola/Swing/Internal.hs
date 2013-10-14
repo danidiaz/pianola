@@ -45,6 +45,7 @@ instance Unpackable GUI where
 data WindowInfo = WindowInfo 
     {  _windowId::Int
     ,  _windowTitle::T.Text
+    ,  _windowPos::(Int,Int) 
     ,  _windowDim::(Int,Int) 
     ,  _menu::[Component]
     ,  _popupLayer:: [Component]
@@ -54,6 +55,7 @@ data WindowInfo = WindowInfo
 instance Unpackable WindowInfo where
     get = WindowInfo <$> get 
                      <*> get 
+                     <*> get    
                      <*> get    
                      <*> get 
                      <*> get 
