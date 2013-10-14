@@ -199,8 +199,8 @@ public class Snapshot {
                 packer.write((int)0);
             } else {
                 Point loc = c.getLocationOnScreen();
-                packer.write((int)loc.getX());
-                packer.write((int)loc.getY());
+                packer.write((int)loc.x);
+                packer.write((int)loc.y);
             } 
         }
         packer.writeArrayEnd();
@@ -283,17 +283,21 @@ public class Snapshot {
                        
         } else if (c instanceof JList) {
             packer.write((int)7);
-            JList list = (JList) c;
+            JList list = (JList) c;            
             ListCellRenderer renderer = list.getCellRenderer();
             
             packer.writeArrayBegin((int)list.getModel().getSize());
             for (int rowid=0; rowid<list.getModel().getSize(); rowid++) {
-                
+                Point loc = list.getLocationOnScreen();
+                Rectangle cellBounds = list.getCellBounds(rowid, rowid);
                 writeCell(  packer, 
-                            rowid, 0, 
+                            rowid, 
+                            0,
+                            loc.x + cellBounds.x,
+                            loc.y + cellBounds.y,                            
                             (Component)renderer.getListCellRendererComponent(list, 
                                     list.getModel().getElementAt(rowid), 
-                                    rowid, 
+                                    rowid,
                                     false, 
                                     false
                                 ), 
@@ -314,11 +318,16 @@ public class Snapshot {
             for (int j=0;j<columncount;j++) {            
                 packer.writeArrayBegin(rowcount);
                 for (int i=0;i<rowcount;i++) {
+                    Point loc = table.getLocationOnScreen();
+                    Rectangle cellBounds = table.getCellRect(i, j, false);
                     
                     TableCellRenderer renderer = table.getCellRenderer(i, j);                    
                     writeCell(  
                             packer, 
-                            i, j, 
+                            i, 
+                            j, 
+                            loc.x + cellBounds.x,
+                            loc.y + cellBounds.y,                              
                             (Component)renderer.getTableCellRendererComponent(table, 
                                     model.getValueAt(i, j),  
                                     false, 
@@ -351,10 +360,14 @@ public class Snapshot {
                     }
                     expectedpathcount = path.getPathCount();
                 }                
-                
+                Point loc = tree.getLocationOnScreen();
+                Rectangle cellBounds = tree.getRowBounds(rowid);
                 writeCell(  
                         packer, 
-                        rowid, 0, 
+                        rowid, 
+                        0, 
+                        loc.x + cellBounds.x,
+                        loc.y + cellBounds.y,                         
                         (Component)renderer.getTreeCellRendererComponent(
                                 tree,
                                 path.getLastPathComponent(),
@@ -405,6 +418,8 @@ public class Snapshot {
                 Packer packer, 
                 int rowid, 
                 int colid, 
+                int xPos,
+                int yPos,
                 Component rendererc, 
                 Component coordBase,
                 boolean belongsToJTree 
@@ -412,6 +427,17 @@ public class Snapshot {
     {
         packer.write((int)rowid);
         packer.write((int)colid);
+        
+        packer.writeArrayBegin(2);
+        packer.write((int)xPos);
+        packer.write((int)yPos);
+        packer.writeArrayEnd();
+        
+        packer.writeArrayBegin(2);
+        packer.write((int)rendererc.getHeight());
+        packer.write((int)rendererc.getWidth());
+        packer.writeArrayEnd();
+        
         writeComponent(packer, rendererc, coordBase, true);
         packer.write((boolean)belongsToJTree);
     }

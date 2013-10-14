@@ -128,12 +128,19 @@ instance Unpackable ComponentType where
 data CellInfo = CellInfo 
     { _rowId::Int
     , _columnId::Int
+    , _cellPos::(Int,Int)
+    , _cellDim::(Int,Int)
     , _renderer::Component 
     , _isFromTree::Bool
     }
 
 instance Unpackable CellInfo where
-    get = CellInfo <$> get <*> get <*> get <*> get 
+    get = CellInfo <$> get 
+                   <*> get 
+                   <*> get 
+                   <*> get 
+                   <*> get 
+                   <*> get 
 
 type ListCell = Identity CellInfo
 
