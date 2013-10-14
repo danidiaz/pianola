@@ -52,6 +52,10 @@ data WindowInfo = WindowInfo
     ,  _contentPane::Component
     } 
 
+instance Geometrical WindowInfo where
+    nwcorner = _windowPos
+    dimensions = _windowDim
+
 instance Unpackable WindowInfo where
     get = WindowInfo <$> get 
                      <*> get 
@@ -133,6 +137,10 @@ data CellInfo = CellInfo
     , _renderer::Component 
     , _isFromTree::Bool
     }
+
+instance Geometrical CellInfo where
+    nwcorner = _cellPos
+    dimensions = _cellDim
 
 instance Unpackable CellInfo where
     get = CellInfo <$> get 
