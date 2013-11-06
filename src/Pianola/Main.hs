@@ -3,6 +3,7 @@
 {-# LANGUAGE RankNTypes #-}
 
 module Pianola.Main (
+        makeMain
     ) where
 
 import Prelude hiding (catch,(.),id)
@@ -30,5 +31,16 @@ import qualified Data.ByteString.Lazy as BL
 import Pipes
 
 import Pianola.Internal
+
+data Opts = Opts
+    { host :: Integer
+    , port :: String
+    , testName :: String
+    , listTests :: Bool
+    }
+
+makeMain :: IO ()
+makeMain = undefined
+
 
 
