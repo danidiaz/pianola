@@ -1,6 +1,7 @@
 dist/
 target/
 tmp/
+.shelly/
 tags
 TAGS
 *.swp
