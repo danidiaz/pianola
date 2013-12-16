@@ -25,10 +25,11 @@ main = do
     let classpath = joinPath ["..","java-swing","target","dependency","*"] 
                     ++ ";" ++ 
                     joinPath ["target","*"]
-        agentpath = joinPath ["..","java-swing","target","pianola-driver-1.0.jar"]
+        agentpath = joinPath $
+            ["..","java-swing","target","pianola-driver-1.0.jar"]
         agentargs = (++) "=port/26060,popupTrigger/" $ case os of
-                        Windows -> "release"
-                        Linux   -> "press"
+            Windows -> "release"
+            Linux   -> "press"
         agentclass = "info.danidiaz.pianola.testapp.Main"
         appfolder = joinPath [backends, "java-swing-testapp"]
     handle <- withDirectory appfolder $ do
