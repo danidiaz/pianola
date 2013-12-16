@@ -32,9 +32,9 @@ main = do
         agentclass = "info.danidiaz.pianola.testapp.Main"
         appfolder = joinPath [backends, "java-swing-testapp"]
     handle <- withDirectory appfolder $ do
-                maven            
-                spawnProcess "java" ["-cp", classpath, 
-                                     "-javaagent:" ++ agentpath ++ agentargs, 
-                                     agentclass]  
+        maven            
+        spawnProcess "java" ["-cp", classpath, 
+                             "-javaagent:" ++ agentpath ++ agentargs, 
+                             agentclass]  
     readProcess "cabal" ["install","--enable-tests"] [] >>= putStrLn
     terminateProcess handle
