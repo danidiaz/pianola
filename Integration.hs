@@ -1,10 +1,7 @@
-module Integration ( main ) where
-
-import Control.Applicative
 import Options.Applicative as O
 import System.Process
-import System.Directory
 import System.FilePath
+import System.Directory
 
 withDirectory :: FilePath -> IO a -> IO a
 withDirectory path action = do
@@ -35,6 +32,6 @@ main = do
         appfolder = joinPath [backends, "java-swing-testapp"]
     handle <- withDirectory appfolder $ do
                 maven            
-                spawnProcess "java.exe" ["-cp", classpath, "-javaagent:" ++ agentpath ++ agentargs, agentclass]  
-    readProcess "cabal.exe" ["install","--enable-tests"] [] >>= putStrLn
+                spawnProcess "java" ["-cp", classpath, "-javaagent:" ++ agentpath ++ agentargs, agentclass]  
+    readProcess "cabal" ["install","--enable-tests"] [] >>= putStrLn
     terminateProcess handle
