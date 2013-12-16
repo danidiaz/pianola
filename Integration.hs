@@ -21,8 +21,9 @@ main = do
     let os = if b then Windows else Linux 
         backends = "backends"
         agentfolder = joinPath [backends, "java-swing"]
-    withDirectory agentfolder $ maven
-    let classpath = joinPath ["..","java-swing","target","dependency","*"] ++ ";" ++ 
+    withDirectory agentfolder maven
+    let classpath = joinPath ["..","java-swing","target","dependency","*"] 
+                    ++ ";" ++ 
                     joinPath ["target","*"]
         agentpath = joinPath ["..","java-swing","target","pianola-driver-1.0.jar"]
         agentargs = (++) "=port/26060,popupTrigger/" $ case os of
@@ -32,6 +33,8 @@ main = do
         appfolder = joinPath [backends, "java-swing-testapp"]
     handle <- withDirectory appfolder $ do
                 maven            
-                spawnProcess "java" ["-cp", classpath, "-javaagent:" ++ agentpath ++ agentargs, agentclass]  
+                spawnProcess "java" ["-cp", classpath, 
+                                     "-javaagent:" ++ agentpath ++ agentargs, 
+                                     agentclass]  
     readProcess "cabal" ["install","--enable-tests"] [] >>= putStrLn
     terminateProcess handle
