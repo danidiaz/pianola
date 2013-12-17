@@ -1,5 +1,8 @@
 import Data.List
+import Control.Lens
 import Options.Applicative as O
+import System.Exit
+import System.Exit.Lens
 import System.Process
 import System.FilePath
 import System.Directory
@@ -34,11 +37,28 @@ main = do
             Linux   -> "press"
         agentclass = "info.danidiaz.pianola.testapp.Main"
         appfolder = joinPath ["integration","apps","java-swing-testapp"]
+    (exitCode,stdout,stderr) <- readProcessWithExitCode "cabal" 
+        ["install", "--enable-tests" ] ""
+    putStrLn stdout
+    putStrLn stderr
+    forOf_ _ExitFailure exitCode $ \_ -> exitFailure 
+    withDirectory "integration" $ do
+        (exitCode',stdout,stderr) <- readProcessWithExitCode "cabal" ["install" ] ""
+        putStrLn stdout
+        putStrLn stderr
+        forOf_ _ExitFailure exitCode $ \_ -> exitFailure 
     handle <- withDirectory appfolder $ do
         maven            
         spawnProcess "java" ["-cp", classpath
                             ,"-javaagent:" ++ agentpath ++ agentargs
                             , agentclass
                             ]  
-    readProcess "cabal" ["install","--enable-tests"] [] >>= putStrLn
+    (exitCode'',stdout,stderr) <- readProcessWithExitCode 
+        "pianola-integration-test-app" [] ""
+    putStrLn stdout
+    putStrLn stderr
+    putStrLn $ case exitCode'' of
+         ExitSuccess -> "PASS"
+         ExitFailure _ -> "FAIL"
     terminateProcess handle
+    exitWith exitCode''
