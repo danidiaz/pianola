@@ -20,20 +20,20 @@ main = do
     let parser = O.switch (O.long "windows")
     b <- O.execParser $ O.info (O.helper <*> parser) O.fullDesc
     let os = if b then Windows else Linux 
-        backends = "backends"
-        agentfolder = joinPath [backends, "java-swing"]
+        agentfolder = joinPath ["backends", "java-swing"]
     withDirectory agentfolder maven
-    let classpath = intercalate ";" . map joinPath $  
-            [ ["..","java-swing","target","dependency","*"] 
+    let upThree = replicate 3 ".." 
+        classpath = intercalate ";" . map joinPath $  
+            [ upThree ++ ["backends","java-swing","target","dependency","*"] 
             , ["target","*"] 
             ]
-        agentpath = joinPath $
-            ["..","java-swing","target","pianola-driver-1.0.jar"]
+        agentpath = joinPath $ upThree ++
+            ["backends","java-swing","target","pianola-driver-1.0.jar"]
         agentargs = (++) "=port/26060,popupTrigger/" $ case os of
             Windows -> "release"
             Linux   -> "press"
         agentclass = "info.danidiaz.pianola.testapp.Main"
-        appfolder = joinPath [backends, "java-swing-testapp"]
+        appfolder = joinPath ["integration","apps","java-swing-testapp"]
     handle <- withDirectory appfolder $ do
         maven            
         spawnProcess "java" ["-cp", classpath
