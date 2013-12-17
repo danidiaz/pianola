@@ -23,9 +23,9 @@ main = do
         backends = "backends"
         agentfolder = joinPath [backends, "java-swing"]
     withDirectory agentfolder maven
-    let classpath = intercalate ";" $  
-            [ joinPath ["..","java-swing","target","dependency","*"] 
-            , joinPath ["target","*"] 
+    let classpath = intercalate ";" . map joinPath $  
+            [ ["..","java-swing","target","dependency","*"] 
+            , ["target","*"] 
             ]
         agentpath = joinPath $
             ["..","java-swing","target","pianola-driver-1.0.jar"]
