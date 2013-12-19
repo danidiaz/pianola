@@ -19,6 +19,8 @@ import Data.Foldable (Foldable)
 import Data.Traversable
 import qualified Data.Text as T
 
+import Pianola.Util
+
 -- | Wraps a monad in order to tag those operations which don't actually change
 -- the state of the remote system. For example: taking a screenshot doesn't
 -- change the state of a GUI, as opposed to clicking a button.

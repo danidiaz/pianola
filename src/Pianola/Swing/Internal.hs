@@ -32,7 +32,6 @@ import Data.Attoparsec.ByteString
 
 import Pianola.Internal (Query,Change)
 import Pianola.Geometry
-import Pianola.Orphans
 
 data GUI = GUI { _snapshotId :: Int
                , _topLevel :: [Window] 

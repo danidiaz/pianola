@@ -25,7 +25,6 @@ Library
     hs-source-dirs: src
     exposed-modules: 
         Pianola
-        Pianola.Orphans
         Pianola.Internal
         Pianola.Geometry
         Pianola.Player

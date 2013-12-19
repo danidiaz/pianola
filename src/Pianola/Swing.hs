@@ -38,7 +38,6 @@ import Data.Functor.Identity
 import Control.Monad.Logic
 import Safe
 import Pianola
-import Pianola.Orphans
 import Pianola.Util
 import Pianola.Geometry
 import Pianola.Swing.Internal

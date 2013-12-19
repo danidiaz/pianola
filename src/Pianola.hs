@@ -4,6 +4,9 @@
 
 module Pianola (
         Selector(..),
+        Query(runQuery),
+        Tag,
+        Change(tags,unseal),
         missing,
         winnow,
         context,
@@ -47,6 +50,7 @@ import Control.Comonad.Trans.Env
 import Pipes
 
 import Pianola.Util
+import Pianola.Internal
 
 --type Selector m l o a = o -> LogicT (Producer l (Query m)) a
 type Selector m l o a = Kleisli (LogicT (Producer l (Query m))) o a

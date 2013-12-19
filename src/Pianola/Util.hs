@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Pianola.Util (
         throwIfZero,
@@ -13,10 +14,6 @@ module Pianola.Util (
         Loggy(..),
         LogEntry(..),
         Image,
-        Query(runQuery),
-        Tag,
-        Change(tags,unseal),
-        addTag,
         jsonToText,
         logJSON
     ) where
@@ -28,7 +25,7 @@ import Data.Tree
 import Data.Foldable (toList)
 import Data.MessagePack
 import Data.Attoparsec.ByteString
-import Control.Lens
+import Control.Lens hiding ( (.=) )
 import Control.Arrow
 import Control.Monad
 import Control.Comonad
@@ -44,8 +41,6 @@ import qualified Data.Text.Encoding as E
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import Pipes
-
-import Pianola.Internal
 
 --
 throwIfZero :: MonadError e m => e -> m (Maybe a) -> m a 
@@ -121,5 +116,44 @@ jsonToText = E.decodeUtf8 . BL.toStrict . encode . toJSON
 
 logJSON :: (Monad m,Loggy m,ToJSON c) => Kleisli m c ()
 logJSON = Kleisli $ logmsg . jsonToText
+
+-----------------------------------------------------------------------
+-- orphan instances
+--
+
+-- This orphan instance is possibly a bad idea, but I need to derive ToJSON and
+-- FromJSON instances, and I can't be bothered to declare the instances
+-- manually.
+instance ToJSON a => ToJSON (Tree a) where
+    toJSON (Node a forest)  = object ["root" .= a,"branches" .= forest]
+
+instance FromJSON a => FromJSON (Tree a) where
+    parseJSON (Object v) = Node <$> v .: "root" <*> v .: "branches"
+    parseJSON _        = fail ""
+
+-- Same for Identity
+instance ToJSON a => ToJSON (Identity a) where
+    toJSON (Identity a)  = object ["identity" .= a]
+
+instance FromJSON a => FromJSON (Identity a) where
+    parseJSON (Object v) = Identity <$> v .: "identity"
+    parseJSON _        = fail ""
+
+-- Useful msgpack instances
+instance (Unpackable a, Unpackable b) => Unpackable (Either a b) where
+    get = do
+        tag <- get::Parser Int
+        case tag of
+            1 -> Left <$> get
+            0 -> Right <$> get
+
+instance Unpackable a => Unpackable (Tree a) where
+    get = Node <$> get <*> get
+
+instance Unpackable a => Unpackable (Identity a) where
+    get = Identity <$> get
+
+-----------------------------------------------------------------------
+
 
 
