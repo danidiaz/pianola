@@ -68,5 +68,5 @@ main = do
             ]  
     withProcess app $ do   
         threadDelay $ 10^6*2
-        invoke "pianola-integration-test-app" []
+        invoke "pianola-integration-test-app" ["run","sometest"]
     putStrLn "PASS" 

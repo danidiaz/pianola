@@ -34,7 +34,7 @@ Library
         Pianola.Swing.Internal
         Pianola.Swing.Protocol
         Pianola.Util
-        Pianola.Main
+        Pianola.MakeMain
         Pianola.Tutorial
     other-modules: 
     build-depends:         

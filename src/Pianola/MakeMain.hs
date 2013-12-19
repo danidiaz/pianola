@@ -2,8 +2,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Pianola.Main (
-        makeMain
+module Pianola.MakeMain (
+        makeSwingMain
     ) where
 
 import Prelude hiding (catch,(.),id)
@@ -12,6 +12,7 @@ import Data.Functor.Identity
 import Data.Tree
 import Data.Foldable (toList)
 import Data.Monoid
+import qualified Data.Map as M
 import Data.MessagePack
 import Data.Attoparsec.ByteString
 import Control.Lens
@@ -31,8 +32,15 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Options.Applicative as O
 import Pipes
+import Network
+import System.Exit
+import System.IO
 
-import Pianola.Internal
+import Pianola
+import Pianola.Util
+import Pianola.Swing
+import Pianola.Player
+import Pianola.Swing.Protocol (snapshot,remote)
 
 data Command = ListC  
              | RunC Run
@@ -40,7 +48,7 @@ data Command = ListC
  
 data Run = Run 
         { testName :: String
-        , hostName :: String
+        , host :: String
         , port :: Int
         } 
     deriving Show
@@ -88,12 +96,40 @@ parser = O.info (O.helper <*> O.hsubparser subParsers) parserModifiers
         , O.header "hello - a test for optparse-applicative"
         ]
 
+makeSwingMain :: (forall m . Monad m => [(T.Text, Remote m -> Pianola m LogEntry GUI ())]) 
+              -> IO ()
+makeSwingMain ts = let testMap = M.fromList ts in do 
+    conf <- O.execParser parser 
+    case conf of
+        ListC -> forM_ (M.keys testMap) 
+                       (putStrLn . T.unpack)
+        RunC runConf -> case M.lookup (T.pack . testName $ runConf) testMap of 
+            Nothing -> do
+                hPutStrLn stderr "Test not found."
+                exitFailure 
+            Just t -> let endpoint = liftA2 Endpoint 
+                                            host
+                                            (PortNumber . fromIntegral . port) 
+                                            runConf 
+                      in   
+               do
+                   r <- runErrorT $ play snapshot 
+                                         endpoint 
+                                         (t remote)  
+                                         (screenshotStream "dist/test")
+                   case r of
+                        Left err -> do
+                           hPutStrLn stderr $ show err
+                           exitFailure
+                        Right _ -> return ()
+                
+                          
 
---testCase:: Monad m => Remote m -> Pianola m LogEntry GUI () 
---testCase p = with (decorate $ topLevel.folded) $ do
 
-makeMain :: IO ()
-makeMain = undefined
+
+
+
+
 
 
 

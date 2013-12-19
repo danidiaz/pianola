@@ -17,7 +17,7 @@ import Pianola
 import Pianola.Util
 import Pianola.Player
 import Pianola.Swing
-import Pianola.Swing.Protocol (snapshot,remote)
+import Pianola.MakeMain
 
 import System.Environment
 import System.Exit (exitFailure)
@@ -142,17 +142,4 @@ testCase p = with (decorate $ topLevel.folded) $ do
     poke $ close p
 
 main :: IO ()
-main = do
-  args <- getArgs 
-  let addr = case args of 
-        [] -> "127.0.0.1"
-        x:_ -> x
-      port = PortNumber . fromIntegral $ 26060
-      endpoint = Endpoint addr port
-
-  r <- runErrorT $ play snapshot endpoint (testCase remote) $ screenshotStream "dist/test"
-  case r of
-     Left err -> do
-        putStrLn $ "result: " <> show err
-        exitFailure
-     Right _ -> putStrLn $ "result: all ok" 
+main = makeSwingMain [("sometest",testCase)]
