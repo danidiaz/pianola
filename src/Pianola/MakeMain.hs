@@ -13,7 +13,6 @@ import Data.Tree
 import Data.Foldable (toList)
 import Data.Monoid
 import qualified Data.Map as M
-import Data.MessagePack
 import Data.Attoparsec.ByteString
 import Control.Lens
 import Control.Arrow

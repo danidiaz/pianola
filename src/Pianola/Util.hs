@@ -23,7 +23,6 @@ import Control.Category
 import Data.Functor.Identity
 import Data.Tree
 import Data.Foldable (toList)
-import Data.MessagePack
 import Data.Attoparsec.ByteString
 import Control.Lens hiding ( (.=) )
 import Control.Arrow

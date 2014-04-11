@@ -9,7 +9,6 @@ module Pianola.Swing.Protocol (
 import Prelude hiding (catch,(.),id)
 import Data.Functor.Identity
 import Data.Monoid
-import Data.MessagePack
 import Data.Attoparsec.ByteString
 import qualified Data.Text as T
 import qualified Data.ByteString as B 

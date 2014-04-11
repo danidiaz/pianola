@@ -8,7 +8,6 @@ module Pianola.Protocol (
     ) where
 
 import Prelude hiding (catch,(.),id)
-import Data.MessagePack
 import Data.Attoparsec.ByteString
 --import qualified Data.Iteratee as I
 import qualified Data.Text as T

@@ -23,7 +23,6 @@ import Data.Functor.Identity
 import qualified Data.ByteString as B 
 import qualified Data.ByteString.Lazy as BL
 import Pianola.Protocol
-import Data.MessagePack
 import Pipes.ByteString
 import Pipes.Attoparsec
 import Control.Monad.Error

@@ -27,7 +27,6 @@ import Data.Functor.Identity
 import Control.Monad.Logic
 import Data.Aeson
 import Data.Aeson.TH
-import Data.MessagePack
 import Data.Attoparsec.ByteString
 
 import Pianola.Internal (Query,Change)
