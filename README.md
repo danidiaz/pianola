@@ -15,7 +15,7 @@ Pianola offers some of the functionality of tools like [Marathon](http://maratho
 Rationale
 =========
 
-* I dislike the "recording" approach taken by many GUI test automation frameworks for developing tests scripts. In any minimally complex test case, you will have to refactor the script aggresively anyway, to remove duplication and increase modularity. I prefer to program the scripts in an incremental manner, ideally with the help of a good REPL. 
+* I dislike the "recording" approach taken by many GUI test automation frameworks for developing tests scripts. In any minimally complex test case, you will have to refactor the script aggressively anyway, to remove duplication and increase modularity. I prefer to program the scripts in an incremental manner, ideally with the help of a good REPL. 
 
 * Sometimes, it can become inconvenient if the test framework needs to control the launch of the AUT, instead of having it started by other means.
 
